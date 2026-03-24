@@ -1,0 +1,7 @@
+{
+  "name": "Audio CRM & Transcriber",
+  "description": "Record audio, generate unique shareable links, and automatically transcribe recordings using Gemini AI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

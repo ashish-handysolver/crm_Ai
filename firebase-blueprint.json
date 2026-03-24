@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Recording": {
+      "title": "Recording",
+      "description": "An audio recording with its transcript and metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the recording." },
+        "audioData": { "type": "string", "description": "Base64 encoded audio data." },
+        "transcript": { "type": "string", "description": "AI-generated transcript of the audio." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the recording was created." },
+        "authorUid": { "type": "string", "description": "The UID of the user who created the recording." },
+        "meetingId": { "type": "string", "description": "Optional ID of the meeting this recording belongs to." }
+      },
+      "required": ["id", "audioData", "transcript", "createdAt", "authorUid"]
+    },
+    "Meeting": {
+      "title": "Meeting",
+      "description": "A meeting room that allows multiple recordings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "ownerUid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/recordings/{recordingId}": {
+      "schema": "Recording",
+      "description": "Collection of shared audio recordings."
+    },
+    "/meetings/{meetingId}": {
+      "schema": "Meeting",
+      "description": "Collection of meeting rooms."
+    }
+  }
+}
