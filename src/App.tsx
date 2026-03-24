@@ -156,19 +156,19 @@ const Navbar = ({ user }: { user: User | null }) => {
   };
 
   return (
-    <nav className="flex items-center justify-end md:justify-end p-6 border-b border-black/5 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+    <nav className="flex items-center justify-end md:justify-end p-6 border-b border-white/20 bg-white/70 backdrop-blur-xl sticky top-0 z-50">
       <Link to="/" className="flex items-center gap-2 group md:hidden mr-auto">
-        <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-blue-500/30 transition-all">
           <Mic className="text-white w-5 h-5" />
         </div>
-        <span className="font-sans font-bold text-xl tracking-tight">AudioCRM</span>
+        <span className="font-sans font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AudioCRM</span>
       </Link>
 
       <div className="flex items-center gap-4">
         {user && (
           <button 
             onClick={() => setIsImportModalOpen(true)}
-            className="hidden md:flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
+            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             Import Leads
@@ -186,11 +186,11 @@ const Navbar = ({ user }: { user: User | null }) => {
         {user ? (
           <div className="flex items-center gap-4">
 
-            <div className="flex items-center gap-2 bg-zinc-100 px-3 py-1.5 rounded-full">
-              <img src={user.photoURL || ''} alt="" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />
-              <span className="text-xs font-medium">{user.displayName}</span>
+            <div className="flex items-center gap-2 bg-white/50 backdrop-blur border border-white/60 shadow-sm px-3 py-1.5 rounded-full">
+              <img src={user.photoURL || ''} alt="" className="w-7 h-7 rounded-full border border-zinc-200" referrerPolicy="no-referrer" />
+              <span className="text-sm font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent px-1">{user.displayName}</span>
             </div>
-            <button onClick={handleLogout} className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-500">
+            <button onClick={handleLogout} className="p-2 bg-white/50 shadow-sm hover:shadow hover:-translate-y-0.5 border border-white/60 rounded-full transition-all text-red-500 hover:bg-red-50 hover:text-red-600">
               <LogOut size={18} />
             </button>
           </div>
@@ -198,7 +198,7 @@ const Navbar = ({ user }: { user: User | null }) => {
           <button
             onClick={handleLogin}
             disabled={isLoggingIn}
-            className={`flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-xl font-medium transition-all active:scale-95 ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-800'}`}
+            className={`flex items-center gap-2 bg-gradient-to-r from-slate-800 to-black text-white shadow-lg shadow-black/20 px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30'}`}
           >
             <LogIn size={18} className={isLoggingIn ? 'animate-spin' : ''} />
             {isLoggingIn ? 'Signing In...' : 'Sign In'}
@@ -375,7 +375,7 @@ const RecordingView = () => {
 
           <div className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
             <audio
-              src={`data:audio/webm;base64,${recording.audioData}`}
+              src={recording.audioUrl ? recording.audioUrl : (recording.audioData ? `data:audio/webm;base64,${recording.audioData}` : '')}
               controls
               className="w-full md:w-64"
             />
@@ -532,9 +532,9 @@ const AppLayout = ({ user }: { user: User | null }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-black selection:text-white flex-row w-full">
+    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-purple-50 text-slate-900 font-sans selection:bg-blue-500 selection:text-white flex-row w-full">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
         <Navbar user={user} />
         <main className="flex-1">
           <Routes>

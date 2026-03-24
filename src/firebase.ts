@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -16,3 +17,4 @@ const app = initializeApp(firebaseConfig);
 // Using the specific database ID from your project configuration
 export const db = getFirestore(app, "ai-studio-a51e591f-052c-4aab-ac9b-b7ec428bbf63");
 export const auth = getAuth();
+export const storage = getStorage(app);
