@@ -37,16 +37,21 @@ export default function Leads({ user }: { user: any }) {
       data.sort((a, b) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
       setLeads(data.length > 0 ? data : DUMMY_LEADS);
       setLoadingLeads(false);
+    }, (error) => {
+      console.error("Leads Listener Error:", error);
+      setLoadingLeads(false);
     });
 
-    const qRecs = query(collection(db, 'recordings'));
+    const qRecs = query(collection(db, 'recordings'), where('authorUid', '==', user.uid));
     const unsubRecs = onSnapshot(qRecs, (snapshot) => {
       const allRecs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as any);
       // Filter client-side
       const filteredRecs = allRecs.filter(d => d.authorUid === user.uid || !d.authorUid);
-      console.log("Recordings fetched total:", allRecs.length, "Filtered:", filteredRecs.length, "User UID:", user.uid);
+      console.log("Recordings fetched total:", allRecs.length, "Filtered:", filteredRecs.length, "User UID:", user?.uid);
       console.log("All Recordings Details:", allRecs);
       setRecordings(filteredRecs);
+    }, (error) => {
+      console.error("Leads Recordings Listener Error:", error);
     });
 
     return () => { unsubLeads(); unsubRecs(); };
@@ -184,7 +189,7 @@ export default function Leads({ user }: { user: any }) {
         transcript: transcriptText,
         createdAt: Timestamp.now(),
         authorUid: user?.uid || '',
-        meetingId: leadId // We use meetingId field instead of leadId so it passes your strict Cloud rules!
+        leadId: leadId
       };
 
       await setDoc(doc(db, 'recordings', recordId), recordingDoc);
@@ -306,7 +311,11 @@ export default function Leads({ user }: { user: any }) {
                 ) : leads.map((lead, idx) => {
                   const leadRecordings = recordings
                     .filter(rec => rec.meetingId === lead.id || rec.leadId === lead.id)
-                    .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    .sort((a, b) => {
+                      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                      return timeB - timeA;
+                    });
 
                   return (
                     <React.Fragment key={lead.id}>
@@ -417,7 +426,7 @@ export default function Leads({ user }: { user: any }) {
                                     <div key={rec.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row gap-4">
                                       <div className="flex-1">
                                         <div className="text-xs text-slate-500 mb-2 font-medium">
-                                          {rec.createdAt?.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                                          {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Unknown Date'}
                                         </div>
                                         <div className="text-sm text-slate-700 italic line-clamp-2">"{rec.transcript}"</div>
                                       </div>

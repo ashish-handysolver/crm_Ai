@@ -30,7 +30,7 @@ export default function Sidebar() {
           <FileText size={18} />
           Reports
         </Link>
-        <Link to="/prompts" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:text-black hover:bg-zinc-50 rounded-xl transition-colors font-medium">
+        <Link to="/analytics" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:text-black hover:bg-zinc-50 rounded-xl transition-colors font-medium">
           <MessageSquare size={18} />
           Analytics
         </Link>

@@ -19,16 +19,24 @@ export default function Reports({ user }: { user: any }) {
       query(collection(db, 'leads'), where('ownerUid', '==', user.uid)),
       (snap) => {
         setLeads(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      },
+      (error) => {
+        console.error("Reports Leads Error:", error);
       }
     );
 
     const unsubRecs = onSnapshot(
-      query(collection(db, 'recordings')),
+      query(collection(db, 'recordings'), where('authorUid', '==', user.uid)),
       (snap) => {
         let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Ensure we load everything and filter carefully client side so nothing is silently lost
+        console.log("Reports: Recordings fetched raw:", data.length);
         data = data.filter(d => (d as any).authorUid === user.uid || !(d as any).authorUid);
+        console.log("Reports: Recordings filtered:", data.length, "User UID:", user?.uid);
         setRecordings(data);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Reports Recordings Error:", error);
         setLoading(false);
       }
     );
@@ -42,7 +50,11 @@ export default function Reports({ user }: { user: any }) {
       const lead = leads.find(l => l.id === rec.meetingId || l.id === rec.leadId);
       return { ...rec, lead };
     })
-    .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    .sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeB - timeA;
+    });
 
   if (loading) {
     return (
@@ -112,7 +124,7 @@ export default function Reports({ user }: { user: any }) {
                     
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 py-1.5 px-3 rounded-lg w-max mb-6">
                       <Calendar size={14} />
-                      {rec.createdAt?.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                      {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Unknown Date'}
                     </div>
                   </div>
 

@@ -126,7 +126,7 @@ export default function GuestRecord() {
         transcript: transcriptText,
         createdAt: Timestamp.now(),
         authorUid: meeting.ownerUid,
-        meetingId: meeting.leadId // Workaround: mapping the meetingId field to leadId for permissions
+        leadId: meeting.leadId
       };
 
       await setDoc(doc(db, 'recordings', generatedId), recordingDoc);

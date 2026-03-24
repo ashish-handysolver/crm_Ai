@@ -96,7 +96,7 @@ service cloud.firestore {
 
     match /recordings/{recordingId} {
       allow read: if true;
-      allow write: if isAuthenticated() || request.resource.data.meetingId != null;
+      allow write: if isAuthenticated() || (request.resource.data.meetingId != null || request.resource.data.leadId != null);
     }
 
     match /meetings/{meetingId} {

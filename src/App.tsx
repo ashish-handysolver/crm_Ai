@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard } from 'lucide-react';
+import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,6 +30,7 @@ import LeadForm from './LeadForm';
 import Dashboard from './Dashboard';
 import Reports from './Reports';
 import GuestRecord from './GuestRecord';
+import Analytics from './Analytics';
 
 // --- Error Handling ---
 enum OperationType {
@@ -170,10 +171,7 @@ const Navbar = ({ user }: { user: User | null }) => {
         )}
         {user ? (
           <div className="flex items-center gap-4">
-            <Link to="/history" className="text-sm font-medium text-zinc-600 hover:text-black flex items-center gap-1.5">
-              <History size={16} />
-              History
-            </Link>
+
             <div className="flex items-center gap-2 bg-zinc-100 px-3 py-1.5 rounded-full">
               <img src={user.photoURL || ''} alt="" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />
               <span className="text-xs font-medium">{user.displayName}</span>
@@ -357,7 +355,7 @@ const RecordingView = () => {
             </div>
             <h1 className="text-3xl font-bold tracking-tight">Transcript & Audio</h1>
             <p className="text-zinc-400 text-sm mt-1">
-              Recorded on {recording.createdAt.toDate().toLocaleDateString()} at {recording.createdAt.toDate().toLocaleTimeString()}
+              Recorded on {recording.createdAt?.toDate ? recording.createdAt.toDate().toLocaleDateString() : 'Unknown Date'} at {recording.createdAt?.toDate ? recording.createdAt.toDate().toLocaleTimeString() : 'Unknown Time'}
             </p>
           </div>
 
@@ -415,7 +413,8 @@ const HistoryView = ({ user }: { user: User | null }) => {
     if (!user) return;
 
     const q = query(
-      collection(db, 'recordings')
+      collection(db, 'recordings'),
+      where('authorUid', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -463,12 +462,15 @@ const HistoryView = ({ user }: { user: User | null }) => {
               className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                    {rec.createdAt.toDate().toLocaleDateString()}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={14} className="text-zinc-400" />
+                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                      {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString() : 'Unknown Date'}
+                    </span>
                   </div>
                   {rec.meetingId && (
-                    <span className="bg-zinc-100 text-zinc-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                    <span className="w-fit bg-zinc-100 text-zinc-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
                       Meeting
                     </span>
                   )}
@@ -529,6 +531,7 @@ const AppLayout = ({ user }: { user: User | null }) => {
             <Route path="/clients/new" element={<LeadForm user={user} />} />
             <Route path="/clients/:id/edit" element={<LeadForm user={user} />} />
             <Route path="/reports" element={<Reports user={user} />} />
+            <Route path="/analytics" element={<Analytics user={user} />} />
           </Routes>
         </main>
       </div>
