@@ -3,11 +3,11 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { Loader2, Users, BarChart3, ArrowRight, ExternalLink } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 
 export default function Analytics({ user }: { user: any }) {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -86,42 +86,17 @@ export default function Analytics({ user }: { user: any }) {
                    </div>
                 </div>
 
-                <button
-                  onClick={() => setShowModal(true)}
+                <Link
+                  to={`/analytics/${lead.id}`}
                   className="w-full mt-8 bg-slate-950 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 group-hover:bg-indigo-600 transition-all shadow-lg shadow-slate-900/10 active:scale-[0.98]"
                 >
                   View Full Insights <ArrowRight size={16} />
-                </button>
+                </Link>
               </motion.div>
             ))
           )}
         </div>
       </div>
-
-      {/* Coming Soon Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center border border-white/20"
-          >
-            <div className="w-24 h-24 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <BarChart3 size={40} className="text-indigo-500" />
-            </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Analytics Coming Soon</h2>
-            <p className="text-slate-500 text-lg leading-relaxed mb-10">
-              We're hard at work building advanced behavioral modeling and predictive conversion tracking. You'll be notified the moment this feature goes live.
-            </p>
-            <button
-               onClick={() => setShowModal(false)}
-               className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all active:scale-[0.98]"
-            >
-              Back to Overview
-            </button>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }
