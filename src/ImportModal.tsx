@@ -169,122 +169,127 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 min-h-screen">
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           exit={{ opacity: 0 }} 
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
           onClick={() => !isImporting && onClose()}
         />
         
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden relative z-10 max-h-[90vh]"
+          exit={{ opacity: 0, scale: 0.95, y: 30 }}
+          className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden relative z-10 max-h-[90vh] md:max-h-[85vh] m-auto border border-white/20"
         >
           {/* Header */}
-          <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+          <div className="p-6 md:px-8 border-b border-zinc-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 via-white to-purple-50/50">
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Import Leads</h2>
-              <p className="text-sm text-zinc-500 mt-1">Add multiple contacts to your CRM via CSV</p>
+              <h2 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">Import Leads</h2>
+              <p className="text-sm font-medium text-slate-500 mt-1">Supercharge your CRM by bringing in fresh contacts.</p>
             </div>
             {!isImporting && (
-              <button onClick={onClose} className="p-2 bg-white rounded-full hover:bg-zinc-100 transition-colors border border-zinc-200">
-                <X size={18} className="text-zinc-500" />
+              <button onClick={onClose} className="p-2.5 bg-white rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm border border-zinc-100 group">
+                <X size={18} className="text-zinc-400 group-hover:text-red-500" />
               </button>
             )}
           </div>
 
           {/* Stepper */}
-          <div className="px-8 py-6 border-b border-zinc-50 bg-white">
-            <div className="flex items-center justify-between relative">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-zinc-100 z-0" />
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-[#3b4256] transition-all z-0" style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }} />
+          <div className="px-8 py-6 border-b border-slate-50 bg-white shadow-sm z-10">
+            <div className="flex items-center justify-between relative max-w-lg mx-auto">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full z-0" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500 z-0" style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }} />
               
               {[1, 2, 3].map(s => (
-                <div key={s} className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step >= s ? 'bg-[#3b4256] text-white' : 'bg-white border-2 border-zinc-200 text-zinc-400'}`}>
-                  {step > s ? <CheckCircle2 size={16} /> : s}
+                <div key={s} className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 shadow-sm ${step >= s ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white scale-110' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
+                  {step > s ? <CheckCircle2 size={20} /> : s}
                 </div>
               ))}
             </div>
-            <div className="flex justify-between mt-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-              <span className={step >= 1 ? 'text-[#3b4256]' : ''}>Upload CSV</span>
-              <span className={step >= 2 ? 'text-[#3b4256]' : ''}>Map Columns</span>
-              <span className={step >= 3 ? 'text-[#3b4256]' : ''}>Import Data</span>
+            <div className="flex justify-between mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest max-w-lg mx-auto px-1">
+              <span className={step >= 1 ? 'text-blue-600' : ''}>Upload</span>
+              <span className={step >= 2 ? 'text-violet-600' : ''}>Map</span>
+              <span className={step >= 3 ? 'text-emerald-600' : ''}>Import</span>
             </div>
           </div>
 
           {/* Body */}
-          <div className="p-8 overflow-y-auto flex-1 bg-zinc-50/30">
+          <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-slate-50/50">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium flex items-center gap-2">
-                <CheckCircle2 size={16} />
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-medium flex items-center gap-3 border border-red-100 shadow-sm">
+                <div className="bg-red-100 p-1.5 rounded-full"><X size={14} /></div>
                 {error}
-              </div>
+              </motion.div>
             )}
 
             {step === 1 && (
-              <div className="flex flex-col items-center justify-center min-h-[300px] gap-6">
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col items-center justify-center py-4 gap-6">
                 <label className="w-full max-w-lg cursor-pointer group">
-                  <div className="border-2 border-dashed border-zinc-300 rounded-3xl p-12 text-center hover:bg-slate-50 hover:border-[#3b4256]/50 transition-all">
-                    <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                      <UploadCloud size={32} className="text-blue-500" />
+                  <div className="relative border-[3px] border-dashed border-blue-200 bg-white rounded-[2rem] p-12 text-center hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="relative z-10">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-violet-100 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm">
+                        <UploadCloud size={40} className="text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-extrabold text-slate-800 mb-2">Drop your CSV here</h3>
+                      <p className="text-sm font-medium text-slate-500 mb-8">Format: standard comma-separated values (.csv)</p>
+                      <span className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl text-sm font-bold shadow-lg shadow-slate-200 group-hover:bg-blue-600 group-hover:shadow-blue-200 transition-all duration-300 inline-flex items-center gap-2">
+                        Browse Files
+                      </span>
                     </div>
-                    <h3 className="text-lg font-bold text-zinc-800 mb-2">Upload your CSV file</h3>
-                    <p className="text-sm text-zinc-500 mb-6">Drag and drop your file here, or click to browse.</p>
-                    <span className="bg-[#3b4256] text-white px-6 py-2.5 rounded-xl text-sm font-bold inline-block">
-                      Select File
-                    </span>
                   </div>
                   <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
                 </label>
                 
-                <div className="flex items-center gap-4 text-sm text-zinc-500">
-                  <span className="w-12 h-px bg-zinc-300" />
+                <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-full max-w-lg">
+                  <span className="flex-1 h-px bg-slate-200" />
                   OR
-                  <span className="w-12 h-px bg-zinc-300" />
+                  <span className="flex-1 h-px bg-slate-200" />
                 </div>
                 
                 <button 
                   onClick={handleDownloadSample}
-                  className="flex items-center gap-2 text-blue-600 font-bold hover:underline"
+                  className="flex items-center gap-2 text-blue-600 font-bold hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-6 py-3 rounded-2xl transition-all"
                 >
-                  <Download size={16} />
+                  <Download size={18} />
                   Download Sample CSV
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {step === 2 && (
-              <div className="flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 text-blue-800 rounded-xl text-sm">
-                  <FileText size={20} className="text-blue-600" />
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col h-full space-y-6">
+                <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
+                  <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                    <FileText size={24} className="text-blue-600" />
+                  </div>
                   <div>
-                    <span className="font-bold block">File uploaded: {file?.name}</span>
-                    <span className="text-blue-600/80">Found {csvRows.length} rows to import</span>
+                    <span className="font-extrabold text-slate-800 block text-lg">{file?.name}</span>
+                    <span className="text-blue-600/80 font-semibold text-sm">Discovered <span className="text-blue-700 font-bold">{csvRows.length} rows</span> ready for mapping</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex-1">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex-1">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-zinc-50 border-b border-zinc-200">
-                        <th className="py-3 px-4 font-bold text-zinc-600 w-1/2">System Field</th>
-                        <th className="py-3 px-4 font-bold text-zinc-600 w-1/2">CSV Column</th>
+                      <tr className="bg-slate-50/80 border-b border-slate-200">
+                        <th className="py-4 px-6 font-extrabold text-slate-500 uppercase tracking-wider text-xs w-1/2">System Field</th>
+                        <th className="py-4 px-6 font-extrabold text-slate-500 uppercase tracking-wider text-xs w-1/2">CSV Column</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {SYSTEM_FIELDS.map((sysField, i) => (
-                        <tr key={sysField.id} className={i !== SYSTEM_FIELDS.length - 1 ? 'border-b border-zinc-100' : ''}>
-                          <td className="py-3 px-4">
-                            <span className="font-medium text-zinc-800">{sysField.label}</span>
-                            {sysField.required && <span className="text-red-500 ml-1">*</span>}
+                    <tbody className="divide-y divide-slate-100">
+                      {SYSTEM_FIELDS.map((sysField) => (
+                        <tr key={sysField.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4 px-6">
+                            <span className="font-bold text-slate-800 tracking-tight">{sysField.label}</span>
+                            {sysField.required && <span className="text-red-500 ml-1.5 font-bold">*</span>}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-3 px-6">
                             <select 
-                              className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium text-zinc-700"
+                              className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold text-slate-700 shadow-sm appearance-none cursor-pointer"
                               value={mappings[sysField.id] !== undefined ? mappings[sysField.id] : -1}
                               onChange={(e) => {
                                 const val = parseInt(e.target.value, 10);
@@ -305,46 +310,54 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {step === 3 && (
-              <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-12 text-center h-full">
                 {importProgress.current < importProgress.total ? (
                   <>
-                    <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-                      <Loader2 size={40} className="text-blue-500 animate-spin" />
+                    <div className="relative mb-8">
+                      <div className="absolute inset-0 bg-blue-400 blur-xl opacity-20 rounded-full animate-pulse" />
+                      <div className="relative w-24 h-24 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                        <Loader2 size={48} className="text-blue-600 animate-spin" />
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Importing Leads...</h3>
-                    <p className="text-zinc-500 mb-6">Please do not close this window.</p>
+                    <h3 className="text-2xl font-extrabold mb-3 text-slate-800">Processing Import...</h3>
+                    <p className="text-slate-500 font-medium mb-8">Please wait while we sync your data to the CRM.</p>
                     
-                    <div className="w-full max-w-md bg-zinc-100 rounded-full h-3 overflow-hidden">
+                    <div className="w-full max-w-md bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner p-0.5">
                       <div 
-                        className="bg-blue-500 h-full transition-all duration-300"
+                        className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300 relative overflow-hidden"
                         style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
-                      />
+                      >
+                        <div className="absolute inset-0 bg-white/20 w-full animate-pulse" />
+                      </div>
                     </div>
-                    <p className="text-sm font-bold text-zinc-400 mt-3">{importProgress.current} of {importProgress.total} rows</p>
+                    <p className="text-sm font-extrabold text-slate-400 mt-4 tracking-widest uppercase">{importProgress.current} / {importProgress.total} Records</p>
                   </>
                 ) : (
                   <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
-                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
-                      <CheckCircle2 size={40} className="text-emerald-500" />
+                    <div className="relative mb-8">
+                      <div className="absolute inset-0 bg-emerald-400 blur-xl opacity-30 rounded-full" />
+                      <div className="relative w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                        <CheckCircle2 size={48} className="text-white" />
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold mb-2 text-emerald-800">Import Complete!</h3>
-                    <p className="text-zinc-500 mb-6">Successfully imported {importProgress.total} leads.</p>
+                    <h3 className="text-3xl font-extrabold mb-3 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Import Complete!</h3>
+                    <p className="text-slate-500 font-medium text-lg">Your workspace has successfully ingested <br/><span className="text-slate-800 font-bold">{importProgress.total}</span> total leads.</p>
                   </motion.div>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-zinc-100 bg-white flex justify-between h-[88px] shrink-0">
+          <div className="p-6 md:px-8 border-t border-slate-100 bg-slate-50/80 flex justify-between shrink-0 rounded-b-[2rem]">
             {step === 2 && (
               <button 
                 onClick={() => setStep(1)}
-                className="px-6 py-2.5 rounded-xl font-bold text-zinc-500 hover:bg-zinc-100 transition-colors"
+                className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all shadow-sm"
                 disabled={isImporting}
               >
                 Back
@@ -354,16 +367,16 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
               {step === 2 && (
                 <button 
                   onClick={handleExecuteImport}
-                  className="px-6 py-2.5 rounded-xl font-bold text-white bg-[#3b4256] hover:bg-black transition-colors flex items-center gap-2"
+                  className="px-8 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center gap-2"
                 >
                   Start Import
-                  <ArrowRight size={16} />
+                  <ArrowRight size={18} />
                 </button>
               )}
               {step === 3 && importProgress.current >= importProgress.total && (
                 <button 
                   onClick={onClose}
-                  className="px-6 py-2.5 rounded-xl font-bold text-white bg-[#3b4256] hover:bg-black transition-colors"
+                  className="px-10 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/25 transition-all"
                 >
                   Done
                 </button>
