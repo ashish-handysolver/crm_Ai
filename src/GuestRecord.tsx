@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Mic, Square, Loader2, CheckCircle2, AlertCircle, Copy, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
@@ -9,6 +9,9 @@ import { db } from './firebase';
 
 export default function GuestRecord() {
   const { meetingId } = useParams();
+  const [searchParams] = useSearchParams();
+  const leadParam = searchParams.get('l');
+  
   const [meeting, setMeeting] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
@@ -120,14 +123,16 @@ export default function GuestRecord() {
       }
 
       const generatedId = uuidv4().slice(0, 8);
-      const recordingDoc = {
+      const recordingDoc: any = {
         id: generatedId,
         audioData: base64Audio,
         transcript: transcriptText,
         createdAt: Timestamp.now(),
-        authorUid: meeting.ownerUid,
-        leadId: meeting.leadId
+        authorUid: meeting.ownerUid
       };
+      // Only append what is available to satisfy strict schema validation on the cloud
+      if (meetingId) recordingDoc.meetingId = meetingId;
+      if (leadParam || meeting.leadId) recordingDoc.leadId = leadParam || meeting.leadId;
 
       await setDoc(doc(db, 'recordings', generatedId), recordingDoc);
       setTranscript(transcriptText);

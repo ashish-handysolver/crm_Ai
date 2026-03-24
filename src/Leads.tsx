@@ -211,11 +211,10 @@ export default function Leads({ user }: { user: any }) {
         id,
         title: `Call with ${leadName}`,
         ownerUid: user.uid,
-        leadId: leadId,
         createdAt: Timestamp.now()
       };
       await setDoc(doc(db, 'meetings', id), meetingData);
-      const url = `${window.location.origin}/m/${id}`;
+      const url = `${window.location.origin}/m/${id}?l=${leadId}`;
       setShareUrls(prev => ({ ...prev, [leadId]: url }));
     } catch (err) {
       console.error("Error creating link:", err);
