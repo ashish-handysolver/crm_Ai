@@ -9,10 +9,10 @@ import { doc, setDoc, Timestamp, collection, query, where, onSnapshot } from 'fi
 import { db, auth } from './firebase';
 
 const DUMMY_LEADS = [
-  { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' },
-  { id: '2', name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', score: 62, lastPulse: 'Yesterday', phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e' },
-  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', score: 92, lastPulse: '4 hours ago', phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f' },
-  { id: '4', name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', score: 15, lastPulse: 'Oct 12, 2023', phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g' },
+  { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
+  { id: '2', name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', score: 62, lastPulse: 'Yesterday', phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e', phone: '+49 30 1234 5678' },
+  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', score: 92, lastPulse: '4 hours ago', phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
+  { id: '4', name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', score: 15, lastPulse: 'Oct 12, 2023', phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g', phone: '+1 212-555-0199' },
 ];
 
 export default function Leads({ user }: { user: any }) {
@@ -293,6 +293,7 @@ export default function Leads({ user }: { user: any }) {
                 <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50/50">
                   <th className="py-4 px-6 font-bold">Lead Identity</th>
                   <th className="py-4 px-6 font-bold">Organization</th>
+                  <th className="py-4 px-6 font-bold">Contact Number</th>
                   <th className="py-4 px-6 font-bold">Source</th>
                   <th className="py-4 px-6 font-bold w-32">Score</th>
                   <th className="py-4 px-6 font-bold">Last Pulse</th>
@@ -303,7 +304,7 @@ export default function Leads({ user }: { user: any }) {
               <tbody className="text-sm">
                 {loadingLeads ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-20 px-6">
+                    <td colSpan={8} className="text-center py-20 px-6">
                       <Loader2 size={32} className="animate-spin text-slate-300 mx-auto" />
                     </td>
                   </tr>
@@ -331,6 +332,9 @@ export default function Leads({ user }: { user: any }) {
                         <td className="py-4 px-6">
                           <div className="font-semibold text-slate-700">{lead.company}</div>
                           <div className="text-slate-400 text-xs mt-0.5">{lead.location}</div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="font-semibold text-slate-700">{lead.phone || 'N/A'}</div>
                         </td>
                         <td className="py-4 px-6">
                           <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md tracking-wider">
@@ -390,7 +394,7 @@ export default function Leads({ user }: { user: any }) {
                       </tr>
                       {expandedLeadId === lead.id && (
                         <tr className="bg-slate-50/80 border-b border-slate-100">
-                          <td colSpan={7} className="p-0">
+                          <td colSpan={8} className="p-0">
                             <div className="p-6">
                               <div className="flex items-center justify-between mb-6">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">

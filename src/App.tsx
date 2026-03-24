@@ -33,6 +33,7 @@ import GuestRecord from './GuestRecord';
 import Analytics from './Analytics';
 import ManualUpload from './ManualUpload';
 import LeadInsights from './LeadInsights';
+import ImportModal from './ImportModal';
 
 // --- Error Handling ---
 enum OperationType {
@@ -109,6 +110,7 @@ interface MeetingData {
 
 const Navbar = ({ user }: { user: User | null }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleLogin = async () => {
     if (isLoggingIn) return;
@@ -163,6 +165,16 @@ const Navbar = ({ user }: { user: User | null }) => {
       </Link>
 
       <div className="flex items-center gap-4">
+        {user && (
+          <button 
+            onClick={() => setIsImportModalOpen(true)}
+            className="hidden md:flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Import Leads
+          </button>
+        )}
+        {isImportModalOpen && <ImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} user={user} />}
         {installPrompt && (
           <button
             onClick={handleInstall}
