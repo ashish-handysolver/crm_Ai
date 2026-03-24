@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mic, LayoutDashboard, Users, Link as LinkIcon, MessageSquare, FileText } from 'lucide-react';
+import { Mic, LayoutDashboard, Users, Link as LinkIcon, MessageSquare, FileText, UploadCloud } from 'lucide-react';
 
 export default function Sidebar() {
   return (
@@ -21,6 +21,10 @@ export default function Sidebar() {
         <Link to="/clients" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:text-black hover:bg-zinc-50 rounded-xl transition-colors font-medium">
           <Users size={18} />
           Clients / Leads
+        </Link>
+        <Link to="/upload" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:text-black hover:bg-zinc-50 rounded-xl transition-colors font-medium">
+          <UploadCloud size={18} />
+          Upload Intelligence
         </Link>
         {/* <Link to="/record" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:text-black hover:bg-zinc-50 rounded-xl transition-colors font-medium">
           <LinkIcon size={18} />

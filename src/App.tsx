@@ -31,6 +31,7 @@ import Dashboard from './Dashboard';
 import Reports from './Reports';
 import GuestRecord from './GuestRecord';
 import Analytics from './Analytics';
+import ManualUpload from './ManualUpload';
 
 // --- Error Handling ---
 enum OperationType {
@@ -530,6 +531,7 @@ const AppLayout = ({ user }: { user: User | null }) => {
             <Route path="/clients" element={<Leads user={user} />} />
             <Route path="/clients/new" element={<LeadForm user={user} />} />
             <Route path="/clients/:id/edit" element={<LeadForm user={user} />} />
+            <Route path="/upload" element={<ManualUpload user={user} />} />
             <Route path="/reports" element={<Reports user={user} />} />
             <Route path="/analytics" element={<Analytics user={user} />} />
           </Routes>
