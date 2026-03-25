@@ -5,6 +5,7 @@ import { doc, setDoc, Timestamp, getDoc, getDocs, collection, query, where } fro
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from './App';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ const SYSTEM_FIELDS = [
 ];
 
 export default function ImportModal({ isOpen, onClose, user }: ImportModalProps) {
+  const { companyId } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [file, setFile] = useState<File | null>(null);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -46,8 +48,8 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       setError('');
 
       // Fetch custom fields from the custom_fields collection
-      if (user) {
-        const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+      if (companyId) {
+        const q = query(collection(db, 'custom_fields'), where('companyId', '==', companyId));
         getDocs(q).then(snap => {
           const customFields = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
           const combined = [...SYSTEM_FIELDS, ...customFields.map(cf => ({ id: cf.name, label: cf.name, required: false }))];
@@ -55,7 +57,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
         }).catch(console.error);
       }
     }
-  }, [isOpen, user]);
+  }, [isOpen, companyId]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -147,7 +149,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
         if (!row[nameIdx]?.trim()) continue;
 
         const leadData: any = {
-          ownerUid: user.uid,
+          companyId: companyId,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
           score: 50, // default

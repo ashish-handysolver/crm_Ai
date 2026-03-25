@@ -9,14 +9,17 @@ export interface CustomFieldDef {
   name: string;
   type: 'TEXT' | 'NUMBER' | 'DROPDOWN' | 'DATE' | 'DATETIME';
   options: string[];
-  ownerUid: string;
+  companyId: string;
   createdAt: any;
 }
 
 const DEFAULT_SOURCES = ['LINKEDIN', 'REFERRAL', 'DIRECT', 'WEBSITE'];
 const DEFAULT_PHASES  = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
 
+import { useAuth } from './App';
+
 export default function CustomFields({ user }: { user: any }) {
+  const { companyId } = useAuth();
   const [fields, setFields] = useState<CustomFieldDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,21 +35,21 @@ export default function CustomFields({ user }: { user: any }) {
   const [newOptionInputs, setNewOptionInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!companyId) { setLoading(false); return; }
     const load = async () => {
       try {
         // Load custom fields
-        const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+        const q = query(collection(db, 'custom_fields'), where('companyId', '==', companyId));
         const snap = await getDocs(q);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
         data.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
         setFields(data);
 
-        // Load custom source/phase from users doc
-        const userSnap = await getDoc(doc(db, 'users', user.uid));
-        if (userSnap.exists()) {
-          setCustomSources(userSnap.data().customSources || []);
-          setCustomPhases(userSnap.data().customPhases || []);
+        // Load custom source/phase from companies doc
+        const companySnap = await getDoc(doc(db, 'companies', companyId));
+        if (companySnap.exists()) {
+          setCustomSources(companySnap.data().customSources || []);
+          setCustomPhases(companySnap.data().customPhases || []);
         }
       } catch (err: any) {
         setError('Failed to load: ' + err.message);
@@ -55,12 +58,13 @@ export default function CustomFields({ user }: { user: any }) {
       }
     };
     load();
-  }, [user]);
+  }, [companyId]);
 
   const addField = () => {
+    if (!companyId) return;
     setFields(prev => [...prev, {
       id: uuidv4(), name: '', type: 'TEXT', options: [],
-      ownerUid: user.uid, createdAt: Timestamp.now()
+      companyId: companyId, createdAt: Timestamp.now()
     }]);
   };
 
@@ -97,19 +101,20 @@ export default function CustomFields({ user }: { user: any }) {
     setError('');
     setSuccess('');
     try {
+      if (!companyId) throw new Error("No company context.");
       for (const f of fields) {
         if (!f.name.trim()) throw new Error("All fields must have a name.");
         if (f.type === 'DROPDOWN' && f.options.length === 0) throw new Error(`Dropdown "${f.name}" needs at least one option.`);
-        await setDoc(doc(db, 'custom_fields', f.id), { ...f, ownerUid: user.uid });
+        await setDoc(doc(db, 'custom_fields', f.id), { ...f, companyId: companyId });
       }
 
-      // Save custom sources/phases to user document
-      const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        await updateDoc(userRef, { customSources, customPhases });
+      // Save custom sources/phases to company document
+      const compRef = doc(db, 'companies', companyId);
+      const compSnap = await getDoc(compRef);
+      if (compSnap.exists()) {
+        await updateDoc(compRef, { customSources, customPhases });
       } else {
-        await setDoc(userRef, { uid: user.uid, email: user.email, role: 'user', customSources, customPhases });
+        await setDoc(compRef, { customSources, customPhases }, { merge: true });
       }
 
       setSuccess('All configurations saved!');

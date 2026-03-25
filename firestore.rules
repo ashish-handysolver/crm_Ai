@@ -115,5 +115,9 @@ service cloud.firestore {
     match /custom_fields/{fieldId} {
       allow read, write: if isAuthenticated();
     }
+
+    match /companies/{companyId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }

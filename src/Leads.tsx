@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -9,6 +9,8 @@ import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs }
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
 import { CustomFieldDef } from './CustomFields';
+import { useAuth } from './App';
+import { motion, AnimatePresence } from 'motion/react';
 
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
@@ -18,6 +20,7 @@ const DUMMY_LEADS = [
 ];
 
 export default function Leads({ user }: { user: any }) {
+  const { companyId } = useAuth();
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [leads, setLeads] = useState<any[]>(DUMMY_LEADS);
   const [recordings, setRecordings] = useState<any[]>([]);
@@ -29,49 +32,42 @@ export default function Leads({ user }: { user: any }) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (!user) {
+    if (!companyId) {
       setLeads(DUMMY_LEADS);
       setLoadingLeads(false);
       return;
     }
-    const qLeads = query(collection(db, 'leads'), where('ownerUid', '==', user.uid));
+    const qLeads = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsubLeads = onSnapshot(qLeads, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as any);
-      console.log("Leads fetched from DB:", data);
       data.sort((a, b) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
       setLeads(data.length > 0 ? data : DUMMY_LEADS);
       setLoadingLeads(false);
     }, (error) => {
-      console.error("Leads Listener Error:", error);
+      console.error("Leads Error:", error);
       setLoadingLeads(false);
     });
 
-    const qRecs = query(collection(db, 'recordings'), where('authorUid', '==', user.uid));
+    const qRecs = query(collection(db, 'recordings'), where('companyId', '==', companyId));
     const unsubRecs = onSnapshot(qRecs, (snapshot) => {
       const allRecs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as any);
-      // Filter client-side
-      const filteredRecs = allRecs.filter(d => d.authorUid === user.uid || !d.authorUid);
-      console.log("Recordings fetched total:", allRecs.length, "Filtered:", filteredRecs.length, "User UID:", user?.uid);
-      console.log("All Recordings Details:", allRecs);
-      setRecordings(filteredRecs);
-    }, (error) => {
-      console.error("Leads Recordings Listener Error:", error);
+      setRecordings(allRecs);
     });
 
     return () => { unsubLeads(); unsubRecs(); };
-  }, [user]);
+  }, [companyId]);
 
-  // Fetch user's custom field definitions
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+    if (!companyId) return;
+    const q = query(collection(db, 'custom_fields'), where('companyId', '==', companyId));
     getDocs(q).then(snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
       setCustomFieldDefs(data);
     }).catch(console.error);
-  }, [user]);
+  }, [companyId]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -80,44 +76,28 @@ export default function Leads({ user }: { user: any }) {
 
   const startRecording = async (leadId: string) => {
     try {
-      setError('');
-      setSuccess('');
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Your browser does not support audio recording.");
-      }
+      setError(''); setSuccess('');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Browser doesn't support recording");
 
       const streams: MediaStream[] = [];
       const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streams.push(micStream);
-
       let finalStream = micStream;
 
       if (navigator.mediaDevices.getDisplayMedia) {
         try {
-          const systemStream = await navigator.mediaDevices.getDisplayMedia({
-            video: { width: 1, height: 1 },
-            audio: true
-          });
-
-          if (systemStream.getAudioTracks().length > 0) {
-            streams.push(systemStream);
-            const audioContext = new AudioContext();
-            audioContextRef.current = audioContext;
-            const dest = audioContext.createMediaStreamDestination();
-
-            const micSource = audioContext.createMediaStreamSource(micStream);
-            micSource.connect(dest);
-
-            const systemSource = audioContext.createMediaStreamSource(systemStream);
-            systemSource.connect(dest);
-
+          const sysStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1, height: 1 }, audio: true });
+          if (sysStream.getAudioTracks().length > 0) {
+            streams.push(sysStream);
+            const ctx = new AudioContext(); audioContextRef.current = ctx;
+            const dest = ctx.createMediaStreamDestination();
+            ctx.createMediaStreamSource(micStream).connect(dest);
+            ctx.createMediaStreamSource(sysStream).connect(dest);
             finalStream = dest.stream;
           } else {
-            systemStream.getTracks().forEach(t => t.stop());
+            sysStream.getTracks().forEach(t => t.stop());
           }
-        } catch (err: any) {
-          console.warn("System audio omitted", err);
-        }
+        } catch (e) { console.warn("System audio omitted", e); }
       }
 
       streamsRef.current = streams;
@@ -125,27 +105,18 @@ export default function Leads({ user }: { user: any }) {
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         transcribeAndSave(blob, leadId);
-
         streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
-        }
+        if (audioContextRef.current) audioContextRef.current.close();
       };
 
       mediaRecorder.start();
       setRecordingId(leadId);
     } catch (err: any) {
-      console.error("Error starting recording:", err);
-      setError(err.message || "Could not start recording.");
+       setError(err.message || "Could not start recording.");
     }
   };
 
@@ -161,33 +132,19 @@ export default function Leads({ user }: { user: any }) {
     try {
       const reader = new FileReader();
       reader.readAsDataURL(audioBlob);
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          resolve(base64String.split(',')[1]);
-        };
-        reader.onerror = () => reject(new Error("Failed to read audio file."));
+      const base64Audio = await new Promise<string>((res, rej) => {
+        reader.onloadend = () => res((reader.result as string).split(',')[1]);
+        reader.onerror = () => rej(new Error("Failed read"));
       });
-      const base64Audio = await base64Promise;
 
       let transcriptText = "No transcript generated.";
       try {
-        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || ''; // Fallbacks
-
-        if (!apiKey) {
-          console.warn("No gemini API key found, skipping transcription from leads.");
-        } else {
+        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+        if (apiKey) {
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: [
-              {
-                parts: [
-                  { text: "Please transcribe this audio recording of a sales/lead call." },
-                  { inlineData: { mimeType: "audio/webm", data: base64Audio } }
-                ]
-              }
-            ]
+            contents: [{ parts: [{ text: "Transcribe this audio strictly." }, { inlineData: { mimeType: "audio/webm", data: base64Audio } }] }]
           });
           transcriptText = response.text || "No transcript generated.";
         }
@@ -197,50 +154,33 @@ export default function Leads({ user }: { user: any }) {
 
       const recordId = uuidv4().slice(0, 8);
       let audioUrl = '';
-      
       try {
-        const storageRef = ref(storage, `recordings/${recordId}.webm`);
-        await uploadBytes(storageRef, audioBlob);
-        audioUrl = await getDownloadURL(storageRef);
-      } catch (uploadErr) {
-        console.warn("Failed to upload audio to Storage. Will save without audio playback.", uploadErr);
+        const sr = ref(storage, `recordings/${recordId}.webm`);
+        await uploadBytes(sr, audioBlob);
+        audioUrl = await getDownloadURL(sr);
+      } catch (e) {
+         console.warn("Upload failed", e);
       }
 
-      const recordingDoc = {
-        id: recordId,
-        audioUrl: audioUrl,
-        transcript: transcriptText,
-        createdAt: Timestamp.now(),
-        authorUid: user?.uid || '',
-        leadId: leadId
-      };
-
-      await setDoc(doc(db, 'recordings', recordId), recordingDoc);
-      setSuccess("Call recorded and saved successfully!");
-      setTimeout(() => setSuccess(''), 5000);
-    } catch (err: any) {
-      console.error(err);
-      setError("Failed to save recording.");
+      await setDoc(doc(db, 'recordings', recordId), {
+        id: recordId, audioUrl, transcript: transcriptText, createdAt: Timestamp.now(), authorUid: user?.uid || '', companyId, leadId
+      });
+      setSuccess("Call recorded securely!"); setTimeout(() => setSuccess(''), 4000);
+    } catch (err) {
+       setError("Failed to save recording.");
     } finally {
-      setIsTranscribing(false);
+       setIsTranscribing(false);
     }
   };
 
   const createMeeting = async (leadId: string, leadName: string) => {
+    if (!companyId) return;
     setIsCreatingMeeting(true);
     try {
       const id = uuidv4().slice(0, 8);
-      const meetingData = {
-        id,
-        title: `Call with ${leadName}`,
-        ownerUid: user.uid,
-        createdAt: Timestamp.now()
-      };
-      await setDoc(doc(db, 'meetings', id), meetingData);
-      const url = `${window.location.origin}/m/${id}?l=${leadId}`;
-      setShareUrls(prev => ({ ...prev, [leadId]: url }));
+      await setDoc(doc(db, 'meetings', id), { id, title: `Call with ${leadName}`, ownerUid: user.uid, companyId, createdAt: Timestamp.now() });
+      setShareUrls(prev => ({ ...prev, [leadId]: `${window.location.origin}/m/${id}?l=${leadId}` }));
     } catch (err) {
-      console.error("Error creating link:", err);
       setError("Failed to create shareable link.");
     } finally {
       setIsCreatingMeeting(false);
@@ -249,264 +189,273 @@ export default function Leads({ user }: { user: any }) {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'QUALIFIED': return 'bg-emerald-100 text-emerald-700';
-      case 'NURTURING': return 'bg-orange-100 text-orange-700';
-      case 'DISCOVERY': return 'bg-blue-100 text-blue-700';
-      default: return 'bg-slate-100 text-slate-700';
+      case 'QUALIFIED': return 'bg-emerald-100/80 text-emerald-700 border-emerald-200';
+      case 'NURTURING': return 'bg-orange-100/80 text-orange-700 border-orange-200';
+      case 'DISCOVERY': return 'bg-blue-100/80 text-blue-700 border-blue-200';
+      case 'INACTIVE': return 'bg-slate-100/80 text-slate-700 border-slate-200';
+      default: return 'bg-indigo-100/80 text-indigo-700 border-indigo-200';
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-emerald-600';
-    if (score >= 50) return 'bg-orange-500';
-    return 'bg-red-400';
-  };
+  const filteredLeads = leads.filter(l => 
+    !searchTerm || 
+    l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    l.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    l.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="flex-1 text-slate-900 p-8 min-h-[calc(100vh-88px)] bg-transparent">
+    <div className="flex-1 text-slate-900 p-4 sm:p-6 lg:p-10 min-h-[calc(100vh-88px)] bg-slate-50">
       <div className="max-w-[1400px] mx-auto">
+        
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div>
-            <div className="text-xs font-extrabold text-indigo-500 tracking-widest uppercase mb-1.5 flex items-center gap-2">
-              <TrendingUp size={14} className="animate-pulse" /> 
-              Pipeline Management
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/50 text-indigo-600 text-[10px] font-bold uppercase tracking-widest mb-3 border border-indigo-200/50">
+              <TrendingUp size={14} className="animate-pulse" /> Pipeline Ledger
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Lead Intelligence Ledger</h1>
-          </div>
-          <div className="flex items-center gap-4">
-
-            <Link to="/clients/new" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 px-6 py-3 rounded-2xl text-sm font-bold transition-all flex items-center gap-2">
-              <span className="text-lg leading-none">+</span> New Lead
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Lead Intelligence</h1>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+            <Link to="/clients/new" className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all relative overflow-hidden group">
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+              <span className="text-lg leading-none relative z-10">+</span> 
+              <span className="relative z-10">New Prospect</span>
             </Link>
-          </div>
+          </motion.div>
         </header>
 
-        {(error || success) && (
-          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium ${error ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
-            {error ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
-            {error || success}
+        <AnimatePresence>
+          {(error || success) && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-8 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm border ${error ? 'bg-red-50 text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>
+              {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+              {error || success}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Toolbar */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="relative w-full max-w-md group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Search leads, companies..."
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+            />
           </div>
-        )}
-
-
-
-        {/* Table Section */}
-        <div className="bg-white/60 backdrop-blur-xl rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-          <div className="p-6 md:px-8 md:py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/50">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search by name, company, or email..."
-                className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200/60 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-300 transition-all shadow-sm placeholder:text-slate-400"
-              />
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <button className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200/60 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all shadow-sm">
-                <Filter size={16} /> Filters
-              </button>
-              <select className="px-5 py-3 flex-1 md:flex-none bg-white border border-slate-200/60 rounded-2xl text-sm font-bold text-slate-600 outline-none hover:bg-slate-50 transition-all shadow-sm cursor-pointer appearance-none">
-                <option>Sort: Latest Activity</option>
-                <option>Sort: Score</option>
-              </select>
-            </div>
+          <div className="flex gap-3 w-full md:w-auto">
+            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 border border-slate-200 bg-white rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+              <Filter size={16} /> Filters
+            </button>
+            <select className="flex-1 md:flex-none px-5 py-3 border border-slate-200 bg-white rounded-xl text-sm font-bold text-slate-600 outline-none hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm appearance-none cursor-pointer">
+              <option>Sort: Latest Pulse</option>
+              <option>Sort: AI Score</option>
+            </select>
           </div>
+        </div>
 
+        {/* Mobile View (Cards) */}
+        <div className="lg:hidden space-y-4">
+          {filteredLeads.map(lead => (
+            <div key={lead.id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-indigo-500"></div>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <img src={lead.avatar} className="w-12 h-12 rounded-[1rem] object-cover ring-2 ring-slate-50" />
+                    <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white bg-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-base text-slate-900">{lead.name}</h3>
+                    <div className="text-slate-500 text-xs font-semibold mt-0.5">{lead.company}</div>
+                  </div>
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${getPhaseColor(lead.phase)}`}>{lead.phase}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5">Score</div>
+                  <div className="font-extrabold text-indigo-600">{lead.score || 0}%</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5">Pulse</div>
+                  <div className="text-sm font-medium text-slate-600 truncate">{lead.lastPulse}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-2 pt-4 border-t border-slate-100">
+                <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-2 rounded-xl transition-all">
+                  <Edit2 size={18} />
+                </Link>
+                <Link to={`/analytics/${lead.id}`} className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2.5 rounded-xl transition-colors">
+                  Full Dossier <ArrowUpRight size={14} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View (Premium Table) */}
+        <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="border-b border-slate-100 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest bg-slate-50/50">
-                  <th className="py-5 px-8">Lead Identity</th>
-                  <th className="py-5 px-6">Organization</th>
-                  <th className="py-5 px-6">Contact Number</th>
-                  <th className="py-5 px-6">Source</th>
-                  <th className="py-5 px-6 w-32">Score</th>
-                  <th className="py-5 px-6">Last Pulse</th>
-                  <th className="py-5 px-6">Phase</th>
-                  {customFieldDefs.map(cf => (
-                    <th key={cf.id} className="py-5 px-6">{cf.name}</th>
-                  ))}
-                  <th className="py-5 px-8 text-right">Actions</th>
+                <tr className="border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                  <th className="py-6 px-8 relative">Identity <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
+                  <th className="py-6 px-6 relative">Organization <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
+                  <th className="py-6 px-6 relative w-32">AI Score <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
+                  <th className="py-6 px-6 relative">Current Phase <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
+                  <th className="py-6 px-8 text-right">Operations</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {loadingLeads ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-20 px-6">
-                      <Loader2 size={32} className="animate-spin text-slate-300 mx-auto" />
+                    <td colSpan={5} className="py-24 text-center">
+                      <Loader2 size={32} className="animate-spin text-indigo-500 mx-auto" />
                     </td>
                   </tr>
-                ) : leads.map((lead, idx) => {
-                  const leadRecordings = recordings
-                    .filter(rec => rec.meetingId === lead.id || rec.leadId === lead.id)
-                    .sort((a, b) => {
-                      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-                      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-                      return timeB - timeA;
-                    });
+                ) : filteredLeads.map((lead) => {
+                  const leadRecs = recordings.filter(r => r.meetingId === lead.id || r.leadId === lead.id);
+                  const isExp = expandedLeadId === lead.id;
 
                   return (
                     <React.Fragment key={lead.id}>
-                      <tr className={`border-b border-slate-50 hover:bg-blue-50/30 transition-all duration-300 ${expandedLeadId === lead.id ? 'bg-blue-50/50 shadow-inner' : ''}`}>
-                        <td className="py-5 px-8">
+                      <tr className={`border-b border-slate-50 hover:bg-slate-50/80 transition-all duration-300 group ${isExp ? 'bg-indigo-50/30 shadow-inner' : ''}`}>
+                        <td className="py-5 px-8 whitespace-nowrap">
                           <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <img src={lead.avatar} alt="" className="w-12 h-12 rounded-xl object-cover shadow-sm border border-white" />
-                              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-emerald-400" />
+                            <div className="relative shrink-0">
+                              <img src={lead.avatar} className="w-12 h-12 rounded-[1rem] object-cover border-2 border-white shadow-sm group-hover:shadow-md transition-shadow" />
+                              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white bg-emerald-400" />
                             </div>
                             <div>
-                              <div className="font-extrabold text-slate-800 text-[15px]">{lead.name}</div>
-                              <div className="text-slate-500 font-medium text-xs mt-0.5 group flex items-center gap-1 cursor-pointer">
-                                {lead.email}
-                              </div>
+                              <div className="font-extrabold text-slate-900 text-base">{lead.name}</div>
+                              <div className="text-slate-500 font-medium text-xs mt-0.5">{lead.email}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-6 whitespace-nowrap">
                           <div className="font-extrabold text-slate-700">{lead.company}</div>
-                          <div className="text-slate-400 font-medium text-xs mt-0.5 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"/> {lead.location}</div>
+                          <div className="text-slate-400 font-semibold text-xs mt-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-300"/>{lead.location}</div>
                         </td>
-                        <td className="py-5 px-6">
-                          <div className="font-bold text-slate-600 bg-slate-100 w-fit px-3 py-1 rounded-lg text-xs">{lead.phone || 'N/A'}</div>
-                        </td>
-                        <td className="py-5 px-6">
-                          <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest">
-                            {lead.source}
-                          </span>
-                        </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-6 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                              <div className={`h-full rounded-full transition-all duration-500 ${getScoreColor(lead.score)}`} style={{ width: `${lead.score}%` }} />
+                            <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                              <div className={`h-full rounded-full transition-all duration-1000 ${lead.score >= 70 ? 'bg-emerald-500' : lead.score >= 40 ? 'bg-amber-500' : 'bg-red-400'}`} style={{ width: `${lead.score||0}%` }} />
                             </div>
-                            <span className={`font-extrabold text-sm ${lead.score >= 50 ? 'text-slate-700' : 'text-slate-400'}`}>{lead.score}</span>
+                            <span className="font-black text-sm text-slate-700">{lead.score || 0}</span>
                           </div>
                         </td>
-                        <td className="py-5 px-6 text-slate-500 font-medium text-xs">{lead.lastPulse}</td>
-                        <td className="py-5 px-6">
-                          <span className={`text-[11px] font-extrabold px-4 py-2 rounded-xl tracking-wider shadow-sm border ${getPhaseColor(lead.phase)} border-current/10`}>
+                        <td className="py-5 px-6 whitespace-nowrap">
+                          <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg border tracking-widest ${getPhaseColor(lead.phase)}`}>
                             {lead.phase}
                           </span>
                         </td>
-                        {/* Dynamic Custom Field Columns */}
-                        {customFieldDefs.map(cf => (
-                          <td key={cf.id} className="py-5 px-6">
-                            <span className="font-medium text-slate-600 text-xs bg-slate-50 px-2 py-1 rounded-lg">{lead[cf.name] || <span className="text-slate-300">—</span>}</span>
-                          </td>
-                        ))}
-                        <td className="py-5 px-8">
+                        <td className="py-5 px-8 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 w-8 h-8 flex items-center justify-center rounded-xl transition-all">
+                            <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-indigo-100">
                               <Edit2 size={16} />
                             </Link>
 
                             {isTranscribing && recordingId === null ? (
-                              <div className="w-8 h-8 flex items-center justify-center bg-slate-50 rounded-xl"><Loader2 size={16} className="animate-spin text-blue-500" /></div>
+                              <div className="w-9 h-9 flex items-center justify-center bg-indigo-50 rounded-xl"><Loader2 size={16} className="animate-spin text-indigo-500" /></div>
                             ) : recordingId === lead.id ? (
-                              <button
-                                onClick={stopRecording}
-                                className="text-white bg-red-500 hover:bg-red-600 w-8 h-8 flex items-center justify-center rounded-xl transition-all shadow-lg shadow-red-500/30 relative"
-                                title="Stop Recording"
-                              >
+                              <button onClick={stopRecording} className="text-white bg-red-500 hover:bg-red-600 w-9 h-9 flex items-center justify-center rounded-xl transition-all shadow-lg shadow-red-500/30 relative">
                                 <span className="absolute inset-0 bg-red-400 rounded-xl animate-ping opacity-40"></span>
                                 <Square size={14} className="fill-current relative z-10" />
                               </button>
                             ) : (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); startRecording(lead.id); }}
-                                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${recordingId ? 'opacity-30 cursor-not-allowed' : 'text-blue-500 hover:bg-blue-50 hover:text-blue-600'}`}
-                                disabled={!!recordingId}
-                                title="Record Lead Call"
-                              >
+                              <button onClick={() => startRecording(lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent ${recordingId ? 'opacity-30' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-100'}`} disabled={!!recordingId} title="Record Call">
                                 <Mic size={16} />
                               </button>
                             )}
-                            <button
-                              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${expandedLeadId === lead.id ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}
-                              onClick={(e) => { e.stopPropagation(); setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id); }}
-                              title="View Reports & Recordings"
-                            >
-                              <ChevronDown size={18} className={`transition-transform duration-300 ${expandedLeadId === lead.id ? 'rotate-180' : ''}`} />
+
+                            <button onClick={() => setExpandedLeadId(isExp ? null : lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${isExp ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 border-transparent'}`}>
+                              <ChevronDown size={18} className={`transition-transform duration-300 ${isExp ? 'rotate-180' : ''}`} />
                             </button>
                           </div>
                         </td>
                       </tr>
-                      {expandedLeadId === lead.id && (
-                        <tr className="bg-gradient-to-b from-blue-50/50 to-white border-b border-white">
-                          <td colSpan={8} className="p-0">
-                            <div className="p-8">
-                              <div className="flex items-center justify-between mb-6">
-                                <h4 className="text-xs font-extrabold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                                  Call History <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">{leadRecordings.length}</span>
-                                </h4>
-                                
-                                <div className="flex flex-col md:flex-row items-center gap-3 md:w-auto w-full md:pl-6 md:border-l border-slate-200">
-                                  {shareUrls[lead.id] ? (
-                                    <div className="flex items-center gap-2 w-full md:w-72 bg-white rounded-xl shadow-sm border border-slate-200 p-1">
-                                      <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none" />
-                                      <button onClick={() => { navigator.clipboard.writeText(shareUrls[lead.id]); setSuccess("Link copied!"); setTimeout(() => setSuccess(""), 3000); }} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors font-bold shadow-sm" title="Copy Guest Link">
-                                        <Share2 size={16} />
+
+                      {/* Expandable Row */}
+                      <AnimatePresence>
+                        {isExp && (
+                          <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-gradient-to-b from-indigo-50/30 to-white/50 border-b border-indigo-50">
+                            <td colSpan={5} className="p-0">
+                              <div className="p-8 px-12">
+                                <div className="flex items-center justify-between mb-8">
+                                  <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                    Call Database <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">{leadRecs.length}</span>
+                                  </h4>
+                                  
+                                  <div className="flex items-center gap-3">
+                                    <Link to={`/analytics/${lead.id}`} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-100 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">
+                                      <BarChart3 size={14} /> Intelligence Dossier
+                                    </Link>
+                                    {shareUrls[lead.id] ? (
+                                      <div className="flex items-center gap-2 w-64 bg-white rounded-xl shadow-inner border border-slate-200 p-1">
+                                        <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none" />
+                                        <button onClick={() => { navigator.clipboard.writeText(shareUrls[lead.id]); setSuccess("Copied!"); setTimeout(() => setSuccess(""), 2000); }} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors font-bold shadow-sm">
+                                          <CheckCircle2 size={16} />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button onClick={() => createMeeting(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-white bg-slate-900 hover:bg-indigo-600 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                                        {isCreatingMeeting ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />} Open Magic Link
                                       </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => createMeeting(lead.id, lead.name)}
-                                      disabled={isCreatingMeeting}
-                                      className="flex justify-center w-full md:w-auto items-center gap-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all shadow-sm shadow-indigo-500/10 disabled:opacity-50"
-                                    >
-                                      {isCreatingMeeting ? <Loader2 className="animate-spin" size={16} /> : <Share2 size={16} />}
-                                      Generate Guest Link
-                                    </button>
-                                  )}
+                                    )}
+                                  </div>
                                 </div>
+
+                                {leadRecs.length === 0 ? (
+                                  <div className="text-sm text-slate-400 font-medium bg-white/50 border-2 border-slate-200 border-dashed rounded-[2rem] p-12 text-center flex flex-col items-center">
+                                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4"><Play className="text-slate-300" size={24} /></div>
+                                    <p>No audio intelligence captured yet. Hit the microphone to start.</p>
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {leadRecs.map(rec => (
+                                      <div key={rec.id} className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all flex items-start gap-4 group cursor-pointer" onClick={() => window.location.href = `/r/${rec.id}`}>
+                                        <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
+                                          <Play className="text-slate-400 group-hover:text-indigo-600 group-hover:fill-indigo-600 ml-1 transition-colors" size={18} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-[10px] text-slate-400 group-hover:text-indigo-500 font-bold uppercase tracking-widest mb-1.5 transition-colors">
+                                            {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium' }) : 'Unknown Date'}
+                                          </div>
+                                          <div className="text-sm font-medium text-slate-700 italic line-clamp-2 leading-relaxed">"{rec.transcript}"</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              {leadRecordings.length === 0 ? (
-                                <div className="text-sm text-slate-400 font-medium bg-white/50 border border-slate-100 border-dashed rounded-2xl p-8 text-center italic">No recordings have been logged for this lead yet.</div>
-                              ) : (
-                                <div className="space-y-4">
-                                  {leadRecordings.map(rec => (
-                                    <div key={rec.id} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-5 items-center group cursor-pointer" onClick={() => window.location.href = `/r/${rec.id}`}>
-                                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                        <Play className="text-blue-600 fill-blue-600 ml-1" size={18} />
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="text-[11px] text-indigo-500 font-extrabold uppercase tracking-widest mb-1.5">
-                                          {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Unknown Date'}
-                                        </div>
-                                        <div className="text-sm font-medium text-slate-700 italic line-clamp-2 leading-relaxed">"{rec.transcript}"</div>
-                                      </div>
-                                      <div className="flex items-center shrink-0">
-                                        <div className="bg-slate-50 text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm">
-                                          Review Details
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
+                            </td>
+                          </motion.tr>
+                        )}
+                      </AnimatePresence>
                     </React.Fragment>
                   );
                 })}
               </tbody>
             </table>
           </div>
-
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
-            <div>Showing {leads.length} of {leads.length} precision leads</div>
-            <div className="flex items-center gap-1">
-              <button className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100"><ChevronLeft size={16} /></button>
-              <button className="px-3 py-1 font-bold bg-[#3b4256] text-white rounded-lg text-xs">1</button>
-              <button className="px-3 py-1 font-bold text-slate-600 hover:bg-slate-100 rounded-lg text-xs">2</button>
-              <button className="px-3 py-1 font-bold text-slate-600 hover:bg-slate-100 rounded-lg text-xs">3</button>
-              <button className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100"><ChevronRight size={16} /></button>
+          <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between text-sm text-slate-500 gap-4">
+            <div className="font-medium">Showing <span className="font-extrabold text-slate-900">{filteredLeads.length}</span> active prospects</div>
+            <div className="flex items-center gap-1.5">
+              <button className="p-2 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-white shadow-sm transition-all"><ChevronLeft size={16} /></button>
+              <button className="px-4 py-2 font-black shadow-md bg-indigo-600 text-white rounded-xl text-xs transition-all">1</button>
+              <button className="px-4 py-2 font-bold text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl text-xs transition-all">2</button>
+              <button className="px-4 py-2 font-bold text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl text-xs transition-all">3</button>
+              <button className="p-2 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-white shadow-sm transition-all"><ChevronRight size={16} /></button>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

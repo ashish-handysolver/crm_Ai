@@ -11,18 +11,19 @@ import {
 interface Meeting {
   id: string;
   title: string;
-  leadName: string;
   leadId: string;
   scheduledAt: Timestamp;
   notes: string;
-  ownerUid: string;
+  companyId: string;
   reminderSent: boolean;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+import { useAuth } from './App';
 
 export default function CalendarPage({ user }: { user: any }) {
+  const { companyId } = useAuth();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -49,8 +50,8 @@ export default function CalendarPage({ user }: { user: any }) {
 
   // Fetch meetings
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
-    const q = query(collection(db, 'meetings'), where('ownerUid', '==', user.uid));
+    if (!companyId) { setLoading(false); return; }
+    const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Meeting));
       setMeetings(data);
@@ -60,17 +61,17 @@ export default function CalendarPage({ user }: { user: any }) {
       setLoading(false);
     });
     return () => unsub();
-  }, [user]);
+  }, [companyId]);
 
   // Fetch leads for the meeting modal
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'leads'), where('ownerUid', '==', user.uid));
+    if (!companyId) return;
+    const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, snap => {
       setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
-  }, [user]);
+  }, [companyId]);
 
   // 10-minute reminder checker
   useEffect(() => {
@@ -146,9 +147,9 @@ export default function CalendarPage({ user }: { user: any }) {
       await addDoc(collection(db, 'meetings'), {
         title: form.title,
         leadId: form.leadId || '',
-        leadName: form.leadName || form.title,
         notes: form.notes,
         scheduledAt: Timestamp.fromDate(scheduledDate),
+        companyId: companyId,
         ownerUid: user.uid,
         reminderSent: false,
       });

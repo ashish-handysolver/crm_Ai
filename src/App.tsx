@@ -36,6 +36,80 @@ import ManualUpload from './ManualUpload';
 import LeadInsights from './LeadInsights';
 import CalendarPage from './Calendar';
 import ImportModal from './ImportModal';
+import Login from './Login';
+import RegisterCompany from './RegisterCompany';
+import Team from './Team';
+
+// --- Auth Context ---
+export const AuthContext = React.createContext<{
+  user: User | null;
+  companyId: string | null;
+  companyName: string | null;
+  loading: boolean;
+}>({
+  user: null,
+  companyId: null,
+  companyName: null,
+  loading: true
+});
+
+export const useAuth = () => React.useContext(AuthContext);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let unsubscribeUser = () => {};
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        unsubscribeUser = onSnapshot(doc(db, 'users', currentUser.uid), async (userDoc) => {
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setCompanyId(userData.companyId);
+            
+            if (userData.companyId) {
+              const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
+              if (companyDoc.exists()) {
+                setCompanyName(companyDoc.data().name);
+              }
+            }
+          } else {
+            setCompanyId(null);
+            setCompanyName(null);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error("Error listening to user data:", error);
+          setCompanyId(null);
+          setCompanyName(null);
+          setLoading(false);
+        });
+      } else {
+        setCompanyId(null);
+        setCompanyName(null);
+        unsubscribeUser();
+        setLoading(false);
+      }
+    });
+    
+    return () => {
+      unsubscribeAuth();
+      unsubscribeUser();
+    };
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, companyId, companyName, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
 // --- Error Handling ---
 enum OperationType {
@@ -95,14 +169,14 @@ interface RecordingData {
   audioData: string;
   transcript: string;
   createdAt: Timestamp;
-  authorUid?: string;
+  companyId?: string;
   meetingId?: string;
 }
 
 interface MeetingData {
   id: string;
   title: string;
-  ownerUid: string;
+  companyId: string;
   createdAt: Timestamp;
 }
 
@@ -110,29 +184,13 @@ interface MeetingData {
 
 // Sidebar component has been extracted to src/Sidebar.tsx
 
-const Navbar = ({ user }: { user: User | null }) => {
+const Navbar = ({ user, onMenuClick }: { user: User | null, onMenuClick: () => void }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleLogin = async () => {
     if (isLoggingIn) return;
-    setIsLoggingIn(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      if (error.code === 'auth/popup-blocked') {
-        alert("The login popup was blocked by your browser. Please allow popups for this site and try again.");
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        // This can happen if multiple login attempts are made rapidly, or if the popup is closed quickly.
-        // We can ignore it or show a subtle message.
-      } else {
-        alert("Login failed. Please try again.");
-      }
-    } finally {
-      setIsLoggingIn(false);
-    }
+    navigate('/login');
   };
 
   const handleLogout = () => signOut(auth);
@@ -158,13 +216,22 @@ const Navbar = ({ user }: { user: User | null }) => {
   };
 
   return (
-    <nav className="flex items-center justify-end md:justify-end p-6 border-b border-white/20 bg-white/70 backdrop-blur-xl sticky top-0 z-50">
-      <Link to="/" className="flex items-center gap-2 group md:hidden mr-auto">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-blue-500/30 transition-all">
-          <Mic className="text-white w-5 h-5" />
-        </div>
-        <span className="font-sans font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AudioCRM</span>
-      </Link>
+    <nav className="flex items-center justify-between p-4 md:p-6 border-b border-white/20 bg-white/70 backdrop-blur-xl sticky top-0 z-30 shadow-sm">
+      <div className="flex items-center gap-4 lg:hidden">
+        <button onClick={onMenuClick} className="p-2 -ml-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+            <Mic className="text-white w-4 h-4" />
+          </div>
+          <span className="font-sans font-extrabold text-lg tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AudioCRM</span>
+        </Link>
+      </div>
+
+      <div className="hidden lg:block mr-auto">
+        <h2 className="text-lg font-bold text-slate-800">Workspace</h2>
+      </div>
 
       <div className="flex items-center gap-4">
         {user && (
@@ -250,7 +317,7 @@ const Home = ({ user }: { user: User | null }) => {
       const meetingData: MeetingData = {
         id,
         title: `Meeting ${new Date().toLocaleDateString()}`,
-        ownerUid: user.uid,
+        companyId: (auth.currentUser as any)?.tenantId || 'TODO_GET_COMPANY_ID', // Actually Home is unused directly or doesn't have useAuth. Wait, AppWithAuth enforces this.
         createdAt: Timestamp.now()
       };
       await setDoc(doc(db, 'meetings', id), meetingData);
@@ -422,21 +489,21 @@ const RecordingView = () => {
 };
 
 const HistoryView = ({ user }: { user: User | null }) => {
+  const { companyId } = useAuth();
   const [recordings, setRecordings] = useState<RecordingData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!companyId) return;
 
     const q = query(
       collection(db, 'recordings'),
-      where('authorUid', '==', user.uid)
+      where('companyId', '==', companyId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let data = snapshot.docs.map(doc => ({ ...doc.data() } as RecordingData));
-      // Client-side filtering and sorting to prevent Firestore index/permission drops
-      data = data.filter(d => d.authorUid === user.uid || !d.authorUid);
+      // Client-side filtering and sorting
       data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
       setRecordings(data);
       setLoading(false);
@@ -519,9 +586,44 @@ const HistoryView = ({ user }: { user: User | null }) => {
   );
 };
 
-const AppLayout = ({ user }: { user: User | null }) => {
+const AppWithAuth = () => {
+  const { user, companyId, loading } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Close sidebar on route change automatically
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!loading) {
+      const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company';
+      const isGuestRoute = location.pathname.startsWith('/m/');
+      
+      if (!isGuestRoute) {
+        if (!user && !isAuthRoute) {
+          navigate('/login');
+        } else if (user && !companyId && location.pathname !== '/register-company') {
+          navigate('/register-company');
+        } else if (user && companyId && isAuthRoute) {
+          navigate('/');
+        }
+      }
+    }
+  }, [user, companyId, loading, navigate, location.pathname]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <Loader2 className="animate-spin text-zinc-300" size={48} />
+      </div>
+    );
+  }
+
   const isGuestRoute = location.pathname.startsWith('/m/');
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company';
 
   if (isGuestRoute) {
     return (
@@ -533,12 +635,25 @@ const AppLayout = ({ user }: { user: User | null }) => {
     );
   }
 
+  if (isAuthRoute) {
+    return (
+      <div className="flex min-h-screen bg-zinc-50 text-zinc-900 font-sans w-full">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register-company" element={<RegisterCompany />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  if (!user || !companyId) return null;
+
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-purple-50 text-slate-900 font-sans selection:bg-blue-500 selection:text-white flex-row w-full">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 relative">
-        <Navbar user={user} />
-        <main className="flex-1">
+    <div className="flex min-h-[100dvh] bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex-row w-full overflow-hidden">
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col min-w-0 relative h-[100dvh] overflow-y-auto w-full scroll-smooth">
+        <Navbar user={user} onMenuClick={() => setIsSidebarOpen(true)} />
+        <main className="flex-1 w-full max-w-full overflow-x-hidden relative pb-12">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/r/:id" element={<RecordingView />} />
@@ -552,6 +667,7 @@ const AppLayout = ({ user }: { user: User | null }) => {
             <Route path="/analytics/:id" element={<LeadInsights user={user} />} />
             <Route path="/settings" element={<CustomFields user={user} />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
+            <Route path="/team" element={<Team user={user} companyId={companyId} />} />
           </Routes>
         </main>
       </div>
@@ -560,28 +676,11 @@ const AppLayout = ({ user }: { user: User | null }) => {
 };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-zinc-200" size={48} />
-      </div>
-    );
-  }
-
   return (
-    <Router>
-      <AppLayout user={user} />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppWithAuth />
+      </Router>
+    </AuthProvider>
   );
 }

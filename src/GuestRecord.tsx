@@ -128,7 +128,7 @@ export default function GuestRecord() {
         audioData: base64Audio,
         transcript: transcriptText,
         createdAt: Timestamp.now(),
-        authorUid: meeting.ownerUid
+        companyId: meeting.companyId
       };
       // Only append what is available to satisfy strict schema validation on the cloud
       if (meetingId) recordingDoc.meetingId = meetingId;

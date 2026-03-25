@@ -5,11 +5,13 @@ import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } fro
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from './App';
 
 export default function LeadForm({ user }: { user: any }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const { companyId } = useAuth();
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
@@ -59,29 +61,29 @@ export default function LeadForm({ user }: { user: any }) {
 
   // Fetch custom fields separately so it runs for both new and edit forms
   useEffect(() => {
-    if (!user) return;
-    // Fetch custom field definitions
-    const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+    if (!companyId) return;
+    // Fetch custom field definitions scoped safely to company
+    const q = query(collection(db, 'custom_fields'), where('companyId', '==', companyId));
     getDocs(q).then(snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
       setCustomFieldDefs(data);
     }).catch(console.error);
     // Fetch custom source/phase options from user doc
-    getDoc(doc(db, 'users', user.uid)).then(snap => {
+    getDoc(doc(db, 'companies', companyId)).then(snap => {
       if (snap.exists()) {
         setCustomSources(snap.data().customSources || []);
         setCustomPhases(snap.data().customPhases || []);
       }
     }).catch(console.error);
-  }, [user]);
+  }, [companyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      if (!user) {
-        throw new Error("You must be logged in to save leads.");
+      if (!companyId) {
+        throw new Error("You must be part of an organization to save leads.");
       }
 
       const leadId = isEditing ? id : uuidv4();
@@ -89,7 +91,7 @@ export default function LeadForm({ user }: { user: any }) {
          ...formData,
          id: leadId,
          updatedAt: Timestamp.now(),
-         ...(isEditing ? {} : { createdAt: Timestamp.now(), ownerUid: user.uid })
+         ...(isEditing ? {} : { createdAt: Timestamp.now(), companyId: companyId })
       };
       
       await setDoc(doc(db, 'leads', leadId as string), payload);

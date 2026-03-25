@@ -16,9 +16,19 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignore non-http requests (e.g. chrome-extension://)
+  if (!event.request.url.startsWith('http')) return;
+
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      if (response) {
+        return response;
+      }
+      return fetch(event.request).catch((err) => {
+        console.error('Service Worker fetch error for:', event.request.url, err);
+        // Can optionally return a custom offline fallback response here
+        // return caches.match('/offline.html');
+      });
     })
   );
 });
