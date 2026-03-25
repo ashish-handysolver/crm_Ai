@@ -111,5 +111,9 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow read, write: if isAuthenticated();
     }
+
+    match /custom_fields/{fieldId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }

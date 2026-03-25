@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mic, LayoutDashboard, Users, Link as LinkIcon, MessageSquare, FileText, UploadCloud } from 'lucide-react';
+import { Mic, LayoutDashboard, Users, Link as LinkIcon, MessageSquare, FileText, UploadCloud, Settings, CalendarDays } from 'lucide-react';
 
 export default function Sidebar() {
   return (
@@ -33,6 +33,15 @@ export default function Sidebar() {
         <Link to="/analytics" className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:text-pink-600 hover:bg-pink-50/50 rounded-2xl transition-all font-bold group">
           <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
           Analytics
+        </Link>
+        <Link to="/calendar" className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:text-violet-600 hover:bg-violet-50/50 rounded-2xl transition-all font-bold group">
+          <CalendarDays size={20} className="group-hover:scale-110 transition-transform" />
+          Calendar
+        </Link>
+        <div className="pt-4 mt-4 border-t border-slate-200/50" />
+        <Link to="/settings" className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-2xl transition-all font-bold group">
+          <Settings size={20} className="group-hover:rotate-45 transition-transform" />
+          Custom Fields
         </Link>
       </nav>
     </aside>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User } from 'lucide-react';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,12 +14,16 @@ export default function LeadForm({ user }: { user: any }) {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [customSources, setCustomSources] = useState<string[]>([]);
+  const [customPhases, setCustomPhases] = useState<string[]>([]);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     name: '',
     email: '',
     company: '',
     location: '',
+    phone: '',
     source: 'DIRECT',
     score: 50,
     phase: 'DISCOVERY',
@@ -51,6 +56,24 @@ export default function LeadForm({ user }: { user: any }) {
       fetchLead();
     }
   }, [id, isEditing]);
+
+  // Fetch custom fields separately so it runs for both new and edit forms
+  useEffect(() => {
+    if (!user) return;
+    // Fetch custom field definitions
+    const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+    getDocs(q).then(snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
+      setCustomFieldDefs(data);
+    }).catch(console.error);
+    // Fetch custom source/phase options from user doc
+    getDoc(doc(db, 'users', user.uid)).then(snap => {
+      if (snap.exists()) {
+        setCustomSources(snap.data().customSources || []);
+        setCustomPhases(snap.data().customPhases || []);
+      }
+    }).catch(console.error);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,12 +202,17 @@ export default function LeadForm({ user }: { user: any }) {
                  <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="City, Country" />
                </div>
                <div className="space-y-2">
+                 <label className="text-sm font-bold text-slate-700">Contact Number</label>
+                 <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="E.g. +1 234 567 8900" />
+               </div>
+               <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700">Source</label>
                  <select name="source" value={formData.source} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium">
-                    <option value="LINKEDIN">LinkedIn</option>
-                    <option value="REFERRAL">Referral</option>
-                    <option value="DIRECT">Direct</option>
-                    <option value="WEBSITE">Website</option>
+                   <option value="LINKEDIN">LinkedIn</option>
+                   <option value="REFERRAL">Referral</option>
+                   <option value="DIRECT">Direct</option>
+                   <option value="WEBSITE">Website</option>
+                   {customSources.map(s => <option key={s} value={s}>{s}</option>)}
                  </select>
                </div>
                <div className="space-y-2">
@@ -194,6 +222,7 @@ export default function LeadForm({ user }: { user: any }) {
                     <option value="NURTURING">Nurturing</option>
                     <option value="QUALIFIED">Qualified</option>
                     <option value="INACTIVE">Inactive</option>
+                    {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
                  </select>
                </div>
                <div className="space-y-2 md:col-span-2">
@@ -203,6 +232,25 @@ export default function LeadForm({ user }: { user: any }) {
                  </label>
                  <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full mt-2 accent-[#3b4256]" />
                </div>
+
+               {/* Dynamic Custom Fields */}
+               {customFieldDefs.map(field => (
+                 <div key={field.id} className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700">{field.name}</label>
+                   {field.type === 'DROPDOWN' ? (
+                     <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium">
+                       <option value="">Select {field.name}</option>
+                       {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                     </select>
+                   ) : field.type === 'DATE' ? (
+                     <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" />
+                   ) : field.type === 'DATETIME' ? (
+                     <input type="datetime-local" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" />
+                   ) : (
+                     <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder={`Enter ${field.name}`} />
+                   )}
+                 </div>
+               ))}
             </div>
             
             <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">

@@ -5,9 +5,10 @@ import {
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { doc, setDoc, Timestamp, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
+import { CustomFieldDef } from './CustomFields';
 
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
@@ -24,6 +25,10 @@ export default function Leads({ user }: { user: any }) {
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
   const [shareUrls, setShareUrls] = useState<Record<string, string>>({});
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -57,9 +62,17 @@ export default function Leads({ user }: { user: any }) {
 
     return () => { unsubLeads(); unsubRecs(); };
   }, [user]);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  // Fetch user's custom field definitions
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+    getDocs(q).then(snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
+      setCustomFieldDefs(data);
+    }).catch(console.error);
+  }, [user]);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -311,6 +324,9 @@ export default function Leads({ user }: { user: any }) {
                   <th className="py-5 px-6 w-32">Score</th>
                   <th className="py-5 px-6">Last Pulse</th>
                   <th className="py-5 px-6">Phase</th>
+                  {customFieldDefs.map(cf => (
+                    <th key={cf.id} className="py-5 px-6">{cf.name}</th>
+                  ))}
                   <th className="py-5 px-8 text-right">Actions</th>
                 </tr>
               </thead>
@@ -373,6 +389,12 @@ export default function Leads({ user }: { user: any }) {
                             {lead.phase}
                           </span>
                         </td>
+                        {/* Dynamic Custom Field Columns */}
+                        {customFieldDefs.map(cf => (
+                          <td key={cf.id} className="py-5 px-6">
+                            <span className="font-medium text-slate-600 text-xs bg-slate-50 px-2 py-1 rounded-lg">{lead[cf.name] || <span className="text-slate-300">—</span>}</span>
+                          </td>
+                        ))}
                         <td className="py-5 px-8">
                           <div className="flex items-center justify-end gap-2">
                             <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 w-8 h-8 flex items-center justify-center rounded-xl transition-all">

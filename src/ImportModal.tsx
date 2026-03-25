@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, UploadCloud, FileText, ArrowRight, CheckCircle2, Loader2, Download } from 'lucide-react';
-import { doc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, Timestamp, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,6 +32,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ total: 0, current: 0 });
   const [error, setError] = useState('');
+  const [dynamicSystemFields, setDynamicSystemFields] = useState(SYSTEM_FIELDS);
 
   // Reset state when modal opens/closes
   React.useEffect(() => {
@@ -42,8 +44,18 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       setMappings({});
       setIsImporting(false);
       setError('');
+
+      // Fetch custom fields from the custom_fields collection
+      if (user) {
+        const q = query(collection(db, 'custom_fields'), where('ownerUid', '==', user.uid));
+        getDocs(q).then(snap => {
+          const customFields = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
+          const combined = [...SYSTEM_FIELDS, ...customFields.map(cf => ({ id: cf.name, label: cf.name, required: false }))];
+          setDynamicSystemFields(combined);
+        }).catch(console.error);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -65,8 +77,8 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       
       // Auto-map where possible
       const newMappings: Record<string, number> = {};
-      SYSTEM_FIELDS.forEach(sysField => {
-        const matchIdx = headers.findIndex(h => h.toLowerCase().includes(sysField.id.toLowerCase()));
+      dynamicSystemFields.forEach(sysField => {
+        const matchIdx = headers.findIndex(h => h.toLowerCase() === sysField.id.toLowerCase() || h.toLowerCase().includes(sysField.id.toLowerCase()));
         if (matchIdx !== -1) {
           newMappings[sysField.id] = matchIdx;
         }
@@ -84,8 +96,14 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
   };
 
   const handleDownloadSample = () => {
-    const headers = SYSTEM_FIELDS.map(f => f.id).join(',');
-    const sampleRow = 'John Doe,john@example.com,Acme Corp,+1234567890,New York,LINKEDIN,85,DISCOVERY';
+    const headers = dynamicSystemFields.map(f => f.id).join(',');
+    const sampleRow = dynamicSystemFields.map(f => {
+        if (f.id === 'name') return 'John Doe';
+        if (f.id === 'email') return 'john@example.com';
+        if (f.id === 'score') return '85';
+        if (f.id === 'phase') return 'DISCOVERY';
+        return f.label;
+    }).join(',');
     const csvContent = `${headers}\n${sampleRow}`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -281,11 +299,11 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {SYSTEM_FIELDS.map((sysField) => (
+                      {dynamicSystemFields.map((sysField) => (
                         <tr key={sysField.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-4 px-6">
                             <span className="font-bold text-slate-800 tracking-tight">{sysField.label}</span>
-                            {sysField.required && <span className="text-red-500 ml-1.5 font-bold">*</span>}
+                            {(sysField as any).required && <span className="text-red-500 ml-1.5 font-bold">*</span>}
                           </td>
                           <td className="py-3 px-6">
                             <select 

@@ -28,11 +28,13 @@ import Leads from './Leads';
 import Sidebar from './Sidebar';
 import LeadForm from './LeadForm';
 import Dashboard from './Dashboard';
+import CustomFields from './CustomFields';
 import Reports from './Reports';
 import GuestRecord from './GuestRecord';
 import Analytics from './Analytics';
 import ManualUpload from './ManualUpload';
 import LeadInsights from './LeadInsights';
+import CalendarPage from './Calendar';
 import ImportModal from './ImportModal';
 
 // --- Error Handling ---
@@ -548,6 +550,8 @@ const AppLayout = ({ user }: { user: User | null }) => {
             <Route path="/reports" element={<Reports user={user} />} />
             <Route path="/analytics" element={<Analytics user={user} />} />
             <Route path="/analytics/:id" element={<LeadInsights user={user} />} />
+            <Route path="/settings" element={<CustomFields user={user} />} />
+            <Route path="/calendar" element={<CalendarPage user={user} />} />
           </Routes>
         </main>
       </div>
