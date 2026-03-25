@@ -39,77 +39,11 @@ import ImportModal from './ImportModal';
 import Login from './Login';
 import RegisterCompany from './RegisterCompany';
 import Team from './Team';
+import Onboarding from './Onboarding';
+import Profile from './Profile';
 
-// --- Auth Context ---
-export const AuthContext = React.createContext<{
-  user: User | null;
-  companyId: string | null;
-  companyName: string | null;
-  loading: boolean;
-}>({
-  user: null,
-  companyId: null,
-  companyName: null,
-  loading: true
-});
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-export const useAuth = () => React.useContext(AuthContext);
-
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [companyId, setCompanyId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let unsubscribeUser = () => {};
-
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      
-      if (currentUser) {
-        unsubscribeUser = onSnapshot(doc(db, 'users', currentUser.uid), async (userDoc) => {
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setCompanyId(userData.companyId);
-            
-            if (userData.companyId) {
-              const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
-              if (companyDoc.exists()) {
-                setCompanyName(companyDoc.data().name);
-              }
-            }
-          } else {
-            setCompanyId(null);
-            setCompanyName(null);
-          }
-          setLoading(false);
-        }, (error) => {
-          console.error("Error listening to user data:", error);
-          setCompanyId(null);
-          setCompanyName(null);
-          setLoading(false);
-        });
-      } else {
-        setCompanyId(null);
-        setCompanyName(null);
-        unsubscribeUser();
-        setLoading(false);
-      }
-    });
-    
-    return () => {
-      unsubscribeAuth();
-      unsubscribeUser();
-    };
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user, companyId, companyName, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
 
 // --- Error Handling ---
 enum OperationType {
@@ -185,6 +119,8 @@ interface MeetingData {
 // Sidebar component has been extracted to src/Sidebar.tsx
 
 const Navbar = ({ user, onMenuClick }: { user: User | null, onMenuClick: () => void }) => {
+  const navigate = useNavigate();
+  const { companyName } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -230,7 +166,7 @@ const Navbar = ({ user, onMenuClick }: { user: User | null, onMenuClick: () => v
       </div>
 
       <div className="hidden lg:block mr-auto">
-        <h2 className="text-lg font-bold text-slate-800">Workspace</h2>
+        <h2 className="text-lg font-bold text-slate-800">{companyName || 'Workspace'}</h2>
       </div>
 
       <div className="flex items-center gap-4">
@@ -254,13 +190,20 @@ const Navbar = ({ user, onMenuClick }: { user: User | null, onMenuClick: () => v
         )}
         {user ? (
           <div className="flex items-center gap-4">
-
-            <div className="flex items-center gap-2 bg-white/50 backdrop-blur border border-white/60 shadow-sm px-3 py-1.5 rounded-full">
-              <img src={user.photoURL || ''} alt="" className="w-7 h-7 rounded-full border border-zinc-200" referrerPolicy="no-referrer" />
-              <span className="text-sm font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent px-1">{user.displayName}</span>
-            </div>
-            <button onClick={handleLogout} className="p-2 bg-white/50 shadow-sm hover:shadow hover:-translate-y-0.5 border border-white/60 rounded-full transition-all text-red-500 hover:bg-red-50 hover:text-red-600">
-              <LogOut size={18} />
+            <Link to="/profile" className="flex items-center gap-2 bg-white/50 backdrop-blur border border-white/60 shadow-sm px-1.5 py-1.5 rounded-full hover:bg-white hover:border-indigo-100 transition-all group/profile">
+              <div className="w-8 h-8 rounded-full border border-zinc-200 overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover/profile:scale-105">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="text-[10px] font-black text-white">{user.displayName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+                )}
+              </div>
+              <span className="text-sm font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent px-2 hidden sm:inline-block transition-colors group-hover/profile:text-indigo-600">
+                {user.displayName}
+              </span>
+            </Link>
+            <button onClick={handleLogout} className="p-3 bg-white/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 border border-white/60 rounded-xl transition-all text-rose-500 hover:bg-rose-50 hover:text-rose-600 group">
+              <LogOut size={18} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         ) : (
@@ -587,7 +530,7 @@ const HistoryView = ({ user }: { user: User | null }) => {
 };
 
 const AppWithAuth = () => {
-  const { user, companyId, loading } = useAuth();
+  const { user, companyId, onboardingComplete, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -600,6 +543,7 @@ const AppWithAuth = () => {
   useEffect(() => {
     if (!loading) {
       const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company';
+      const isOnboardingRoute = location.pathname === '/onboarding';
       const isGuestRoute = location.pathname.startsWith('/m/');
       
       if (!isGuestRoute) {
@@ -607,12 +551,14 @@ const AppWithAuth = () => {
           navigate('/login');
         } else if (user && !companyId && location.pathname !== '/register-company') {
           navigate('/register-company');
-        } else if (user && companyId && isAuthRoute) {
+        } else if (user && companyId && !onboardingComplete && !isOnboardingRoute) {
+          navigate('/onboarding');
+        } else if (user && companyId && onboardingComplete && (isAuthRoute || isOnboardingRoute)) {
           navigate('/');
         }
       }
     }
-  }, [user, companyId, loading, navigate, location.pathname]);
+  }, [user, companyId, onboardingComplete, loading, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -624,6 +570,7 @@ const AppWithAuth = () => {
 
   const isGuestRoute = location.pathname.startsWith('/m/');
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company';
+  const isOnboardingRoute = location.pathname === '/onboarding';
 
   if (isGuestRoute) {
     return (
@@ -635,12 +582,13 @@ const AppWithAuth = () => {
     );
   }
 
-  if (isAuthRoute) {
+  if (isAuthRoute || isOnboardingRoute) {
     return (
       <div className="flex min-h-screen bg-zinc-50 text-zinc-900 font-sans w-full">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register-company" element={<RegisterCompany />} />
+          <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </div>
     );
@@ -668,6 +616,7 @@ const AppWithAuth = () => {
             <Route path="/settings" element={<CustomFields user={user} />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
             <Route path="/team" element={<Team user={user} companyId={companyId} />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
       </div>

@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadFileToGemini } from './utils/gemini';
 import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
 import { CustomFieldDef } from './CustomFields';
-import { useAuth } from './App';
+import { useAuth } from './contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 const DUMMY_LEADS = [
@@ -130,43 +131,52 @@ export default function Leads({ user }: { user: any }) {
   const transcribeAndSave = async (audioBlob: Blob, leadId: string) => {
     setIsTranscribing(true);
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      const base64Audio = await new Promise<string>((res, rej) => {
-        reader.onloadend = () => res((reader.result as string).split(',')[1]);
-        reader.onerror = () => rej(new Error("Failed read"));
-      });
+      const recordId = uuidv4().slice(0, 8);
+      let audioUrl = '';
 
+      // 1. Upload to Firebase Storage
+      const storageRef = ref(storage, `recordings/${recordId}.webm`);
+      await uploadBytes(storageRef, audioBlob);
+      audioUrl = await getDownloadURL(storageRef);
+
+      // 2. Transcription logic via Gemini File API
       let transcriptText = "No transcript generated.";
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
         if (apiKey) {
+          const fileUri = await uploadFileToGemini(audioBlob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: [{ parts: [{ text: "Transcribe this audio strictly." }, { inlineData: { mimeType: "audio/webm", data: base64Audio } }] }]
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  { text: "Please transcribe this audio recording of a sales/lead call. Provide only the text." },
+                  { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
+                ]
+              }
+            ]
           });
           transcriptText = response.text || "No transcript generated.";
         }
-      } catch (e) {
+      } catch (e: any) {
         console.warn("Transcription failed", e);
       }
 
-      const recordId = uuidv4().slice(0, 8);
-      let audioUrl = '';
-      try {
-        const sr = ref(storage, `recordings/${recordId}.webm`);
-        await uploadBytes(sr, audioBlob);
-        audioUrl = await getDownloadURL(sr);
-      } catch (e) {
-         console.warn("Upload failed", e);
-      }
-
       await setDoc(doc(db, 'recordings', recordId), {
-        id: recordId, audioUrl, transcript: transcriptText, createdAt: Timestamp.now(), authorUid: user?.uid || '', companyId, leadId
+        id: recordId, 
+        audioUrl, 
+        transcript: transcriptText, 
+        createdAt: Timestamp.now(), 
+        authorUid: user?.uid || '', 
+        companyId, 
+        leadId
       });
-      setSuccess("Call recorded securely!"); setTimeout(() => setSuccess(''), 4000);
+      setSuccess("Call recorded securely!"); 
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
+       console.error(err);
        setError("Failed to save recording.");
     } finally {
        setIsTranscribing(false);
@@ -178,9 +188,16 @@ export default function Leads({ user }: { user: any }) {
     setIsCreatingMeeting(true);
     try {
       const id = uuidv4().slice(0, 8);
-      await setDoc(doc(db, 'meetings', id), { id, title: `Call with ${leadName}`, ownerUid: user.uid, companyId, createdAt: Timestamp.now() });
+      await setDoc(doc(db, 'meetings', id), { 
+        id, 
+        title: `Call with ${leadName}`, 
+        ownerUid: user.uid, 
+        companyId, 
+        createdAt: Timestamp.now() 
+      });
       setShareUrls(prev => ({ ...prev, [leadId]: `${window.location.origin}/m/${id}?l=${leadId}` }));
     } catch (err) {
+      console.error(err);
       setError("Failed to create shareable link.");
     } finally {
       setIsCreatingMeeting(false);

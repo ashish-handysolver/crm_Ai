@@ -4,7 +4,7 @@ import { db } from './firebase';
 import { Loader2, Users, BarChart3, ArrowRight, ExternalLink, Sparkles, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { useAuth } from './App';
+import { useAuth } from './contexts/AuthContext';
 
 export default function Analytics({ user }: { user: any }) {
   const { companyId } = useAuth();

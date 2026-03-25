@@ -4,8 +4,10 @@ import { Mic, Square, Loader2, CheckCircle2, AlertCircle, Copy, FileText } from 
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadFileToGemini } from './utils/gemini';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from './firebase';
 
 export default function GuestRecord() {
   const { meetingId } = useParams();
@@ -53,7 +55,8 @@ export default function GuestRecord() {
         throw new Error("Your browser does not support audio recording.");
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Optimized bitrate: 64kbps is perfect for 45-minute speech (approx 21MB total)
+      const mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 64000 });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -88,44 +91,44 @@ export default function GuestRecord() {
     setError('');
 
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const res = reader.result as string;
-          resolve(res.split(',')[1]);
-        };
-        reader.onerror = () => reject(new Error("Failed to read audio file"));
-      });
-      const base64Audio = await base64Promise;
+      const generatedId = uuidv4().slice(0, 8);
+      let audioUrl = '';
 
+      // 1. Upload to Firebase Storage
+      const storageRef = ref(storage, `recordings/${generatedId}/audio.webm`);
+      await uploadBytes(storageRef, audioBlob);
+      audioUrl = await getDownloadURL(storageRef);
+
+      // 2. Transcription logic via Gemini File API
       let transcriptText = "No transcript generated.";
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
         if (apiKey) {
+          const fileUri = await uploadFileToGemini(audioBlob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: [
               {
+                role: 'user',
                 parts: [
                   { text: "Please transcribe this audio recording of a sales/lead call. Provide only the text." },
-                  { inlineData: { mimeType: "audio/webm", data: base64Audio } }
+                  { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
                 ]
               }
             ]
           });
+          
           transcriptText = response.text || "No transcript generated.";
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Transcription failed", err);
-        setError("Transcription failed, but saving audio anyway...");
+        setError("Transcription failed: " + (err.message || "Unknown API error") + ". Saving audio anyway...");
       }
 
-      const generatedId = uuidv4().slice(0, 8);
       const recordingDoc: any = {
         id: generatedId,
-        audioData: base64Audio,
+        audioUrl: audioUrl,
         transcript: transcriptText,
         createdAt: Timestamp.now(),
         companyId: meeting.companyId

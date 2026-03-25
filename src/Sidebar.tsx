@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mic, LayoutDashboard, Users, MessageSquare, FileText, UploadCloud, Settings, CalendarDays, History, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from './contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ function NavItem({ to, icon, label, colorClass, hoverBgClass, onClick }: { to: s
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const { companyName } = useAuth();
+
   // Mobile backdrop
   const mobileOverlay = (
     <AnimatePresence>
@@ -60,7 +63,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center hover:scale-110 hover:rotate-6 shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-300">
               <Mic className="text-white w-5 h-5" />
             </div>
-            <span className="font-sans font-extrabold text-2xl tracking-tight text-white">AudioCRM</span>
+            <span className="font-sans font-extrabold text-2xl tracking-tight text-white truncate max-w-[180px]">{companyName || 'AudioCRM'}</span>
           </Link>
 
           <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white bg-white/5 rounded-full backdrop-blur transition-colors">
@@ -92,8 +95,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                <Mic className="text-white w-4 h-4" />
             </div>
             <div className="flex flex-col overflow-hidden">
-               <span className="text-xs font-bold text-white truncate">Pro Workspace</span>
-               <span className="text-[10px] font-medium text-slate-500 truncate">Audio intelligence active</span>
+               <span className="text-xs font-bold text-white truncate">{companyName || 'Pro Workspace'}</span>
+               <span className="text-[10px] font-medium text-slate-500 truncate">Workspace Active</span>
             </div>
           </div>
         </div>

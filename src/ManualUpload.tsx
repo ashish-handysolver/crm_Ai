@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
-import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFileToGemini } from './utils/gemini';
+import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { UploadCloud, FileAudio, FileText, Loader2, CheckCircle2, AlertCircle, Sparkles, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './App';
+import { useAuth } from './contexts/AuthContext';
 
 export default function ManualUpload({ user }: { user: any }) {
   const { companyId } = useAuth();
@@ -45,31 +47,31 @@ export default function ManualUpload({ user }: { user: any }) {
     setIsSubmitting(true);
 
     try {
-      let base64Audio = 'Tk9fQVVESU8='; // "NO_AUDIO" safely in base64
+      let audioUrl = '';
       let finalTranscript = transcriptText.trim();
+      const generatedId = uuidv4().slice(0, 8);
 
-      // Read audio file if provided
+      // Upload audio to Storage if provided
       if (audioFile) {
-        const reader = new FileReader();
-        reader.readAsDataURL(audioFile);
-        base64Audio = await new Promise<string>((resolve, reject) => {
-          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-          reader.onerror = () => reject(new Error('Failed to read audio file'));
-        });
+        const storageRef = ref(storage, `recordings/${generatedId}/audio.webm`);
+        await uploadBytes(storageRef, audioFile);
+        audioUrl = await getDownloadURL(storageRef);
       }
 
-      // If audio file but NO transcript -> Gemini
+      // If audio file but NO transcript -> Gemini (using File API)
       if (audioFile && !finalTranscript) {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
         if (apiKey) {
+          const fileUri = await uploadFileToGemini(audioFile, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: [
               {
+                role: 'user',
                 parts: [
                   { text: 'Please transcribe this manually uploaded recording of a sales/lead call. Provide only the text.' },
-                  { inlineData: { mimeType: audioFile.type || "audio/webm", data: base64Audio } }
+                  { fileData: { mimeType: audioFile.type || "audio/webm", fileUri } }
                 ]
               }
             ]
@@ -82,10 +84,9 @@ export default function ManualUpload({ user }: { user: any }) {
 
       if (!finalTranscript) finalTranscript = 'No explicit transcript/prompt was captured.';
 
-      const generatedId = uuidv4().slice(0, 8);
       const recordingDoc: any = {
         id: generatedId,
-        audioData: base64Audio,
+        audioUrl: audioUrl, // Use URL instead of base64 binary
         transcript: finalTranscript,
         createdAt: Timestamp.now(),
         companyId: companyId,

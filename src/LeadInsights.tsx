@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
+import { useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
-import { motion } from 'motion/react';
-import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, X, Plus, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 export default function LeadInsights({ user }: { user: any }) {
@@ -65,7 +66,7 @@ export default function LeadInsights({ user }: { user: any }) {
       setGeneratingAI(true);
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
-        if (!apiKey) throw new Error("No Gemini API key found to generate insights.");
+        if (!apiKey) return;
 
         const ai = new GoogleGenAI({ apiKey });
         const prompt = `
@@ -97,7 +98,6 @@ export default function LeadInsights({ user }: { user: any }) {
         const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(jsonStr);
 
-        // Ensure tasks have 'completed' boolean
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
           parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
         }
@@ -118,27 +118,27 @@ export default function LeadInsights({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-[#fdfdfd] flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-slate-300 w-12 h-12" />
+      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh]">
+        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="flex-1 bg-[#fdfdfd] flex items-center justify-center min-h-screen text-slate-500 font-medium">
-        Lead not found.
+      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh] text-slate-500 font-medium text-lg">
+        Lead Record Missing
       </div>
     );
   }
 
   const insights = selectedRec?.aiInsights || {
     sentiment: 'Analyzing...',
-    painPoints: ['Generating insights...'],
-    requirements: ['Generating insights...'],
-    nextActions: ['Generating insights...'],
-    improvements: ['Generating insights...'],
-    overview: 'Analyzing the transcript to provide a comprehensive executive summary...',
+    painPoints: ['Capturing data...'],
+    requirements: ['Capturing data...'],
+    nextActions: ['Capturing data...'],
+    improvements: ['Capturing data...'],
+    overview: 'Analyzing the transcript to provide a comprehensive executive overview of the engagement...',
     tasks: []
   };
 
@@ -154,7 +154,6 @@ export default function LeadInsights({ user }: { user: any }) {
     }
   };
 
-  // Direct Firestore update helpers
   const saveInsights = async (newInsights: any) => {
     if (!selectedRec) return;
     try {
@@ -182,9 +181,9 @@ export default function LeadInsights({ user }: { user: any }) {
 
   const handleArrayAdd = async (field: string) => {
     if (!selectedRec) return;
-    const newArr = [...insights[field], "New item"];
+    const newArr = [...insights[field], "New finding"];
     await saveInsights({ ...insights, [field]: newArr });
-    setEditingItem({ field, index: newArr.length - 1, value: "New item" });
+    setEditingItem({ field, index: newArr.length - 1, value: "New finding" });
   };
 
   const handleTaskToggle = async (index: number) => {
@@ -202,7 +201,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
   const handleTaskAdd = async () => {
     if (!selectedRec) return;
-    const newTasks = [...insights.tasks, { title: "New Task", assignee: "Self", dueDate: "Tomorrow", completed: false }];
+    const newTasks = [...insights.tasks, { title: "New Action Item", assignee: "Owner", dueDate: "TBD", completed: false }];
     await saveInsights({ ...insights, tasks: newTasks });
   };
 
@@ -217,258 +216,280 @@ export default function LeadInsights({ user }: { user: any }) {
     await saveInsights({ ...insights, sentiment: e.target.value });
   };
 
-
   return (
-    <div className="flex-1 bg-[#fdfdfd] text-slate-900 min-h-screen p-8 lg:p-12 font-sans overflow-x-hidden">
-      <div className="max-w-[1200px] mx-auto">
-        <Link to="/analytics" className="inline-flex items-center gap-1 text-sm font-semibold text-slate-400 hover:text-slate-800 transition-colors mb-8">
-          <ChevronLeft size={16} /> Back to Analytics
+    <div className="flex-1 bg-slate-50 text-slate-900 min-h-full p-4 sm:p-6 lg:p-10 font-sans">
+      <div className="max-w-[1400px] mx-auto">
+        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors mb-6 group">
+          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Intelligence Ledger
         </Link>
 
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 tracking-[0.15em] uppercase mb-2">Automation Sales Command</div>
-            <h1 className="text-4xl md:text-[2.75rem] font-extrabold tracking-tight text-slate-800 leading-none">
-              {lead.company || lead.name} Summary
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <div className="text-[10px] font-extrabold text-blue-500 tracking-widest uppercase mb-3 flex items-center gap-2">
+              <Zap size={14} className="animate-pulse" /> Automation Protocol Active
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-none">
+               {lead.company || lead.name} <span className="text-slate-400 font-light">Dossier</span>
             </h1>
-          </div>
-          <div className="flex gap-4">
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1.5 text-right">Lead Status</div>
-              <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-[#00a35c]">
-                ● {lead.status === 'Won' ? 'Closed' : lead.status === 'Lost' ? 'Dead' : 'Active'}
+          </motion.div>
+          
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Lead Disposition</div>
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
+                {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Dead' : 'Active Engagement'}
               </span>
             </div>
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1.5 text-right">Call Sentiment</div>
+            <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Call Sentiment</div>
               <select
                 value={insights.sentiment}
                 onChange={handleSentimentChange}
-                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 appearance-none cursor-pointer outline-none border-0 ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
-                disabled>
-                <option value="Positive">Positive</option>
-                <option value="Neutral">Neutral</option>
-                <option value="Negative">Negative</option>
+                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] appearance-none cursor-pointer outline-none transition-colors ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100/50' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'}`}
+                disabled={!selectedRec}
+              >
+                <option value="Positive">Positive Vectors</option>
+                <option value="Neutral">Neutral Vectors</option>
+                <option value="Negative">Negative Vectors</option>
+                <option value="Analyzing...">Pending Analysis</option>
               </select>
             </div>
-          </div>
+          </motion.div>
         </header>
 
-        {/* Action Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-100">
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest py-2 mr-2">Call Archives:</span>
-            {recordings.length > 0 ? recordings.map((rec) => {
-              const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown Date';
-              const isSelected = selectedRecId === rec.id;
-              return (
-                <button
-                  key={rec.id}
-                  onClick={() => setSelectedRecId(rec.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${isSelected ? 'bg-[#5c647b] text-white shadow-md' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
-                >
-                  <Calendar size={14} /> {dateStr}
-                </button>
-              );
-            }) : (
-              <span className="text-sm font-bold text-amber-600">No calls found.</span>
-            )}
+        {/* Intelligence Timeline */}
+        <div className="bg-white rounded-3xl p-2 mb-8 flex flex-nowrap items-center gap-2 overflow-x-auto shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 scollbar-hide">
+          <div className="pl-4 pr-6 shrink-0 flex items-center gap-2 border-r border-slate-100">
+             <Calendar size={16} className="text-slate-400" />
+             <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Archive</span>
           </div>
+          {recordings.length > 0 ? recordings.map((rec) => {
+            const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown Date';
+            const isSelected = selectedRecId === rec.id;
+            return (
+              <button
+                key={rec.id}
+                onClick={() => setSelectedRecId(rec.id)}
+                className={`shrink-0 px-5 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border ${isSelected ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-600 hover:bg-white hover:border-slate-300 border-slate-100 hover:shadow-md'}`}
+              >
+                {dateStr}
+              </button>
+            );
+          }) : (
+            <span className="text-sm font-bold text-amber-500 py-3 px-4 italic">No intelligence operations logged yet.</span>
+          )}
         </div>
 
-        {generatingAI && (
-          <div className="mb-8 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center gap-3 text-indigo-600 font-bold text-sm animate-pulse">
-            <Wand2 size={16} className="animate-spin" /> Abstracting intelligence from transcript via Gemini...
-          </div>
-        )}
+        <AnimatePresence>
+          {generatingAI && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8">
+              <div className="p-5 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl flex items-center justify-center gap-3 text-indigo-600 font-extrabold text-sm shadow-inner">
+                 <Wand2 size={18} className="animate-spin" /> Cross-referencing logic parameters via DeepMind Framework...
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* 4 AI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8 group">
+        {/* 4 AI Intelligence Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[
-            { id: 'painPoints', title: 'AI Pain Points', icon: AlertTriangle },
-            { id: 'requirements', title: 'AI Requirements', icon: Archive },
-            { id: 'nextActions', title: 'AI Next Actions', icon: Zap },
-            { id: 'improvements', title: 'AI Suggested Improvements', icon: Wand2 }
-          ].map((col) => {
+            { id: 'painPoints', title: 'Friction Points', icon: AlertTriangle, color: 'text-rose-500', bg: 'bg-rose-50', hover: 'hover:border-rose-200 group-hover:shadow-rose-500/10' },
+            { id: 'requirements', title: 'Core Objectives', icon: Archive, color: 'text-amber-500', bg: 'bg-amber-50', hover: 'hover:border-amber-200 group-hover:shadow-amber-500/10' },
+            { id: 'nextActions', title: 'Strategic Vectors', icon: Zap, color: 'text-blue-500', bg: 'bg-blue-50', hover: 'hover:border-blue-200 group-hover:shadow-blue-500/10' },
+            { id: 'improvements', title: 'Conversion Boosters', icon: Wand2, color: 'text-emerald-500', bg: 'bg-emerald-50', hover: 'hover:border-emerald-200 group-hover:shadow-emerald-500/10' }
+          ].map((col, idx) => {
             const Icon = col.icon;
             const dataArr = insights[col.id] || [];
             return (
-              <div key={col.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col group/card relative">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="font-extrabold text-slate-800 flex items-center gap-2 text-lg">
-                    <Icon className="text-slate-500" size={18} /> {col.title}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={col.id} className={`bg-white rounded-[2rem] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col group relative overflow-hidden transition-all duration-300 ${col.hover}`}>
+                <div className={`absolute top-0 right-0 w-32 h-32 ${col.bg} rounded-bl-full -z-0 opacity-50`}></div>
+                
+                <div className="flex justify-between items-start mb-6 relative z-10">
+                  <h3 className="font-extrabold text-slate-800 flex items-center gap-2.5 text-base">
+                    <div className={`p-2 rounded-xl ${col.bg} ${col.color}`}><Icon size={16} /></div> {col.title}
                   </h3>
                   <button
                     onClick={() => handleArrayAdd(col.id)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100 bg-slate-50"
-                    title="Add item"
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white shadow-sm rounded-lg transition-colors border border-slate-100 hover:border-indigo-200"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
 
-                <ul className="space-y-4 text-sm text-slate-600 font-medium pl-4 list-disc marker:text-slate-300">
+                <ul className="space-y-4 text-sm text-slate-600 font-medium list-none relative z-10">
                   {dataArr.map((item: string, i: number) => {
                     const isEditingThis = editingItem?.field === col.id && editingItem?.index === i;
-
                     return isEditingThis ? (
-                      <div key={i} className="flex flex-col gap-2 -ml-4">
+                      <div key={i} className="flex flex-col gap-3">
                         <textarea
                           autoFocus
-                          className="w-full text-sm font-medium bg-slate-50 border border-indigo-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 resize-y min-h-[80px]"
+                          className="w-full text-sm font-semibold bg-slate-50 border-2 border-indigo-200 rounded-xl p-3 outline-none focus:ring-4 focus:ring-indigo-500/20 resize-y min-h-[100px] text-slate-700 shadow-inner"
                           value={editingItem.value}
                           onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
                         />
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-md">Cancel</button>
-                          <button onClick={handleArraySave} className="px-3 py-1.5 text-xs font-bold bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1 rounded-md"><Check size={14} /> Save</button>
+                          <button onClick={() => setEditingItem(null)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-xl transition-all">Cancel</button>
+                          <button onClick={handleArraySave} className="px-4 py-2 text-xs font-bold bg-slate-900 text-white hover:bg-indigo-600 transition-all flex items-center gap-1.5 rounded-xl shadow-lg active:scale-95"><Check size={14} /> Matrix Save</button>
                         </div>
                       </div>
                     ) : (
-                      <li key={i} className="group/item relative pr-16 leading-relaxed">
-                        <span>{item}</span>
-                        <div className="hidden group-hover/item:flex items-center gap-1 absolute right-0 top-0 -mt-1 bg-white pl-2">
-                          <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded border border-transparent hover:border-indigo-100 transition-colors shadow-sm">
-                            <Edit3 size={14} />
-                          </button>
-                          <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 rounded border border-transparent hover:border-red-100 transition-colors shadow-sm">
-                            <Trash2 size={14} />
-                          </button>
+                      <li key={i} className="group/item relative pl-4 leading-relaxed bg-slate-50/50 hover:bg-white p-3 rounded-xl border border-transparent hover:border-slate-200 transition-all shadow-sm">
+                        <div className={`absolute left-0 top-4 w-1.5 h-1.5 rounded-full ${col.bg.replace('bg-', 'bg-').replace('50', '400')}`}></div>
+                        <span className="block pr-12">{item}</span>
+                        <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={14} /></button>
+                          <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-rose-500 bg-white hover:bg-rose-50 border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={14} /></button>
                         </div>
                       </li>
                     )
                   })}
                 </ul>
-              </div>
+              </motion.div>
             );
           })}
         </div>
 
-        {/* Executive Overview & Stage */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-8">
-          <div className="lg:w-2/3 bg-[#5c647b] rounded-xl p-8 shadow-md text-white group/overview relative">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-widest">
-                <Sparkles className="text-slate-300" size={16} /> AI Executive Overview
+        {/* Split View */}
+        <div className="flex flex-col xl:flex-row gap-6 mb-8">
+          
+          {/* Executive Overview */}
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="xl:w-2/3 bg-[#0A0D14] rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-white relative overflow-hidden group/overview border border-slate-800">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+            
+            <div className="flex justify-between items-start mb-6 relative z-10">
+              <h3 className="font-extrabold text-white flex items-center gap-3 text-lg tracking-tight">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-indigo-500/30 backdrop-blur-sm"><Sparkles className="text-indigo-300" size={18} /></div> 
+                AI Executive Summary
               </h3>
               {editingOverview === null && (
-                <button onClick={() => setEditingOverview(insights.overview)} className="p-1.5 text-[#5c647b] hover:text-indigo-600 hover:bg-indigo-50 bg-white/10 hover:bg-white rounded-lg transition-colors shadow-sm">
-                  <Edit3 size={14} className="text-slate-200 hover:text-indigo-600" />
+                <button onClick={() => setEditingOverview(insights.overview)} className="p-2 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-sm">
+                  <Edit3 size={16} />
                 </button>
               )}
             </div>
 
             {editingOverview !== null ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4 relative z-10">
                 <textarea
                   autoFocus
-                  className="w-full text-[15px] leading-relaxed font-medium bg-[#4a5165] border border-emerald-400/50 rounded-lg p-4 text-white outline-none focus:ring-2 focus:ring-emerald-400 min-h-[120px]"
+                  className="w-full text-base leading-relaxed font-medium bg-white/5 border border-indigo-500/50 rounded-2xl p-6 text-white outline-none focus:ring-4 focus:ring-indigo-500/30 min-h-[160px] shadow-inner"
                   value={editingOverview}
                   onChange={e => setEditingOverview(e.target.value)}
                 />
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setEditingOverview(null)} className="px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-white/10 rounded-md">Cancel</button>
-                  <button onClick={handleOverviewSave} className="px-3 py-1.5 text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 flex items-center gap-1 rounded-md"><Check size={14} /> Save</button>
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setEditingOverview(null)} className="px-5 py-2.5 text-sm font-bold text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors">Abort Override</button>
+                  <button onClick={handleOverviewSave} className="px-6 py-2.5 text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center gap-2 rounded-xl shadow-lg shadow-indigo-500/25 active:scale-95 transition-all"><Check size={16} /> Inject Override</button>
                 </div>
               </div>
             ) : (
-              <p className="text-[15px] leading-relaxed font-medium pr-8">{insights.overview}</p>
+              <p className="text-lg leading-relaxed font-medium text-slate-300 pr-8 relative z-10">{insights.overview}</p>
             )}
-          </div>
+          </motion.div>
 
-          <div className="lg:w-1/3 bg-white rounded-xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center">
-            <div className="text-[10px] font-bold text-slate-400 tracking-[0.15em] uppercase mb-4">Lead Stage Progression</div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mb-4">
-              <div className="bg-[#5c647b] h-full rounded-full transition-all duration-1000" style={{ width: `${getPhaseProgress(lead.phase)}%` }} />
+          {/* Pipeline Stage Visualizer */}
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="xl:w-1/3 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden group">
+            <div className={`absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-bl-[100px] -z-0 transition-colors group-hover:bg-indigo-50`}></div>
+            
+            <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-8 relative z-10">Sales State Machine</div>
+            
+            <div className="w-full bg-slate-100 h-3 rounded-full mb-6 relative overflow-hidden shadow-inner z-10">
+              <motion.div 
+                initial={{ width: 0 }} 
+                animate={{ width: `${getPhaseProgress(lead.phase)}%` }} 
+                transition={{ duration: 1.5, type: 'spring' }}
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-slate-800 to-slate-900 rounded-full" 
+              />
             </div>
-            <div className="flex items-end justify-between mb-8">
-              <h2 className="text-3xl font-extrabold tracking-tight capitalize">{lead.phase?.toLowerCase() || 'Active'}</h2>
-              <span className="text-xs font-bold text-slate-400">Pipeline Status</span>
+            
+            <div className="flex items-end justify-between relative z-10">
+              <h2 className="text-4xl font-black tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">{lead.phase?.toLowerCase() || 'Processing'}</h2>
+              <span className="text-xs font-extrabold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">{getPhaseProgress(lead.phase)}% Closed</span>
             </div>
-          </div>
+          </motion.div>
+
         </div>
 
-        {/* Tasks & Transcript */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-12">
-          {/* Operational Tasks */}
-          <div className="lg:w-1/2 bg-white rounded-xl border border-slate-200 p-8 shadow-sm group">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-2 text-lg">
-                <CheckSquare className="text-slate-500" size={18} /> AI Operational Tasks
+        {/* Bottom Split (Tasks + Transcript) */}
+        <div className="flex flex-col xl:flex-row gap-6 mb-12">
+          
+          {/* Actionable Steps */}
+          <div className="xl:w-1/2 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4">
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-500"><CheckSquare size={18} /></div> Actionable Path
               </h3>
-              <button onClick={handleTaskAdd} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100 bg-slate-50">
-                <Plus size={16} />
+              <button onClick={handleTaskAdd} className="p-2 bg-white text-slate-400 hover:text-indigo-600 shadow-sm rounded-xl transition-all border border-slate-200 hover:border-indigo-200">
+                <Plus size={18} />
               </button>
             </div>
 
-            <div className="space-y-4">
-              {insights.tasks.length === 0 && <p className="text-slate-400 text-sm font-medium italic">No immediate tasks identified from this call.</p>}
+            <div className="space-y-4 flex-1">
+              {insights.tasks.length === 0 && <div className="text-center p-8 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200"><p className="text-slate-500 text-sm font-bold">No path algorithms established.</p></div>}
 
               {insights.tasks.map((task: any, idx: number) => {
                 const isEditingTask = editingItem?.field === 'tasks' && editingItem?.index === idx;
 
                 return (
-                  <div key={idx} className={`p-4 rounded-xl border transition-all flex items-start gap-4 group/task ${task.completed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100 hover:border-indigo-100 shadow-sm'}`}>
+                  <div key={idx} className={`p-5 rounded-2xl border transition-all flex items-start gap-5 group/task ${task.completed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100 hover:border-indigo-100 shadow-sm hover:shadow-md'}`}>
 
-                    {/* The Checkbox */}
                     <button
                       onClick={() => handleTaskToggle(idx)}
-                      className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border ${task.completed ? 'bg-indigo-500 border-indigo-500 text-white' : 'bg-white border-slate-300 hover:border-indigo-400'
-                        }`}
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border-2 transition-colors ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/20' : 'bg-white border-slate-300 hover:border-indigo-400'}`}
                     >
-                      {task.completed && <Check size={14} strokeWidth={3} />}
+                      {task.completed && <Check size={16} strokeWidth={4} />}
                     </button>
 
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       {isEditingTask ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <input type="text" value={JSON.parse(editingItem.value || "{}").title} onChange={e => {
                             const parsed = JSON.parse(editingItem.value || "{}");
                             parsed.title = e.target.value;
                             setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                          }} className="w-full text-[15px] font-bold bg-slate-50 border border-slate-200 p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Task Title" />
-                          <div className="flex gap-2">
+                          }} className="w-full text-base font-bold bg-slate-50 border-2 border-slate-200 p-3 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all text-slate-800" placeholder="Task Title" />
+                          <div className="flex gap-3">
                             <input type="text" value={JSON.parse(editingItem.value || "{}").assignee} onChange={e => {
                               const parsed = JSON.parse(editingItem.value || "{}");
                               parsed.assignee = e.target.value;
                               setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                            }} className="w-1/2 text-xs bg-slate-50 border border-slate-200 p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Assignee (e.g. Self)" />
+                            }} className="w-1/2 text-xs font-semibold bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-600" placeholder="Assignee (e.g. Owner)" />
                             <input type="text" value={JSON.parse(editingItem.value || "{}").dueDate} onChange={e => {
                               const parsed = JSON.parse(editingItem.value || "{}");
                               parsed.dueDate = e.target.value;
                               setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                            }} className="w-1/2 text-xs bg-slate-50 border border-slate-200 p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Due Date (e.g. Tomorrow)" />
+                            }} className="w-1/2 text-xs font-semibold bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-600" placeholder="Due Date (e.g. Nov 24)" />
                           </div>
                           <div className="flex justify-end gap-2 pt-2">
-                            <button onClick={() => setEditingItem(null)} className="px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-md">Cancel</button>
+                            <button onClick={() => setEditingItem(null)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-xl transition-colors">Abort</button>
                             <button onClick={async () => {
                               const parsed = JSON.parse(editingItem.value);
                               const newArr = [...insights.tasks];
                               newArr[idx] = parsed;
                               await saveInsights({ ...insights, tasks: newArr });
                               setEditingItem(null);
-                            }} className="px-3 py-1 text-xs font-bold bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1 rounded-md"><Check size={14} /> Save</button>
+                            }} className="px-4 py-2 text-xs font-bold bg-slate-900 text-white hover:bg-indigo-600 flex items-center gap-1.5 rounded-xl transition-all shadow-md active:scale-95"><Check size={14} /> Commit</button>
                           </div>
                         </div>
                       ) : (
                         <div>
-                          <h4 className={`font-bold text-[15px] mb-1 ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{task.title}</h4>
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            <span className="w-4 h-4 rounded bg-white text-indigo-500 flex items-center justify-center -ml-1 aspect-square border-slate-200 border">{task.assignee?.charAt(0)}</span>
-                            {task.assignee} • Due {task.dueDate}
+                          <h4 className={`font-extrabold text-base mb-2 truncate ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{task.title}</h4>
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 border border-slate-200/60 text-[10px] font-black text-slate-500 uppercase tracking-widest shadow-sm">
+                            <span className="w-5 h-5 rounded-md bg-white text-indigo-500 flex items-center justify-center -ml-2 border-slate-200 border shadow-sm">{task.assignee?.charAt(0)}</span>
+                            {task.assignee} <span className="text-slate-300">•</span> T-Minus: <span className={task.dueDate?.toLowerCase().includes('today') || task.dueDate?.toLowerCase().includes('tomorrow') ? 'text-rose-500' : 'text-indigo-500'}>{task.dueDate}</span>
                           </span>
                         </div>
                       )}
                     </div>
 
                     {!isEditingTask && (
-                      <div className="hidden group-hover/task:flex items-center gap-1">
-                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 rounded border hover:border-indigo-100 transition-colors shadow-sm">
-                          <Edit3 size={14} />
+                      <div className="hidden group-hover/task:flex items-center gap-1.5 opacity-0 group-hover/task:opacity-100 transition-opacity">
+                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-2 text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-200 hover:border-indigo-200 rounded-xl transition-all">
+                          <Edit3 size={16} />
                         </button>
-                        <button onClick={() => handleTaskDelete(idx)} className="p-1.5 text-slate-400 hover:text-red-500 bg-white hover:bg-red-50 rounded border hover:border-red-100 transition-colors shadow-sm">
-                          <Trash2 size={14} />
+                        <button onClick={() => handleTaskDelete(idx)} className="p-2 text-slate-400 hover:text-red-500 bg-white shadow-sm border border-slate-200 hover:border-red-200 rounded-xl transition-all">
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     )}
@@ -478,50 +499,63 @@ export default function LeadInsights({ user }: { user: any }) {
             </div>
           </div>
 
-          {/* Transcript Snippet */}
-          <div className="lg:w-1/2 bg-white rounded-xl border border-slate-200 p-8 shadow-sm flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-2 text-lg">
-                <AlignLeft className="text-slate-500" size={18} /> Raw Transcript Link
+          {/* Transcript Core */}
+          <div className="xl:w-1/2 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col relative overflow-hidden group">
+            <div className="absolute top-10 right-10 text-9xl text-slate-50 font-serif leading-none italic pointer-events-none select-none z-0 rotate-12 -mr-8 -mt-8">"</div>
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4 relative z-10">
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><AlignLeft size={18} /></div> Source Transcript
               </h3>
+              {selectedRec && (
+                 <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white 
+                 text-slate-400 hover:text-purple-600 border border-slate-200 hover:border-purple-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-xs font-bold px-4">
+                    Open Full <ArrowUpRight size={14} />
+                 </Link>
+              )}
             </div>
-            <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100 overflow-y-auto max-h-[300px]">
+            <div className="flex-1 bg-slate-50/80 p-6 rounded-2xl border border-slate-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover:bg-slate-50 transition-colors">
               {selectedRec?.transcript ? (
-                <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                  {selectedRec.transcript.substring(0, 500)}
-                  {selectedRec.transcript.length > 500 && '...'}
+                <p className="text-[15px] text-slate-600 font-medium leading-[1.8] italic select-text">
+                  "{selectedRec.transcript}"
                 </p>
               ) : (
-                <p className="text-sm text-slate-400 font-medium italic">No transcript available for this recording.</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 font-medium italic overflow-hidden">
+                   <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                      <Zap size={24} className="text-slate-300" />
+                   </div>
+                   No dialogue payload detected in current partition.
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Client Details Footer */}
-        <div className="bg-[#f8f9fa] rounded-2xl border border-slate-200 p-8 relative overflow-hidden">
-          <h3 className="font-bold text-slate-700 mb-8 flex items-center gap-2 text-sm uppercase tracking-widest">
-            <Briefcase className="text-slate-400" size={16} /> Client Registration Details
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1">Contact Name</div>
-              <div className="font-bold text-slate-800 text-[15px]">{lead.name}</div>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1">Company Registered</div>
-              <div className="font-bold text-slate-800 text-[15px]">{lead.company || 'Not specified'}</div>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1">Source Email</div>
-              <div className="font-bold text-slate-800 text-[15px]">{lead.email || 'None'}</div>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1">Phone</div>
-              <div className="font-bold text-slate-800 text-[15px]">{lead.phone || 'None'}</div>
-            </div>
+        {/* Global Footer */}
+        <div className="bg-slate-900 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+             <div className="w-16 h-16 bg-white border-2 border-white/20 rounded-[1.25rem] flex items-center justify-center overflow-hidden">
+               {lead.avatar ? <img src={lead.avatar} className="object-cover w-full h-full" /> : <div className="text-2xl font-black text-slate-300">?</div>}
+             </div>
+             <div>
+               <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-1">Entity Registered</div>
+               <div className="font-extrabold text-white text-xl">{lead.company || lead.name}</div>
+               <div className="text-sm font-semibold text-slate-400 mt-1 flex gap-3">
+                  <span>{lead.email || 'No email attached'}</span>
+                  <span className="text-slate-600">•</span>
+                  <span>{lead.phone || 'No direct dial'}</span>
+               </div>
+             </div>
+          </div>
+
+          <div className="relative z-10 md:w-auto w-full">
+            <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-sm font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+               <Edit3 size={16} /> Modify Profile
+            </Link>
           </div>
         </div>
+
       </div>
     </div>
   );

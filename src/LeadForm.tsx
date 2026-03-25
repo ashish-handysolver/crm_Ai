@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap } from 'lucide-react';
 import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from './App';
+import { useAuth } from './contexts/AuthContext';
+import { motion } from 'motion/react';
 
 export default function LeadForm({ user }: { user: any }) {
   const { id } = useParams();
@@ -46,11 +47,11 @@ export default function LeadForm({ user }: { user: any }) {
              else if (id === '2') setFormData({ name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', score: 62, phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e' });
              else if (id === '3') setFormData({ name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', score: 92, phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f' });
              else if (id === '4') setFormData({ name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', score: 15, phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g' });
-             else setError("Lead not found");
+             else setError("Lead details could not be retrieved from the matrix.");
           }
         } catch (err) {
           console.error(err);
-          setError("Error fetching lead");
+          setError("Error fetching lead from secure storage.");
         } finally {
           setLoading(false);
         }
@@ -59,16 +60,14 @@ export default function LeadForm({ user }: { user: any }) {
     }
   }, [id, isEditing]);
 
-  // Fetch custom fields separately so it runs for both new and edit forms
   useEffect(() => {
     if (!companyId) return;
-    // Fetch custom field definitions scoped safely to company
     const q = query(collection(db, 'custom_fields'), where('companyId', '==', companyId));
     getDocs(q).then(snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomFieldDef));
       setCustomFieldDefs(data);
     }).catch(console.error);
-    // Fetch custom source/phase options from user doc
+
     getDoc(doc(db, 'companies', companyId)).then(snap => {
       if (snap.exists()) {
         setCustomSources(snap.data().customSources || []);
@@ -82,9 +81,7 @@ export default function LeadForm({ user }: { user: any }) {
     setSaving(true);
     setError('');
     try {
-      if (!companyId) {
-        throw new Error("You must be part of an organization to save leads.");
-      }
+      if (!companyId) throw new Error("Authentication context invalid.");
 
       const leadId = isEditing ? id : uuidv4();
       const payload = {
@@ -98,7 +95,7 @@ export default function LeadForm({ user }: { user: any }) {
       navigate('/clients');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to save lead");
+      setError(err.message || "Protocol failure: Could not commit changes to ledger.");
       setSaving(false);
     }
   };
@@ -120,25 +117,16 @@ export default function LeadForm({ user }: { user: any }) {
           const MAX_HEIGHT = 400;
           let width = img.width;
           let height = img.height;
-
           if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
           } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Compresses the image
-          
-          setFormData(prev => ({ ...prev, avatar: dataUrl }));
+          setFormData(prev => ({ ...prev, avatar: canvas.toDataURL('image/jpeg', 0.8) }));
         };
         img.src = reader.result as string;
       };
@@ -147,123 +135,229 @@ export default function LeadForm({ user }: { user: any }) {
   };
 
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center min-h-screen bg-[#f8fafc]"><Loader2 size={32} className="animate-spin text-slate-300" /></div>;
+    return (
+      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh]">
+        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+      </div>
+    );
   }
 
+  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-slate-200 bg-white focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-slate-700 shadow-sm placeholder:text-slate-400 placeholder:font-medium";
+  const labelClasses = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5 block px-1";
+
   return (
-    <div className="flex-1 bg-[#f8fafc] text-slate-900 p-8 min-h-screen">
-      <div className="max-w-3xl mx-auto">
-        <Link to="/clients" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium mb-8 transition-colors">
-           <ArrowLeft size={18} /> Back to Leads
+    <div className="flex-1 bg-[#F9FBFF] text-slate-900 p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+      <div className="max-w-4xl mx-auto">
+        
+        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-all mb-10 group">
+          <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 shadow-sm transition-colors">
+            <ChevronLeft size={16} />
+          </div>
+          Back to Intelligence Ledger
         </Link>
-        <header className="mb-8">
-           <h1 className="text-3xl font-bold tracking-tight">{isEditing ? 'Edit Lead' : 'New Lead'}</h1>
-           <p className="text-slate-500 mt-2">Enter the details for {isEditing ? 'this' : 'the new'} lead account below.</p>
-        </header>
+        
+        <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+            <div className="text-[10px] font-extrabold text-indigo-500 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+               <Sparkles size={14} className="animate-pulse" /> Asset Modification Protocol
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+              {isEditing ? 'Modify Lead' : 'Initialize New Lead'}
+            </h1>
+            <p className="text-slate-500 mt-4 text-lg font-medium max-w-2xl">
+               Maintain the integrity of the sales pipeline by ensuring all lead vectors are accurately categorized within the dossier.
+            </p>
+        </motion.header>
 
         {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-center gap-3 text-sm font-medium border border-red-100">
-              <AlertCircle size={18} /> {error}
-            </div>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8 p-5 bg-rose-50 text-rose-600 rounded-2xi flex items-center gap-4 text-sm font-bold border border-rose-100 shadow-xl shadow-rose-500/5">
+              <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
+                <AlertCircle size={20} />
+              </div>
+              {error}
+            </motion.div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex flex-col items-center mb-8">
-               <div className="relative group cursor-pointer mb-3">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden relative group">
+           {/* Decorative Background Blob */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-indigo-100/50"></div>
+          
+          <form onSubmit={handleSubmit} className="p-8 sm:p-12 relative z-10">
+            
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center mb-12">
+               <div className="relative group cursor-pointer mb-4">
                  <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                 <div className="w-24 h-24 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-slate-400 transition-colors">
+                 <div className="w-28 h-28 rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-indigo-400 transition-all duration-300 relative">
                     {formData.avatar ? (
                       <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
                     ) : (
-                      <User size={32} className="text-slate-300" />
+                      <div className="flex flex-col items-center gap-1 text-slate-300">
+                        <User size={36} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">Null Image</span>
+                      </div>
                     )}
-                 </div>
-                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <Camera className="text-white" size={24} />
+                    <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors flex items-center justify-center pointer-events-none">
+                       <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
+                    </div>
                  </div>
                </div>
-               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Profile Photo</span>
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biometric Identity Photo</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-100 pt-8">
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Full Name</label>
-                 <input required type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="E.g. Sarah Wick" />
-               </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Email Address</label>
-                 <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="E.g. s.wick@company.com" />
-               </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Organization</label>
-                 <input required type="text" name="company" value={formData.company} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="Company Name" />
-               </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Location</label>
-                 <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="City, Country" />
-               </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Contact Number</label>
-                 <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder="E.g. +1 234 567 8900" />
-               </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Source</label>
-                 <select name="source" value={formData.source} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium">
-                   <option value="LINKEDIN">LinkedIn</option>
-                   <option value="REFERRAL">Referral</option>
-                   <option value="DIRECT">Direct</option>
-                   <option value="WEBSITE">Website</option>
-                   {customSources.map(s => <option key={s} value={s}>{s}</option>)}
-                 </select>
-               </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Phase</label>
-                 <select name="phase" value={formData.phase} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium">
-                    <option value="DISCOVERY">Discovery</option>
-                    <option value="NURTURING">Nurturing</option>
-                    <option value="QUALIFIED">Qualified</option>
-                    <option value="INACTIVE">Inactive</option>
-                    {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
-                 </select>
-               </div>
-               <div className="space-y-2 md:col-span-2">
-                 <label className="text-sm font-bold text-slate-700 flex justify-between">
-                    Interest Score
-                    <span className="text-slate-500 font-medium">{formData.score}/100</span>
-                 </label>
-                 <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full mt-2 accent-[#3b4256]" />
-               </div>
-
-               {/* Dynamic Custom Fields */}
-               {customFieldDefs.map(field => (
-                 <div key={field.id} className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700">{field.name}</label>
-                   {field.type === 'DROPDOWN' ? (
-                     <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium">
-                       <option value="">Select {field.name}</option>
-                       {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                     </select>
-                   ) : field.type === 'DATE' ? (
-                     <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" />
-                   ) : field.type === 'DATETIME' ? (
-                     <input type="datetime-local" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" />
-                   ) : (
-                     <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3b4256]/20 transition-all font-medium" placeholder={`Enter ${field.name}`} />
-                   )}
+            <div className="space-y-12">
+              
+              {/* Primary Identity Section */}
+              <section>
+                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={16} /></div>
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Primary Identity</h3>
                  </div>
-               ))}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="relative">
+                      <label className={labelClasses}>Full Identification Name</label>
+                      <div className="relative">
+                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                        <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. Alexander Sterling" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClasses}>Communication Endpoint (Email)</label>
+                      <div className="relative">
+                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="a.sterling@vanguard.io" />
+                      </div>
+                    </div>
+                 </div>
+              </section>
+
+              {/* Organizational Vector Section */}
+              <section>
+                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><Building2 size={16} /></div>
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Organizational Vector</h3>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className={labelClasses}>Entity Corporation</label>
+                      <div className="relative">
+                        <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                        <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Vanguard Systems" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClasses}>Geographic Coordinates</label>
+                      <div className="relative">
+                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                        <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="London, UK" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClasses}>Direct Dial Parameter</label>
+                      <div className="relative">
+                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                        <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 8900" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClasses}>Acquisition Source</label>
+                      <select name="source" value={formData.source} onChange={handleChange} className={inputClasses}>
+                        <option value="LINKEDIN">LinkedIn Network</option>
+                        <option value="REFERRAL">Internal Referral</option>
+                        <option value="DIRECT">Direct Traffic</option>
+                        <option value="WEBSITE">Main Terminal (Website)</option>
+                        {customSources.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                 </div>
+              </section>
+
+              {/* Disposition & Scoring Section */}
+              <section>
+                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Zap className="fill-emerald-500" size={16} /></div>
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Disposition & Logic</h3>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className={labelClasses}>Lifecycle Phase</label>
+                      <select name="phase" value={formData.phase} onChange={handleChange} className={inputClasses}>
+                        <option value="DISCOVERY">Discovery Protocol</option>
+                        <option value="NURTURING">Nurturing Cycle</option>
+                        <option value="QUALIFIED">Qualified Status</option>
+                        <option value="INACTIVE">Inactive / Archived</option>
+                        {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <label className={`${labelClasses} flex justify-between`}>
+                         Interest Score Matrix
+                         <span className="text-indigo-600 font-black">{formData.score}% Match</span>
+                      </label>
+                      <div className="px-2 pt-2">
+                         <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500 transition-all shadow-inner" />
+                         <div className="flex justify-between mt-3 px-1">
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Low Intent</span>
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Peak Conversion</span>
+                         </div>
+                      </div>
+                    </div>
+                 </div>
+              </section>
+
+              {/* Dynamic Logic Matrices (Custom Fields) */}
+              {customFieldDefs.length > 0 && (
+                <section>
+                   <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                      <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center"><Globe size={16} /></div>
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Dynamic Logic Parameters</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {customFieldDefs.map(field => (
+                       <div key={field.id}>
+                         <label className={labelClasses}>{field.name}</label>
+                         {field.type === 'DROPDOWN' ? (
+                           <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses}>
+                             <option value="">Select Option</option>
+                             {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                           </select>
+                         ) : field.type === 'DATE' ? (
+                           <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
+                         ) : field.type === 'DATETIME' ? (
+                           <input type="datetime-local" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
+                         ) : (
+                           <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name} payload`} />
+                         )}
+                       </div>
+                     ))}
+                   </div>
+                </section>
+              )}
             </div>
             
-            <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
-               <Link to="/clients" className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all">Cancel</Link>
-               <button type="submit" disabled={saving} className="flex items-center gap-2 bg-[#3b4256] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#2A303F] transition-all disabled:opacity-50">
-                  {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                  {isEditing ? 'Update Lead' : 'Save Lead'}
+            {/* Form Footer Action Bar */}
+            <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4">
+               <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                  <ChevronLeft size={18} /> Cancel Cycle
+               </Link>
+               <button type="submit" disabled={saving} className="flex items-center justify-center gap-3 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50">
+                  {saving ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Save size={20} className={isEditing ? 'text-indigo-300' : 'text-emerald-300'} />
+                  )}
+                  {isEditing ? 'Update Persona' : 'Commit New Entry'}
                </button>
             </div>
           </form>
+        </motion.div>
+
+        {/* Informational Footer */}
+        <div className="mt-12 text-center">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+               System Security: All data is encrypted via AES-256 Protocol & Scoped to Company ID: {companyId?.slice(0, 8)}...
+            </p>
         </div>
+
       </div>
     </div>
   );

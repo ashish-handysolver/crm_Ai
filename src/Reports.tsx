@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { Loader2, Play, Search, Filter, Calendar, AudioWaveform, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from './App';
+import { useAuth } from './contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Reports({ user }: { user: any }) {

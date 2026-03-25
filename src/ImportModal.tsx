@@ -5,7 +5,7 @@ import { doc, setDoc, Timestamp, getDoc, getDocs, collection, query, where } fro
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from './App';
+import { useAuth } from './contexts/AuthContext';
 
 interface ImportModalProps {
   isOpen: boolean;
