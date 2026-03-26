@@ -195,7 +195,8 @@ export default function Leads({ user }: { user: any }) {
         companyId, 
         createdAt: Timestamp.now() 
       });
-      setShareUrls(prev => ({ ...prev, [leadId]: `${window.location.origin}/m/${id}?l=${leadId}` }));
+      const origin = window.location.hostname === 'localhost' ? 'https://handydashcrmai.vercel.app' : window.location.origin;
+      setShareUrls(prev => ({ ...prev, [leadId]: `${origin}/m/${id}?l=${leadId}` }));
     } catch (err) {
       console.error(err);
       setError("Failed to create shareable link.");

@@ -264,7 +264,8 @@ const Home = ({ user }: { user: User | null }) => {
         createdAt: Timestamp.now()
       };
       await setDoc(doc(db, 'meetings', id), meetingData);
-      const url = `${window.location.origin}/m/${id}`;
+      const origin = window.location.hostname === 'localhost' ? 'https://handydashcrmai.vercel.app' : window.location.origin;
+      const url = `${origin}/m/${id}`;
       setShareUrl(url);
     } catch (err) {
       console.error("Error creating meeting:", err);
@@ -515,7 +516,10 @@ const HistoryView = ({ user }: { user: User | null }) => {
                   View
                 </Link>
                 <button
-                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/r/${rec.id}`)}
+                  onClick={() => {
+                    const origin = window.location.hostname === 'localhost' ? 'https://handydashcrmai.vercel.app' : window.location.origin;
+                    navigator.clipboard.writeText(`${origin}/r/${rec.id}`);
+                  }}
                   className="p-2 text-zinc-400 hover:text-black transition-colors"
                 >
                   <Share2 size={18} />
