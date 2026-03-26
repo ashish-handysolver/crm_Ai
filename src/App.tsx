@@ -155,7 +155,7 @@ const Navbar = ({ user, onMenuClick }: { user: User | null, onMenuClick: () => v
     <nav className="flex items-center justify-between p-4 md:p-6 border-b border-white/20 bg-white/70 backdrop-blur-xl sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-4 lg:hidden">
         <button onClick={onMenuClick} className="p-2 -ml-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></svg>
         </button>
         <Link to="/" className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
@@ -166,12 +166,12 @@ const Navbar = ({ user, onMenuClick }: { user: User | null, onMenuClick: () => v
       </div>
 
       <div className="hidden lg:block mr-auto">
-        <h2 className="text-lg font-bold text-slate-800">{companyName || 'Workspace'}</h2>
+        <h2 className="text-lg font-bold text-slate-800"></h2>
       </div>
 
       <div className="flex items-center gap-4">
         {user && (
-          <button 
+          <button
             onClick={() => setIsImportModalOpen(true)}
             className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
           >
@@ -545,7 +545,7 @@ const AppWithAuth = () => {
       const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company';
       const isOnboardingRoute = location.pathname === '/onboarding';
       const isGuestRoute = location.pathname.startsWith('/m/');
-      
+
       if (!isGuestRoute) {
         if (!user && !isAuthRoute) {
           navigate('/login');

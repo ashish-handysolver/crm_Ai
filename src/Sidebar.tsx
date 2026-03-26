@@ -89,16 +89,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Bottom fading edge */}
-        <div className="p-6 relative z-10 border-t border-white/5 bg-gradient-to-t from-[#0A0D14] to-transparent">
-          <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-md">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex flex-shrink-0 items-center justify-center shadow-inner">
-               <Mic className="text-white w-4 h-4" />
-            </div>
-            <div className="flex flex-col overflow-hidden">
-               <span className="text-xs font-bold text-white truncate">{companyName || 'Pro Workspace'}</span>
-               <span className="text-[10px] font-medium text-slate-500 truncate">Workspace Active</span>
-            </div>
-          </div>
+        <div className="p-6 border-t border-white/5 relative z-10 text-center">
+          <p className="text-[11px] font-medium text-slate-500 flex items-center justify-center gap-1.5">
+            Made with <span className="text-[14px]">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
+          </p>
         </div>
       </aside>
     </>
