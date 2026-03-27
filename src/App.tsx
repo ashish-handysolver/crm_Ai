@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon } from 'lucide-react';
+import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -65,7 +65,7 @@ interface FirestoreErrorInfo {
   collectionName?: string;
 }
 
-const Navbar = ({ user, onMenuClick }: { user: User, onMenuClick: () => void }) => {
+const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: User, onMenuClick: () => void, onInstall: () => void, showInstallButton: boolean }) => {
   const { companyName } = useAuth();
   
   return (
@@ -75,12 +75,20 @@ const Navbar = ({ user, onMenuClick }: { user: User, onMenuClick: () => void }) 
           <MessageSquare size={20} />
         </button>
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-slate-900">{companyName || 'AudioCRM'}</span>
+          <span className="text-sm font-bold text-slate-900">{companyName || 'CRM AI'}</span>
           <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Workspace</span>
         </div>
       </div>
       
       <div className="flex items-center gap-3">
+        {showInstallButton && (
+          <button 
+            onClick={onInstall}
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100"
+          >
+            <Download size={14} /> Install App
+          </button>
+        )}
         <div className="hidden sm:flex flex-col items-end mr-2">
           <span className="text-xs font-bold text-slate-900">{user.displayName || 'User'}</span>
           <span className="text-[10px] font-medium text-slate-400">{user.email}</span>
@@ -252,6 +260,25 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   // Close sidebar on route change automatically
   useEffect(() => {
@@ -322,7 +349,12 @@ const AppContent = () => {
     <div className="flex min-h-[100dvh] bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex-row w-full overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 relative h-[100dvh] overflow-y-auto w-full scroll-smooth">
-        <Navbar user={user} onMenuClick={() => setIsSidebarOpen(true)} />
+        <Navbar 
+          user={user} 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+          onInstall={handleInstall}
+          showInstallButton={!!deferredPrompt}
+        />
         <main className="flex-1 w-full max-w-full overflow-x-hidden relative pb-12">
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />

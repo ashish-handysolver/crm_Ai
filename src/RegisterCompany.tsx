@@ -149,10 +149,10 @@ export default function RegisterCompany() {
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
           
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <AudioLines className="text-white w-6 h-6" />
+            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-slate-200/50 border border-slate-100 p-1.5 overflow-hidden">
+              <img src="/logo.png" alt="CRM AI Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">AudioCRM</span>
+            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">CRM AI</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
