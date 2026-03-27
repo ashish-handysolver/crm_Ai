@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mic, LayoutDashboard, Users, MessageSquare, FileText, UploadCloud, Settings, CalendarDays, History, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Plus, Users, Settings, LogOut, LayoutDashboard, FileText, 
+  BarChart3, ChevronRight, Menu, X, Sparkles, Mic, Monitor, Activity, Eye, EyeOff, History, CalendarDays, UploadCloud
+} from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
+import { useDemo } from './DemoContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -32,7 +36,9 @@ function NavItem({ to, icon, label, colorClass, hoverBgClass, onClick }: { to: s
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { companyName } = useAuth();
+  const { companyName, role, logout } = useAuth();
+  const { isDemoMode, setDemoMode } = useDemo();
+  const location = useLocation();
 
   // Mobile backdrop
   const mobileOverlay = (
@@ -74,22 +80,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto scrollbar-hide relative z-10">
           <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-2">Overview</div>
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" colorClass="text-blue-400" hoverBgClass="" />
-          <NavItem onClick={onClose} to="/clients" icon={<Users />} label="Leads / CRM" colorClass="text-indigo-400" hoverBgClass="" />
-          <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Intelligence" colorClass="text-emerald-400" hoverBgClass="" />
+          <NavItem onClick={onClose} to="/clients" icon={<Users />} label="Clients" colorClass="text-indigo-400" hoverBgClass="" />
+          <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Upload Audio" colorClass="text-emerald-400" hoverBgClass="" />
           
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Insights</div>
-          <NavItem onClick={onClose} to="/analytics" icon={<MessageSquare />} label="Analytics" colorClass="text-pink-400" hoverBgClass="" />
-          <NavItem onClick={onClose} to="/reports" icon={<FileText />} label="Reports" colorClass="text-orange-400" hoverBgClass="" />
+          
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Media</div>
+          <NavItem onClick={onClose} to="/history" icon={<History />} label="Recordings" colorClass="text-slate-300" hoverBgClass="" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" colorClass="text-violet-400" hoverBgClass="" />
           
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Organization</div>
-          <NavItem onClick={onClose} to="/team" icon={<Users />} label="Team Directory" colorClass="text-cyan-400" hoverBgClass="" />
-          <NavItem onClick={onClose} to="/history" icon={<History />} label="All Recordings" colorClass="text-slate-300" hoverBgClass="" />
-          <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Workspace Settings" colorClass="text-slate-300" hoverBgClass="" />
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Manage</div>
+          <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Admin Settings" colorClass="text-slate-300" hoverBgClass="" />
         </nav>
 
         {/* Bottom fading edge */}
         <div className="p-6 border-t border-white/5 relative z-10 text-center">
+          <div className="space-y-2 mb-4">
+            <button 
+              onClick={() => setDemoMode(!isDemoMode)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isDemoMode ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            >
+              {isDemoMode ? <Eye size={18} /> : <EyeOff size={18} />}
+              {isDemoMode ? 'Demo Mode: ON' : 'Switch to Demo'}
+            </button>
+            <button 
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-sm font-bold transition-all group"
+            >
+              <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
+              Sign Out
+            </button>
+          </div>
           <p className="text-[11px] font-medium text-slate-500 flex items-center justify-center gap-1.5">
             Made with <span className="text-[14px]">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
           </p>

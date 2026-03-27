@@ -156,90 +156,65 @@ export default function RegisterCompany() {
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
-            Build your workspace
+            Create your account
           </h1>
           <p className="text-slate-500 font-medium text-lg mb-8">
-            Create an organization to start managing leads, meetings, and AI transcriptions securely.
+            Set up your company to start managing leads and AI meeting notes easily.
           </p>
 
-          <form onSubmit={handleRegister}>
-            <AnimatePresence mode="wait">
-              {step === 1 ? (
-                <motion.div key="step1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Organization Name</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Building2 size={20} /></div>
-                      <input 
-                        type="text" 
-                        required 
-                        value={companyName} 
-                        onChange={e => setCompanyName(e.target.value)} 
-                        placeholder="Acme Corporation" 
-                        className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-medium shadow-sm" 
-                      />
-                    </div>
-                  </div>
-                  {error && (
-                    <div className="flex items-start gap-3 p-4 bg-red-50/80 backdrop-blur text-red-600 rounded-2xl text-sm font-semibold border border-red-100">
-                      <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                      <span>{error}</span>
-                    </div>
-                  )}
-                  <button 
-                    type="button" 
-                    onClick={() => companyName && setStep(2)} 
-                    disabled={!companyName.trim()}
-                    className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-slate-900/10"
-                  >
-                    Continue <ArrowRight size={18} />
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Your Full Name</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><UserIcon size={20} /></div>
-                      <input type="text" required value={userName} onChange={e => setUserName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Mail size={20} /></div>
-                      <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="john@company.com" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Secure Password</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Lock size={20} /></div>
-                      <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" minLength={6} className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
-                    </div>
-                  </div>
+          <form onSubmit={handleRegister} className="space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Building2 size={20} /></div>
+                <input 
+                  type="text" 
+                  required 
+                  value={companyName} 
+                  onChange={e => setCompanyName(e.target.value)} 
+                  placeholder="e.g. Acme Corp" 
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-900 shadow-sm" 
+                />
+              </div>
+            </div>
 
-                  {error && (
-                    <div className="flex items-start gap-3 p-4 bg-red-50/80 backdrop-blur text-red-600 rounded-2xl text-sm font-semibold border border-red-100">
-                      <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                      <span>{error}</span>
-                    </div>
-                  )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Your Name</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><UserIcon size={20} /></div>
+                  <input type="text" required value={userName} onChange={e => setUserName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Mail size={20} /></div>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
+                </div>
+              </div>
+            </div>
 
-                  <div className="flex flex-col gap-4 mt-8">
-                    <button type="submit" disabled={loading} className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group">
-                      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                      {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : <CheckCircle2 className="relative z-10" size={20} />}
-                      <span className="relative z-10">{loading ? 'Provisioning Workspace...' : 'Create Account'}</span>
-                    </button>
-                    
-                    <button type="button" onClick={() => setStep(1)} className="text-sm font-bold text-slate-400 hover:text-slate-700 transition-colors py-2">
-                      ← Back to Organization Name
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Lock size={20} /></div>
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-3 p-4 bg-red-50/80 backdrop-blur text-red-600 rounded-2xl text-sm font-semibold border border-red-100">
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group">
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+              {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : <CheckCircle2 className="relative z-10" size={20} />}
+              <span className="relative z-10">{loading ? 'Setting up...' : 'Create Account'}</span>
+            </button>
           </form>
 
           <p className="mt-10 text-center text-sm font-medium text-slate-500">
@@ -275,18 +250,18 @@ export default function RegisterCompany() {
           
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
             <Sparkles className="text-indigo-400 w-4 h-4" />
-            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Next-Gen Audio Intelligence</span>
+            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Smart Audio Notes</span>
           </div>
 
           <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-6 tracking-tight">
-            Transcribe.<br/>
+            Record.<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
-              Analyze. Close.
+              Listen. Grow.
             </span>
           </h2>
           
           <p className="text-lg lg:text-xl text-slate-400 font-medium leading-relaxed mb-12 max-w-xl">
-            Empower your sales team with AI-driven meeting transcripts, smart lead capturing, and automated CRM workflows that completely isolate data seamlessly across your organization.
+            Make your sales better with AI meeting notes, easy lead tracking, and simple workflows that work for your whole team.
           </p>
 
           {/* Floating UI Mockup element */}

@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   companyId: string | null;
   companyName: string | null;
+  role: string | null;
   onboardingComplete: boolean;
   loading: boolean;
 }
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   companyId: null,
   companyName: null,
+  role: null,
   onboardingComplete: true, // Default to true to avoid flicker
   loading: true
 });
@@ -25,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -39,28 +42,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setCompanyId(userData.companyId);
+            
+            // Check if user is specified as super admin in .env or has the role in DB
+            if (currentUser.email === (import.meta as any).env.VITE_SUPER_ADMIN_EMAIL || userData.role === 'super_admin') {
+              setRole('super_admin');
+            } else {
+              setRole(userData.role || 'user');
+            }
+            
             setOnboardingComplete(userData.onboardingComplete === true);
             
             if (userData.companyId) {
-              const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
-              if (companyDoc.exists()) {
-                setCompanyName(companyDoc.data().name);
-              }
+              getDoc(doc(db, 'companies', userData.companyId)).then((companyDoc) => {
+                if (companyDoc.exists()) {
+                  setCompanyName(companyDoc.data().name);
+                }
+              }).catch(err => console.error("Error fetching company name:", err));
             }
           } else {
             setCompanyId(null);
             setCompanyName(null);
+            setRole(null);
           }
           setLoading(false);
         }, (error) => {
           console.error("Error listening to user data:", error);
           setCompanyId(null);
           setCompanyName(null);
+          setRole(null);
           setLoading(false);
         });
       } else {
         setCompanyId(null);
         setCompanyName(null);
+        setRole(null);
         unsubscribeUser();
         setLoading(false);
       }
@@ -73,7 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, companyId, companyName, onboardingComplete, loading }}>
+    <AuthContext.Provider value={{ user, companyId, companyName, role, onboardingComplete, loading }}>
       {children}
     </AuthContext.Provider>
   );

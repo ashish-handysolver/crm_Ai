@@ -7,8 +7,9 @@ import {
   ChevronLeft, ChevronRight, Plus, X, Bell, Loader2,
   Clock, User, Trash2, CalendarDays, AlertCircle, CheckCircle2, Sparkles, Zap, Calendar as CalendarIcon, Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './contexts/AuthContext';
+import { useDemo } from './DemoContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface Meeting {
   id: string;
@@ -26,11 +27,12 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 
 export default function CalendarPage({ user }: { user: any }) {
   const { companyId } = useAuth();
+  const { isDemoMode, demoData } = useDemo();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isDemoMode);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
@@ -57,6 +59,20 @@ export default function CalendarPage({ user }: { user: any }) {
 
   // Fetch meetings
   useEffect(() => {
+    if (isDemoMode) {
+      const formattedMeetings = demoData.meetings.map(m => ({
+        ...m,
+        scheduledAt: m.scheduledAt ? { 
+          ...m.scheduledAt, 
+          toDate: () => new Date(m.scheduledAt.seconds * 1000),
+          toMillis: () => m.scheduledAt.seconds * 1000
+        } : null
+      }));
+      setMeetings(formattedMeetings as any);
+      setLoading(false);
+      return;
+    }
+
     if (!companyId) { setLoading(false); return; }
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, (snap) => {
@@ -68,17 +84,21 @@ export default function CalendarPage({ user }: { user: any }) {
       setLoading(false);
     });
     return () => unsub();
-  }, [companyId]);
+  }, [companyId, isDemoMode, demoData]);
 
   // Fetch leads for the meeting modal
   useEffect(() => {
+    if (isDemoMode) {
+      setLeads(demoData.leads);
+      return;
+    }
     if (!companyId) return;
     const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, snap => {
       setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
-  }, [companyId]);
+  }, [companyId, isDemoMode, demoData]);
 
   // 10-minute reminder checker
   useEffect(() => {
@@ -133,6 +153,7 @@ export default function CalendarPage({ user }: { user: any }) {
   };
 
   const openModal = (day: number) => {
+    if (isDemoMode) return;
     const date = new Date(currentYear, currentMonth, day);
     setSelectedDate(date);
     setForm({ title: '', leadId: '', leadName: '', time: '10:00', notes: '' });
@@ -169,6 +190,7 @@ export default function CalendarPage({ user }: { user: any }) {
   };
 
   const handleDelete = async (id: string) => {
+    if (isDemoMode) return;
     if (!window.confirm('Erase this temporal entry?')) return;
     await deleteDoc(doc(db, 'meetings', id));
   };

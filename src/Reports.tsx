@@ -4,21 +4,35 @@ import { db } from './firebase';
 import { Loader2, Play, Search, Filter, Calendar, AudioWaveform, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Reports({ user }: { user: any }) {
   const { companyId } = useAuth();
+  const { isDemoMode, demoData } = useDemo();
   const [leads, setLeads] = useState<any[]>([]);
   const [recordings, setRecordings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isDemoMode);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    if (isDemoMode) {
+      setLeads(demoData.leads);
+      const formattedRecs = demoData.recordings.map(r => ({
+        ...r,
+        createdAt: { toMillis: () => r.createdAt.seconds * 1000 }
+      }));
+      setRecordings(formattedRecs);
+      setLoading(false);
+      return;
+    }
+
     if (!companyId) {
       setLoading(false);
       return;
     }
 
+    setLoading(true);
     const unsubLeads = onSnapshot(
       query(collection(db, 'leads'), where('companyId', '==', companyId)),
       (snap) => {
@@ -41,7 +55,7 @@ export default function Reports({ user }: { user: any }) {
     );
 
     return () => { unsubLeads(); unsubRecs(); };
-  }, [companyId]);
+  }, [companyId, isDemoMode, demoData]);
 
   const enrichedRecordings = recordings
     .map(rec => {

@@ -4,6 +4,7 @@ import { db } from './firebase';
 import { Loader2, Settings, Plus, Trash2, Save, AlertCircle, CheckCircle2, Tag, GitBranch, Sparkles, Wand2, Info, ChevronRight, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
+import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 export interface CustomFieldDef {
@@ -20,6 +21,7 @@ const DEFAULT_PHASES  = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
 
 export default function CustomFields({ user }: { user: any }) {
   const { companyId } = useAuth();
+  const { isDemoMode, demoData } = useDemo();
   const [fields, setFields] = useState<CustomFieldDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,6 +35,11 @@ export default function CustomFields({ user }: { user: any }) {
   const [newOptionInputs, setNewOptionInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (isDemoMode) {
+      setFields(demoData.customFields as any);
+      setLoading(false);
+      return;
+    }
     if (!companyId) { setLoading(false); return; }
     const load = async () => {
       try {
@@ -54,7 +61,7 @@ export default function CustomFields({ user }: { user: any }) {
       }
     };
     load();
-  }, [companyId]);
+  }, [companyId, isDemoMode, demoData]);
 
   const addField = () => {
     if (!companyId) return;
@@ -145,11 +152,11 @@ export default function CustomFields({ user }: { user: any }) {
           <motion.button 
              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
              onClick={handleSave} 
-             disabled={saving} 
+             disabled={saving || isDemoMode} 
              className="shrink-0 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-            Commit Parameters
+            {isDemoMode ? 'Readonly Mode' : 'Commit Parameters'}
           </motion.button>
         </header>
 
@@ -175,9 +182,11 @@ export default function CustomFields({ user }: { user: any }) {
                       <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner"><Settings size={16} /></div>
                       Custom Data Vectors
                    </h2>
-                   <button onClick={addField} className="text-xs font-black text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 rounded-lg transition-all active:scale-95">
-                      <Plus size={14} /> NEW VECTOR
-                   </button>
+                   {!isDemoMode && (
+                     <button onClick={addField} className="text-xs font-black text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 rounded-lg transition-all active:scale-95">
+                        <Plus size={14} /> NEW VECTOR
+                     </button>
+                   )}
                 </div>
 
                 <div className="space-y-6">
@@ -260,9 +269,11 @@ export default function CustomFields({ user }: { user: any }) {
                             </motion.div>
                           )}
                         </div>
-                        <button onClick={() => removeField(field.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
-                          <Trash2 size={16} />
-                        </button>
+                        {!isDemoMode && (
+                          <button onClick={() => removeField(field.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
+                             <Trash2 size={16} />
+                          </button>
+                        )}
                       </motion.div>
                     ))}
                   </AnimatePresence>

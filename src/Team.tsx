@@ -3,10 +3,12 @@ import { Users, UserPlus, Mail, Shield, User, Loader2, CheckCircle2, AlertCircle
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { db, firebaseConfig } from './firebase';
+import { useDemo } from './DemoContext';
 
 export default function Team({ user, companyId }: { user: any, companyId: string | null }) {
+  const { isDemoMode, demoData } = useDemo();
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isDemoMode);
   const [isAdding, setIsAdding] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,6 +20,11 @@ export default function Team({ user, companyId }: { user: any, companyId: string
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    if (isDemoMode) {
+      setTeamMembers(demoData.team);
+      setLoading(false);
+      return;
+    }
     if (!companyId) return;
 
     const q = query(collection(db, 'users'), where('companyId', '==', companyId));
@@ -28,7 +35,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
     });
 
     return () => unsubscribe();
-  }, [companyId]);
+  }, [companyId, isDemoMode, demoData]);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +94,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
     }
   };
 
-  if (!companyId) {
+  if (!companyId && !isDemoMode) {
     return (
       <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[calc(100vh-88px)]">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-12 rounded-[2.5rem] border border-slate-200 shadow-xl text-center max-w-md">
@@ -119,13 +126,20 @@ export default function Team({ user, companyId }: { user: any, companyId: string
           </motion.div>
           
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="shrink-0">
-             <button 
-                onClick={() => setIsAdding(!isAdding)}
-                className={`w-full md:w-auto px-10 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 ${isAdding ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-slate-200/20' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-slate-900/20'}`}
-              >
-                {isAdding ? <ChevronLeft size={18} /> : <UserPlus size={18} />}
-                {isAdding ? 'Back to Roster' : 'Initialize New Member'}
-              </button>
+             {!isDemoMode && (
+               <button 
+                  onClick={() => setIsAdding(!isAdding)}
+                  className={`w-full md:w-auto px-10 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 ${isAdding ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-slate-200/20' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-slate-900/20'}`}
+                >
+                  {isAdding ? <ChevronLeft size={18} /> : <UserPlus size={18} />}
+                  {isAdding ? 'Back to Roster' : 'Initialize New Member'}
+                </button>
+             )}
+             {isDemoMode && (
+                <div className="px-6 py-3 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                   <Lock size={16} /> Demo Restricted
+                </div>
+             )}
           </motion.div>
         </header>
 

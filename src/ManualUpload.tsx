@@ -9,9 +9,12 @@ import { GoogleGenAI } from '@google/genai';
 import { UploadCloud, FileAudio, FileText, Loader2, CheckCircle2, AlertCircle, Sparkles, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { useDemo } from './DemoContext';
+import { Eye } from 'lucide-react';
 
 export default function ManualUpload({ user }: { user: any }) {
   const { companyId } = useAuth();
+  const { isDemoMode, demoData } = useDemo();
   const [leads, setLeads] = useState<any[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState('');
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -23,6 +26,10 @@ export default function ManualUpload({ user }: { user: any }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (isDemoMode) {
+      setLeads(demoData.leads);
+      return;
+    }
     if (!companyId) return;
     const unsub = onSnapshot(
       query(collection(db, 'leads'), where('companyId', '==', companyId)),
@@ -30,7 +37,7 @@ export default function ManualUpload({ user }: { user: any }) {
       (err) => console.error(err)
     );
     return () => unsub();
-  }, [user, companyId]);
+  }, [user, companyId, isDemoMode, demoData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,12 +228,14 @@ export default function ManualUpload({ user }: { user: any }) {
                 <span className="text-xs font-bold text-slate-400 px-2 py-1 bg-slate-100 rounded-md">At least ONE input (Audio or Text) is required</span>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isDemoMode}
                   className="w-full sm:w-auto relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group"
                 >
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                  {isSubmitting ? <Loader2 className="animate-spin relative z-10" size={20} /> : <UploadCloud className="relative z-10" size={20} />}
-                  <span className="relative z-10">{isSubmitting ? 'Processing & Analyzing...' : 'Bind Intelligence'}</span>
+                  {isSubmitting ? <Loader2 className="animate-spin relative z-10" size={20} /> : isDemoMode ? <Eye className="relative z-10" size={20} /> : <UploadCloud className="relative z-10" size={20} />}
+                  <span className="relative z-10">
+                    {isSubmitting ? 'Processing & Analyzing...' : isDemoMode ? 'Readonly Demo Mode' : 'Bind Intelligence'}
+                  </span>
                 </button>
               </div>
             </motion.form>

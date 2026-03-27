@@ -5,18 +5,27 @@ import { Loader2, Users, BarChart3, ArrowRight, ExternalLink, Sparkles, Target }
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { useDemo } from './DemoContext';
 
 export default function Analytics({ user }: { user: any }) {
   const { companyId } = useAuth();
+  const { isDemoMode, demoData } = useDemo();
   const [leads, setLeads] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isDemoMode);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setLeads(demoData.leads);
+      setLoading(false);
+      return;
+    }
+
     if (!companyId) {
       setLoading(false);
       return;
     }
 
+    setLoading(true);
     const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -25,7 +34,7 @@ export default function Analytics({ user }: { user: any }) {
     });
 
     return () => unsubscribe();
-  }, [companyId]);
+  }, [companyId, isDemoMode, demoData]);
 
   if (loading) {
     return (
