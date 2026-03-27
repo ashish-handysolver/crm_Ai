@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -39,6 +39,14 @@ export default function Leads({ user }: { user: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [showSafetyAlert, setShowSafetyAlert] = useState(false);
+  const AUTO_SUBMIT_WINDOW = Number((import.meta as any).env.VITE_AUTO_SUBMIT_WINDOW_SECS) || 60;
+  const [autoSubmitCountdown, setAutoSubmitCountdown] = useState(AUTO_SUBMIT_WINDOW);
+  const autoSubmitRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const SAFETY_CHECK_SECONDS = (Number((import.meta as any).env.VITE_SAFETY_CHECK_DURATION_MINS) || 5) * 60;
 
   useEffect(() => {
     if (isDemoMode) {
@@ -95,60 +103,21 @@ export default function Leads({ user }: { user: any }) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamsRef = useRef<MediaStream[]>([]);
 
-  const startRecording = async (leadId: string) => {
-    try {
-      setError(''); setSuccess('');
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Browser doesn't support recording");
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
 
-      const streams: MediaStream[] = [];
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streams.push(micStream);
-      let finalStream = micStream;
-
-      if (navigator.mediaDevices.getDisplayMedia) {
-        try {
-          const sysStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1, height: 1 }, audio: true });
-          if (sysStream.getAudioTracks().length > 0) {
-            streams.push(sysStream);
-            const ctx = new AudioContext(); audioContextRef.current = ctx;
-            const dest = ctx.createMediaStreamDestination();
-            ctx.createMediaStreamSource(micStream).connect(dest);
-            ctx.createMediaStreamSource(sysStream).connect(dest);
-            finalStream = dest.stream;
-          } else {
-            sysStream.getTracks().forEach(t => t.stop());
-          }
-        } catch (e) { console.warn("System audio omitted", e); }
-      }
-
-      streamsRef.current = streams;
-      const mediaRecorder = new MediaRecorder(finalStream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        transcribeAndSave(blob, leadId);
-        streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
-        if (audioContextRef.current) audioContextRef.current.close();
-      };
-
-      mediaRecorder.start();
-      setRecordingId(leadId);
-    } catch (err: any) {
-       setError(err.message || "Could not start recording.");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && recordingId) {
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
       setRecordingId(null);
+      setIsPaused(false);
+      stopTimer();
+      setShowSafetyAlert(false);
     }
-  };
+  }, [stopTimer]);
 
-  const transcribeAndSave = async (audioBlob: Blob, leadId: string) => {
+  const performTranscription = useCallback(async (audioBlob: Blob, leadId: string) => {
     setIsTranscribing(true);
     try {
       const recordId = uuidv4().slice(0, 8);
@@ -200,6 +169,106 @@ export default function Leads({ user }: { user: any }) {
        setError("Failed to save recording.");
     } finally {
        setIsTranscribing(false);
+       autoSubmitRef.current = false;
+    }
+  }, [companyId, user?.uid]);
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setRecordingSeconds(prev => {
+        const next = prev + 1;
+        if (next > 0 && next % SAFETY_CHECK_SECONDS === 0) {
+          setShowSafetyAlert(true);
+          setAutoSubmitCountdown(AUTO_SUBMIT_WINDOW);
+        }
+        return next;
+      });
+
+      setShowSafetyAlert(currentShow => {
+        if (currentShow) {
+          setAutoSubmitCountdown(prevCountdown => {
+            if (prevCountdown <= 1) {
+              autoSubmitRef.current = true;
+              stopRecording();
+              return 0;
+            }
+            return prevCountdown - 1;
+          });
+        }
+        return currentShow;
+      });
+    }, 1000);
+  }, [stopRecording]);
+
+  const startRecording = async (leadId: string) => {
+    try {
+      setError(''); setSuccess('');
+      setRecordingSeconds(0);
+      setIsPaused(false);
+      autoSubmitRef.current = false;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Browser doesn't support recording");
+
+      const streams: MediaStream[] = [];
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streams.push(micStream);
+      let finalStream = micStream;
+
+      if (navigator.mediaDevices.getDisplayMedia) {
+        try {
+          const sysStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1, height: 1 }, audio: true });
+          if (sysStream.getAudioTracks().length > 0) {
+            streams.push(sysStream);
+            const ctx = new AudioContext(); audioContextRef.current = ctx;
+            const dest = ctx.createMediaStreamDestination();
+            ctx.createMediaStreamSource(micStream).connect(dest);
+            ctx.createMediaStreamSource(sysStream).connect(dest);
+            finalStream = dest.stream;
+          } else {
+            sysStream.getTracks().forEach(t => t.stop());
+          }
+        } catch (e) { console.warn("System audio omitted", e); }
+      }
+
+      streamsRef.current = streams;
+      const mediaRecorder = new MediaRecorder(finalStream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
+        if (audioContextRef.current) audioContextRef.current.close();
+        
+        if (autoSubmitRef.current) {
+          performTranscription(blob, leadId);
+        } else {
+          performTranscription(blob, leadId);
+        }
+      };
+
+      mediaRecorder.start();
+      setRecordingId(leadId);
+      startTimer();
+    } catch (err: any) {
+       setError(err.message || "Could not start recording.");
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && recordingId && !isPaused) {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      stopTimer();
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && recordingId && isPaused) {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      startTimer();
     }
   };
 
@@ -443,13 +512,29 @@ export default function Leads({ user }: { user: any }) {
                       <div className="flex items-center gap-2">
                          {!isDemoMode && (
                            <>
-                            <button 
-                              onClick={() => startRecording(lead.id)}
-                              className="p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2 font-bold text-xs"
-                              title="Start Session"
-                            >
-                              <Mic size={16} /> Record
-                            </button>
+                             {recordingId === lead.id ? (
+                               <div className="flex items-center gap-2">
+                                 <div className="bg-slate-900 text-white px-3 py-2 rounded-xl flex items-center gap-2 font-mono text-xs">
+                                   <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-pulse'}`} />
+                                   {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{ (recordingSeconds % 60).toString().padStart(2, '0') }
+                                 </div>
+                                 <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-3 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100">
+                                   {isPaused ? <Play size={16} /> : <Pause size={16} />}
+                                 </button>
+                                 <button onClick={stopRecording} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100">
+                                   <Square size={16} />
+                                 </button>
+                               </div>
+                             ) : (
+                               <button 
+                                 onClick={() => startRecording(lead.id)}
+                                 className="p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2 font-bold text-xs"
+                                 title="Start Session"
+                                 disabled={!!recordingId}
+                               >
+                                 <Mic size={16} /> Record
+                               </button>
+                             )}
                             <Link to={`/clients/${lead.id}/edit`} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                               <Edit2 size={18} />
                             </Link>
@@ -535,18 +620,25 @@ export default function Leads({ user }: { user: any }) {
                               <Edit2 size={16} />
                             </Link>
 
-                            {isTranscribing && recordingId === null ? (
-                              <div className="w-9 h-9 flex items-center justify-center bg-indigo-50 rounded-xl"><Loader2 size={16} className="animate-spin text-indigo-500" /></div>
-                            ) : recordingId === lead.id ? (
-                              <button onClick={stopRecording} className="text-white bg-red-500 hover:bg-red-600 w-9 h-9 flex items-center justify-center rounded-xl transition-all shadow-lg shadow-red-500/30 relative">
-                                <span className="absolute inset-0 bg-red-400 rounded-xl animate-ping opacity-40"></span>
-                                <Square size={14} className="fill-current relative z-10" />
-                              </button>
-                            ) : (
-                              <button onClick={() => startRecording(lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent ${recordingId ? 'opacity-30' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-100'}`} disabled={!!recordingId} title="Record Call">
-                                <Mic size={16} />
-                              </button>
-                            )}
+                             {isTranscribing && recordingId === null ? (
+                               <div className="w-9 h-9 flex items-center justify-center bg-indigo-50 rounded-xl"><Loader2 size={16} className="animate-spin text-indigo-500" /></div>
+                             ) : recordingId === lead.id ? (
+                               <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                 <div className={`px-2 py-1 font-mono text-[10px] font-bold ${isPaused ? 'text-amber-500' : 'text-slate-700'}`}>
+                                   {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{ (recordingSeconds % 60).toString().padStart(2, '0') }
+                                 </div>
+                                 <button onClick={isPaused ? resumeRecording : pauseRecording} className="w-7 h-7 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50">
+                                   {isPaused ? <Play size={14} /> : <Pause size={14} />}
+                                 </button>
+                                 <button onClick={stopRecording} className="w-7 h-7 flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50">
+                                   <Square size={14} />
+                                 </button>
+                               </div>
+                             ) : (
+                               <button onClick={() => startRecording(lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent ${recordingId ? 'opacity-30' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-100'}`} disabled={!!recordingId} title="Record Call">
+                                 <Mic size={16} />
+                               </button>
+                             )}
 
                             <button onClick={() => setExpandedLeadId(isExp ? null : lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${isExp ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 border-transparent'}`}>
                               <ChevronDown size={18} className={`transition-transform duration-300 ${isExp ? 'rotate-180' : ''}`} />
@@ -632,6 +724,47 @@ export default function Leads({ user }: { user: any }) {
         </>
         )}
       </div>
+
+      {/* ── Safety Alert Modal ── */}
+      <AnimatePresence>
+        {showSafetyAlert && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center"
+            >
+              <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <ShieldAlert className="text-amber-500" size={32} />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 mb-2">Safety Check-In</h2>
+              <p className="text-slate-500 text-sm mb-1 font-medium">
+                You've been recording for <span className="text-slate-900 font-bold">{Math.floor(recordingSeconds / 60)} minutes</span>.
+              </p>
+              <p className="text-amber-500 text-xs font-black uppercase tracking-widest mb-8">
+                Auto-submitting in {autoSubmitCountdown}s...
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => { setShowSafetyAlert(false); setAutoSubmitCountdown(AUTO_SUBMIT_WINDOW); }}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+                >
+                  Keep Recording
+                </button>
+                <button 
+                  onClick={stopRecording}
+                  className="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold hover:bg-slate-100 transition-all"
+                >
+                  Stop and Submit
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

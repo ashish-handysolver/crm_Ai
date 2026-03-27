@@ -4,7 +4,7 @@ import { doc, getDoc, collection, query, where, onSnapshot, updateDoc } from 'fi
 import { useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight } from 'lucide-react';
+import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 export default function LeadInsights({ user }: { user: any }) {
@@ -15,9 +15,9 @@ export default function LeadInsights({ user }: { user: any }) {
   const [loading, setLoading] = useState(true);
   const [generatingAI, setGeneratingAI] = useState(false);
 
-  // Inline editing state: which list item is currently being edited
   const [editingItem, setEditingItem] = useState<{ field: string, index: number, value: string } | null>(null);
   const [editingOverview, setEditingOverview] = useState<string | null>(null);
+  const [meetings, setMeetings] = useState<any[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -50,7 +50,15 @@ export default function LeadInsights({ user }: { user: any }) {
       }
     });
 
-    return () => unsub();
+    // Fetch meetings linked to this lead
+    const mq = query(collection(db, 'meetings'), where('leadId', '==', id));
+    const munsubMeetings = onSnapshot(mq, snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      data.sort((a, b) => (a.scheduledAt?.toMillis?.() || 0) - (b.scheduledAt?.toMillis?.() || 0));
+      setMeetings(data);
+    });
+
+    return () => { unsub(); munsubMeetings(); };
   }, [id, lead, selectedRecId]);
 
   useEffect(() => {
@@ -410,6 +418,66 @@ export default function LeadInsights({ user }: { user: any }) {
           </motion.div>
 
         </div>
+
+        {/* ── Scheduled Meetings ── */}
+        {meetings.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2 rounded-xl bg-violet-50 text-violet-500">
+                <CalendarDays size={18} />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Scheduled Meetings</h3>
+              <span className="ml-auto text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-full">
+                {meetings.length} session{meetings.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {meetings.map((m, idx) => {
+                const d = m.scheduledAt?.toDate?.();
+                const isPast = d && d < new Date();
+                return (
+                  <motion.div key={m.id}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+                    className={`p-5 rounded-2xl border transition-all ${
+                      isPast
+                        ? 'bg-slate-50 border-slate-100 opacity-60'
+                        : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        isPast ? 'bg-slate-100' : 'bg-violet-50'
+                      }`}>
+                        <CalendarDays size={16} className={isPast ? 'text-slate-400' : 'text-violet-500'} />
+                      </div>
+                      {isPast && (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Past</span>
+                      )}
+                      {!isPast && (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-100 px-2 py-1 rounded-full animate-pulse">Upcoming</span>
+                      )}
+                    </div>
+                    <div className="font-extrabold text-slate-800 text-sm mb-2 leading-snug">{m.title}</div>
+                    {d && (
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <Clock size={11} />
+                        {d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        &nbsp;·&nbsp;
+                        {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </div>
+                    )}
+                    {m.notes && (
+                      <p className="mt-2 text-[11px] text-slate-400 font-medium line-clamp-2 leading-relaxed">{m.notes}</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Bottom Split (Tasks + Transcript) */}
         <div className="flex flex-col xl:flex-row gap-6 mb-12">

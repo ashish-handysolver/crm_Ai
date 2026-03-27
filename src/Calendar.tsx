@@ -5,7 +5,7 @@ import {
 import { db } from './firebase';
 import {
   ChevronLeft, ChevronRight, Plus, X, Bell, Loader2,
-  Clock, User, Trash2, CalendarDays, AlertCircle, CheckCircle2, Sparkles, Zap, Calendar as CalendarIcon, Info
+  Clock, User, Trash2, CalendarDays, AlertCircle, CheckCircle2, Sparkles, Zap, Calendar as CalendarIcon, Info, Video
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
@@ -41,10 +41,36 @@ export default function CalendarPage({ user }: { user: any }) {
   const [leads, setLeads] = useState<any[]>([]);
   const [form, setForm] = useState({ title: '', leadId: '', leadName: '', time: '10:00', notes: '' });
 
-  // Audio notification sound
+  // Waiting ringtone — generated via Web Audio API (no external URL needed)
   const playPulseSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audio.play().catch(e => console.error("Audio playback blocked: ", e));
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const playTone = (freq1: number, freq2: number, startAt: number, duration: number) => {
+        [freq1, freq2].forEach(freq => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, ctx.currentTime + startAt);
+          gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + startAt + 0.02);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime + startAt + duration - 0.02);
+          gain.gain.linearRampToValueAtTime(0, ctx.currentTime + startAt + duration);
+          osc.start(ctx.currentTime + startAt);
+          osc.stop(ctx.currentTime + startAt + duration);
+        });
+      };
+      // Ring pattern: 7 cycles × ~1.4s = ~10 seconds of ringing
+      for (let i = 0; i < 7; i++) {
+        const base = i * 1.4;
+        playTone(480, 440, base,        0.4); // first ring
+        playTone(480, 440, base + 0.6,  0.4); // second ring
+      }
+      setTimeout(() => ctx.close(), 11000);
+    } catch (e) {
+      console.error('Ringtone playback failed:', e);
+    }
   };
 
   const reminderCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -355,9 +381,19 @@ export default function CalendarPage({ user }: { user: any }) {
                             )}
                           </div>
                         </div>
-                        <button onClick={() => handleDelete(m.id)} className="absolute bottom-4 right-4 p-2 text-white/10 hover:text-rose-400 transition-colors">
-                           <Trash2 size={14} />
-                        </button>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 mt-4 relative z-10">
+                          <button
+                            onClick={() => window.open(`/m/${m.id}`, '_blank')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95"
+                          >
+                            <Video size={11} /> Quick Record
+                          </button>
+                          <button onClick={() => handleDelete(m.id)} className="ml-auto p-2 text-white/10 hover:text-rose-400 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </motion.div>
                     );
                   })}
