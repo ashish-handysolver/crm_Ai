@@ -1,34 +1,33 @@
-const CACHE_NAME = 'audiocrm-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css'
-];
+const CACHE_NAME = 'crmai-cache-v2';
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+      );
     })
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignore non-http requests (e.g. chrome-extension://)
+  if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
+    fetch(event.request)
+      .then((response) => {
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, resClone);
+        });
         return response;
-      }
-      return fetch(event.request).catch((err) => {
-        console.error('Service Worker fetch error for:', event.request.url, err);
-        // Can optionally return a custom offline fallback response here
-        // return caches.match('/offline.html');
-      });
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
