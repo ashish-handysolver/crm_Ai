@@ -561,7 +561,7 @@ export default function Leads({ user }: { user: any }) {
                   <th className="py-6 px-8 relative">Name <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
                   <th className="py-6 px-6 relative">Company <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
                   <th className="py-6 px-6 relative w-32">AI Score <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
-                  <th className="py-6 px-6 relative">Status <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
+                  {/* <th className="py-6 px-6 relative">Status <div  ="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th> */}
                   <th className="py-6 px-8 text-right">Actions</th>
                 </tr>
               </thead>
@@ -609,11 +609,11 @@ export default function Leads({ user }: { user: any }) {
                             <span className="font-black text-sm text-slate-700">{lead.score || 0}</span>
                           </div>
                         </td>
-                        <td className="py-5 px-6 whitespace-nowrap">
+                        {/* <td className="py-5 px-6 whitespace-nowrap">
                           <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg border tracking-widest ${getPhaseColor(lead.phase)}`}>
                             {lead.phase}
                           </span>
-                        </td>
+                        </td> */}
                         <td className="py-5 px-8 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-indigo-100">
