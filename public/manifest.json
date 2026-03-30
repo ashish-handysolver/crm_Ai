@@ -1,21 +1,25 @@
 {
-  "name": "AudioCRM & Transcriber",
-  "short_name": "AudioCRM",
-  "description": "Record audio, generate shareable links, and transcribe with Gemini AI.",
+  "name": "CRM AI | MyHandyDash",
+  "short_name": "CRM AI",
+  "description": "Premium CRM with AI-powered meeting intelligence.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "background_color": "#0A0D14",
+  "theme_color": "#0A0D14",
   "icons": [
     {
-      "src": "https://picsum.photos/seed/audio/192/192",
+      "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://picsum.photos/seed/audio/512/512",
+      "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

@@ -90,6 +90,13 @@ service cloud.firestore {
              data.role in ['admin', 'user'];
     }
 
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin' ||
+         request.auth.token.email == "ashish.handysolver@gmail.com" ||
+         request.auth.token.email == "admin@handysolver.com");
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -97,6 +104,7 @@ service cloud.firestore {
     match /recordings/{recordingId} {
       allow read: if true;
       allow write: if isAuthenticated() || (request.resource.data.meetingId != null || request.resource.data.leadId != null);
+      allow delete: if isSuperAdmin();
     }
 
     match /meetings/{meetingId} {
@@ -105,15 +113,22 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == userId);
     }
 
     match /leads/{leadId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated() && (resource.data.companyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || isSuperAdmin());
+      allow write: if isAuthenticated();
     }
 
     match /custom_fields/{fieldId} {
       allow read, write: if isAuthenticated();
+    }
+
+    match /companies/{companyId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.createdBy || isSuperAdmin());
+      allow write: if isAuthenticated();
     }
   }
 }
