@@ -75,7 +75,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           <MessageSquare size={20} />
         </button>
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-slate-900">{companyName || 'CRM AI'}</span>
+          <span className="text-sm font-bold text-slate-900">{companyName || 'Handysolver'}</span>
           <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Workspace</span>
         </div>
       </div>
