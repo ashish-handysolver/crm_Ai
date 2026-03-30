@@ -1,21 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
-export const firebaseConfig = {
-  apiKey: "AIzaSyCDMYbu604E083IyEBE__U6KX4I2YaovQA",
-  authDomain: "handydash-75858.firebaseapp.com",
-  databaseURL: "https://handydash-75858.firebaseio.com",
-  projectId: "handydash-75858",
-  storageBucket: "handydash-75858.appspot.com",
-  messagingSenderId: "18967278229",
-  appId: "1:18967278229:web:eedb13d46173cf05b4619c"
+const firebaseConfig = {
+  apiKey: "AIzaSyAMIBKe69JUMbXd5dT8gWAfomruHLc1nxg",
+  authDomain: "gen-lang-client-0004919353.firebaseapp.com",
+  projectId: "gen-lang-client-0004919353",
+  storageBucket: "gen-lang-client-0004919353.firebasestorage.app",
+  messagingSenderId: "744812235160",
+  appId: "1:744812235160:web:14fc83746bbb070b06c3ed"
 };
 
 const app = initializeApp(firebaseConfig);
-// Using the specific named database the user created
-export const db = getFirestore(app, 'handydash-firestore');
+// Using the specific database ID from your project configuration
+export const db = getFirestore(app, "ai-studio-a51e591f-052c-4aab-ac9b-b7ec428bbf63");
 export const auth = getAuth();
-export const storage = getStorage(app);
