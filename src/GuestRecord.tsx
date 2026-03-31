@@ -75,6 +75,8 @@ export default function GuestRecord() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamsRef = useRef<MediaStream[]>([]);
 
   useEffect(() => {
     const fetchMeeting = async () => {
@@ -158,14 +160,16 @@ export default function GuestRecord() {
           const fileUri = await uploadFileToGemini(blob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-lite',
+            model: 'gemini-1.5-flash',
             config: {
               responseMimeType: "application/json",
             },
-            contents: [{ role: 'user', parts: [
-              { text: 'Transcribe this audio recording of a sales/lead call. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY the raw JSON string.' },
-              { fileData: { mimeType: blob.type || 'audio/webm', fileUri } },
-            ]}],
+            contents: [{
+              role: 'user', parts: [
+                { text: 'Transcribe this audio recording of a sales/lead call. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY the raw JSON string.' },
+                { fileData: { mimeType: blob.type || 'audio/webm', fileUri } },
+              ]
+            }],
           });
 
           // Robust parsing for unified SDK
@@ -226,34 +230,107 @@ export default function GuestRecord() {
   const startRecording = async () => {
     try {
       setError('');
-      setRecordingSeconds(0);
+      // Resetting state
       autoSubmitRef.current = false;
-      if (!navigator.mediaDevices?.getUserMedia)
-        throw new Error('Your browser does not support audio recording.');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 64000 });
+
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error('This browser does not support system audio recording.');
+      }
+
+      const isChromium = !!(window as any).chrome;
+      let micStream: MediaStream;
+      let sysStream: MediaStream | null = null;
+
+      if (isChromium) {
+        // 1. Trigger BOTH prompts immediately to preserve user gesture
+        // Using Promise.all so they fire as close together as possible (Chrome requirement)
+        const [m, s] = await Promise.all([
+          navigator.mediaDevices.getUserMedia({ audio: true }),
+          navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: {
+              echoCancellation: false,
+              systemAudio: 'include' // Hint for Chrome
+            } as any,
+            systemAudio: 'include'
+          } as any).catch(e => {
+            console.warn("System audio denied", e);
+            return null; // Return null if user cancels system share
+          })
+        ]);
+        micStream = m;
+        sysStream = s;
+      } else {
+        // Firefox/Safari: Sequential to avoid internal permission prompt collision
+        // These browsers often block simultaneous media requests.
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (navigator.mediaDevices.getDisplayMedia) {
+          try {
+            sysStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+          } catch (e) {
+            console.warn("System audio failed or cancelled", e);
+          }
+        }
+      }
+
+      let finalStream: MediaStream;
+      const streams: MediaStream[] = [micStream];
+
+      // 2. Setup Audio Context for Merging
+      if (sysStream && sysStream.getAudioTracks().length > 0) {
+        streams.push(sysStream);
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        const ctx = new AudioContextClass();
+        audioContextRef.current = ctx;
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        const dest = ctx.createMediaStreamDestination();
+
+        // Connect Mic
+        const micSource = ctx.createMediaStreamSource(micStream);
+        micSource.connect(dest);
+
+        // Connect System Audio
+        const sysSource = ctx.createMediaStreamSource(sysStream);
+        sysSource.connect(dest);
+
+        finalStream = dest.stream;
+      } else {
+        // Fallback: Just the Mic
+        finalStream = micStream;
+        if (sysStream) {
+          sysStream.getTracks().forEach(t => t.stop());
+          alert("System Audio Note: You shared a screen/tab but didn't check the 'Also share audio' box. Only your microphone will be recorded.");
+        }
+      }
+
+      streamsRef.current = streams;
+
+      // 3. Recorder Setup
+      const options = { mimeType: 'audio/webm;codecs=opus' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options.mimeType = 'audio/mp4';
+
+      const mediaRecorder = new MediaRecorder(finalStream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(audioChunksRef.current, { type: options.mimeType });
         setAudioBlob(blob);
-        stream.getTracks().forEach(t => t.stop());
-        
-        // If auto-submit was triggered, wait a tiny bit for state to settle then transcribe
-        if (autoSubmitRef.current) {
-          // Wrap in a function to ensure it uses the latest blob
-          setTimeout(() => {
-            performTranscription(blob);
-          }, 100);
-        }
+        streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
       };
+
       mediaRecorder.start();
       setIsRecording(true);
       setIsPaused(false);
       startTimer();
+
     } catch (err: any) {
-      setError(err.message || 'Could not start microphone.');
+      console.error(err);
+      setError(err.name === 'NotAllowedError'
+        ? 'Permission denied. Please allow microphone and screen sharing.'
+        : err.message);
     }
   };
 
@@ -351,7 +428,7 @@ export default function GuestRecord() {
             >
               {/* Header card */}
               <motion.div className="w-full bg-white/5 border border-white/8 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center">
-                
+
                 {/* Brand pill */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/15 border border-violet-500/20 mb-7">
                   <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
@@ -409,11 +486,10 @@ export default function GuestRecord() {
                     <motion.button
                       onClick={isRecording ? stopRecording : startRecording}
                       whileTap={{ scale: 0.93 }}
-                      className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${
-                        isRecording
-                          ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
-                          : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
-                      } ${isPaused ? 'opacity-70' : ''}`}
+                      className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${isRecording
+                        ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
+                        : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
+                        } ${isPaused ? 'opacity-70' : ''}`}
                     >
                       {isRecording
                         ? <Square className="text-white fill-white" size={36} />

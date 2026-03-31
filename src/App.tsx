@@ -220,7 +220,7 @@ const RecordingView = () => {
       const ai = new GoogleGenAI({ apiKey });
 
       const genResult = await ai.models.generateContent({
-        model: "gemini-2.0-flash-lite",
+        model: "gemini-1.5-flash",
         config: {
           responseMimeType: "application/json",
         },

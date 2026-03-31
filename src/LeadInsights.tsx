@@ -125,7 +125,7 @@ export default function LeadInsights({ user }: { user: any }) {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-lite',
+          model: 'gemini-1.5-flash',
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
@@ -225,7 +225,7 @@ export default function LeadInsights({ user }: { user: any }) {
       const ai = new GoogleGenAI({ apiKey });
 
       const genResult = await ai.models.generateContent({
-        model: "gemini-2.0-flash-lite",
+        model: "gemini-1.5-flash",
         config: {
           responseMimeType: "application/json",
         },

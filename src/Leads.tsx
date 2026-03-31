@@ -137,7 +137,7 @@ export default function Leads({ user }: { user: any }) {
           const fileUri = await uploadFileToGemini(audioBlob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-lite", 
+            model: "gemini-1.5-flash", 
             config: {
               responseMimeType: "application/json",
             },
@@ -238,28 +238,61 @@ export default function Leads({ user }: { user: any }) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Browser doesn't support recording");
 
       const streams: MediaStream[] = [];
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const isChromium = !!(window as any).chrome;
+      
+      let micStream: MediaStream;
+      let sysStream: MediaStream | null = null;
+
+      try {
+        if (navigator.mediaDevices.getDisplayMedia) {
+          sysStream = await navigator.mediaDevices.getDisplayMedia(
+            isChromium 
+              ? { 
+                  video: true, 
+                  audio: { echoCancellation: false, systemAudio: 'include' } as any,
+                  systemAudio: 'include',
+                  selfBrowserSurface: 'include',
+                  monitorTypeSurfaces: 'include'
+                } as any
+              : { video: true, audio: true }
+          );
+        }
+      } catch (e) {
+        console.warn("System audio omitted or cancelled", e);
+      }
+
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
       streams.push(micStream);
       let finalStream = micStream;
 
-      if (navigator.mediaDevices.getDisplayMedia) {
-        try {
-          const sysStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1, height: 1 }, audio: true });
-          if (sysStream.getAudioTracks().length > 0) {
-            streams.push(sysStream);
-            const ctx = new AudioContext(); audioContextRef.current = ctx;
-            const dest = ctx.createMediaStreamDestination();
-            ctx.createMediaStreamSource(micStream).connect(dest);
-            ctx.createMediaStreamSource(sysStream).connect(dest);
-            finalStream = dest.stream;
-          } else {
-            sysStream.getTracks().forEach(t => t.stop());
-          }
-        } catch (e) { console.warn("System audio omitted", e); }
+      if (sysStream && sysStream.getAudioTracks().length > 0) {
+        streams.push(sysStream);
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        const ctx = new AudioContextClass(); audioContextRef.current = ctx;
+        if (ctx.state === 'suspended') await ctx.resume();
+        const dest = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(micStream).connect(dest);
+        ctx.createMediaStreamSource(sysStream).connect(dest);
+        finalStream = dest.stream;
+      } else if (sysStream) {
+        alert("System Audio Note: You shared a screen/tab but didn't check the 'Also share audio' box. Only your microphone will be recorded.");
+        sysStream.getTracks().forEach(t => t.stop());
       }
 
       streamsRef.current = streams;
-      const mediaRecorder = new MediaRecorder(finalStream);
+
+      // Dynanamic mimeType for cross-browser support (Safari prefers mp4, Chrome prefers webm)
+      const options: any = { audioBitsPerSecond: 64000 };
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          options.mimeType = type;
+          break;
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(finalStream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
