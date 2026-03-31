@@ -158,7 +158,7 @@ export default function GuestRecord() {
           const fileUri = await uploadFileToGemini(blob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.0-flash',
             config: {
               responseMimeType: "application/json",
             },
