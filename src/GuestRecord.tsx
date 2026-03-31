@@ -157,7 +157,7 @@ export default function GuestRecord() {
           const fileUri = await uploadFileToGemini(blob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-1.5-flash',
             contents: [{ role: 'user', parts: [
               { text: 'Please transcribe this audio recording of a sales/lead call. Provide only the text.' },
               { fileData: { mimeType: blob.type || 'audio/webm', fileUri } },

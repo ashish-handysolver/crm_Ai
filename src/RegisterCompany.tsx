@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Building2, Mail, Lock, User as UserIcon, ArrowRight, Loader2, CheckCircle2, AlertCircle, Sparkles, AudioLines
+  Building2, Mail, Lock, User as UserIcon, ArrowRight, Loader2, CheckCircle2, AlertCircle, Sparkles, AudioLines, Flame
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { motion, AnimatePresence } from 'motion/react';
@@ -136,10 +136,10 @@ export default function RegisterCompany() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="flex min-h-screen bg-white font-sans selection:bg-indigo-500 selection:text-white" style={{ width: '100vw' }}>
       {/* Left Area - Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-white border-r border-slate-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
-        
+
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
           <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-blue-100/40 blur-3xl"></div>
@@ -147,18 +147,21 @@ export default function RegisterCompany() {
         </div>
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
-          
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-slate-200/50 border border-slate-100 p-1.5 overflow-hidden">
-              <img src="/logo.png" alt="CRM AI Logo" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">CRM AI</span>
-          </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
+          <Link to="/" className="flex items-center gap-3 group/logo mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20 shadow-lg border border-white/20 p-2 transition-transform duration-500 group-hover/logo:rotate-[10deg]">
+              <AudioLines className="text-white" size={24} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 leading-none mb-1">Handysolver</span>
+              <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] leading-none">Intelligence Hub</span>
+            </div>
+          </Link>
+
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-2">
             Create your account
           </h1>
-          <p className="text-slate-500 font-medium text-lg mb-8">
+          <p className="text-slate-500 font-medium text-lg mb-6">
             Set up your company to start managing leads and AI meeting notes easily.
           </p>
 
@@ -167,13 +170,13 @@ export default function RegisterCompany() {
               <label className="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Building2 size={20} /></div>
-                <input 
-                  type="text" 
-                  required 
-                  value={companyName} 
-                  onChange={e => setCompanyName(e.target.value)} 
-                  placeholder="e.g. Acme Corp" 
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-900 shadow-sm" 
+                <input
+                  type="text"
+                  required
+                  value={companyName}
+                  onChange={e => setCompanyName(e.target.value)}
+                  placeholder="e.g. Acme Corp"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-900 shadow-sm"
                 />
               </div>
             </div>
@@ -210,10 +213,14 @@ export default function RegisterCompany() {
               </div>
             )}
 
-            <button type="submit" disabled={loading} className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group">
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-              {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : <CheckCircle2 className="relative z-10" size={20} />}
-              <span className="relative z-10">{loading ? 'Setting up...' : 'Create Account'}</span>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#0F172A] text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-xl shadow-slate-900/10 group"
+            >
+              <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+              {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : <CheckCircle2 className="relative z-10 opacity-70" size={20} />}
+              <span className="relative z-10 text-base">{loading ? 'Setting up...' : 'Create Account'}</span>
             </button>
           </form>
 
@@ -231,6 +238,9 @@ export default function RegisterCompany() {
             </div>
           )}
         </motion.div>
+        <p className="text-[11px] font-medium text-slate-500 flex items-center justify-center gap-1.5">
+          Made with <span className="text-[14px]">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
+        </p>
       </div>
 
       {/* Right Area - Visual Display */}
@@ -240,53 +250,42 @@ export default function RegisterCompany() {
           <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-1000"></div>
           <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse delay-700"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-blue-500/10 rounded-full blur-[150px] mix-blend-screen"></div>
-          
+
           {/* Noise overlay */}
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
         </div>
 
         {/* Hero Content */}
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative z-10 w-full max-w-2xl px-12">
-          
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-            <Sparkles className="text-indigo-400 w-4 h-4" />
-            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Smart Audio Notes</span>
-          </div>
 
-          <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-6 tracking-tight">
-            Record.<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
-              Listen. Grow.
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
+            <Flame className="text-orange-400 w-4 h-4" />
+            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Multi-Tenant Intelligence</span>
+          </div>
+          <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tightest">
+            Streamline.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-400">
+              Manage. Connect.
             </span>
           </h2>
-          
-          <p className="text-lg lg:text-xl text-slate-400 font-medium leading-relaxed mb-12 max-w-xl">
-            Make your sales better with AI meeting notes, easy lead tracking, and simple workflows that work for your whole team.
+          <p className="text-lg lg:text-xl text-slate-400 font-medium leading-relaxed mb-10 max-w-xl">
+            Access your secure workspace instantly. Manage your organization's leads, calendar, and AI-powered meeting analytics with the Handysolver edge.
           </p>
 
           {/* Floating UI Mockup element */}
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-30 animate-pulse"></div>
-            <div className="relative bg-white/5 border border-white/10 backdrop-blur-2xl rounded-2xl p-6 shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                 <div className="flex gap-2">
-                   <div className="w-3 h-3 rounded-full bg-slate-600/50"></div>
-                   <div className="w-3 h-3 rounded-full bg-slate-600/50"></div>
-                   <div className="w-3 h-3 rounded-full bg-slate-600/50"></div>
-                 </div>
-                 <div className="text-xs font-bold text-slate-400 bg-white/5 px-3 py-1 rounded-full">Secure Workspace</div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-2 w-3/4 bg-slate-700/50 rounded-full"></div>
-                <div className="h-2 w-1/2 bg-slate-700/50 rounded-full"></div>
-                <div className="h-2 w-5/6 bg-slate-700/50 rounded-full"></div>
-                <div className="h-2 w-2/3 bg-slate-700/50 rounded-full"></div>
-              </div>
-              <div className="mt-8 flex gap-4">
-                 <div className="flex-1 h-24 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl border border-indigo-500/20"></div>
-                 <div className="flex-1 h-24 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl border border-blue-500/20"></div>
-              </div>
-            </div>
+          <div className="bg-[#1E293B]/20 border border-white/10 backdrop-blur-3xl rounded-2xl p-8 shadow-2xl relative overflow-hidden flex items-end gap-3 h-56 group/graph">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>
+            {[35, 65, 40, 85, 60, 80, 100].map((height, i) => (
+              <motion.div
+                key={i}
+                initial={{ height: 0 }}
+                animate={{ height: `${height}%` }}
+                transition={{ duration: 1.2, delay: 0.5 + i * 0.1, type: "spring" }}
+                className="flex-1 bg-gradient-to-t from-blue-600/80 to-indigo-400/80 rounded-t-md relative group/bar hover:from-blue-500 hover:to-indigo-300 transition-all border-t border-white/20"
+              >
+                <div className="absolute inset-0 bg-blue-400/10 blur-sm opacity-0 group-hover/bar:opacity-100 transition-opacity"></div>
+              </motion.div>
+            ))}
           </div>
 
         </motion.div>

@@ -67,9 +67,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="px-6 pt-8 pb-6 flex items-center justify-between relative z-10">
           <Link to="/" onClick={onClose} className="flex items-center gap-3 group">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-slate-200/50 border border-slate-100 p-1.5 overflow-hidden">
-              <img src="/logo.png" alt="CRM AI Logo" className="w-full h-full object-contain" />
+              <img src="/logo.png" alt="Handysolver Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">CRM AI</span>
+            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">Handysolver</span>
           </Link>
 
           <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white bg-white/5 rounded-full backdrop-blur transition-colors">

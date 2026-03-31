@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock } from 'lucide-react';
+import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock, RotateCcw, Download } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { jsPDF } from 'jspdf';
 
 export default function LeadInsights({ user }: { user: any }) {
   const { id } = useParams();
@@ -80,6 +81,9 @@ export default function LeadInsights({ user }: { user: any }) {
         const prompt = `
           Analyze this sales call transcript and extract actionable intelligence. 
           Respond ONLY in strict JSON format. 
+
+          Focus specifically on creating high-quality "meetingMinutes" which should be a comprehensive, bulleted summary of the discussion. 
+          Ensure every key topic, decision, and question from the meeting script is captured as a separate point in "meetingMinutes".
           
           Transcript: "${selectedRec.transcript}"
           
@@ -88,7 +92,7 @@ export default function LeadInsights({ user }: { user: any }) {
             "painPoints": ["point 1", "point 2", "point 3"],
             "requirements": ["req 1", "req 2", "req 3"],
             "nextActions": ["action 1", "action 2"],
-            "improvements": ["improvement 1", "improvement 2"],
+            "meetingMinutes": ["Key discussion point from call...", "Decision made regarding...", "Client asked about...", "Action agreed on..."],
             "overview": "A concise 3-sentence executive summary of the prospect's situation and goals.",
             "sentiment": "Positive",
             "tasks": [
@@ -98,8 +102,8 @@ export default function LeadInsights({ user }: { user: any }) {
         `;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: [{ parts: [{ text: prompt }] }]
+          model: 'gemini-1.5-flash',
+          contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
         const rawText = response.text || "{}";
@@ -109,6 +113,8 @@ export default function LeadInsights({ user }: { user: any }) {
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
           parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
         }
+
+        console.log("AI Results Produced:", parsed);
 
         await updateDoc(doc(db, 'recordings', selectedRec.id), {
           aiInsights: parsed
@@ -122,6 +128,14 @@ export default function LeadInsights({ user }: { user: any }) {
 
     generateInsights();
   }, [selectedRec, generatingAI]);
+
+  const handleRegenerate = async () => {
+    if (!selectedRec) return;
+    setGeneratingAI(false); // Reset lock
+    await updateDoc(doc(db, 'recordings', selectedRec.id), {
+      aiInsights: deleteField()
+    });
+  };
 
 
   if (loading) {
@@ -147,6 +161,7 @@ export default function LeadInsights({ user }: { user: any }) {
     nextActions: ['Capturing data...'],
     improvements: ['Capturing data...'],
     overview: 'Analyzing the transcript to provide a comprehensive executive overview of the engagement...',
+    meetingMinutes: ['Identifying meeting minutes...'],
     tasks: []
   };
 
@@ -224,6 +239,136 @@ export default function LeadInsights({ user }: { user: any }) {
     await saveInsights({ ...insights, sentiment: e.target.value });
   };
 
+  const handleExportPDF = () => {
+    if (!lead || !insights) return;
+    const doc = new jsPDF();
+    const margin = 20;
+    let y = 20;
+
+    // Header & Branding
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("HANDYSOLVER", margin, 20);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("EXECUTIVE INTELLIGENCE REPORT", margin, 32);
+    
+    const dateStr = new Date().toLocaleDateString();
+    doc.text(`DATE: ${dateStr}`, 150, 32);
+
+    y = 55;
+    
+    // Client Info
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("CLIENT DOSSIER", margin, y);
+    y += 8;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Entity: ${lead.company || lead.name}`, margin, y);
+    y += 6;
+    doc.text(`Contact: ${lead.name}`, margin, y);
+    y += 6;
+    doc.text(`Disposition: ${lead.status || 'Active Agent'}`, margin, y);
+    
+    y += 15;
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.line(margin, y, 190, y);
+    y += 15;
+
+    // Executive Summary
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("AI EXECUTIVE SUMMARY", margin, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const overviewLines = doc.splitTextToSize(insights.overview || "No summary generated.", 170);
+    doc.text(overviewLines, margin, y);
+    y += (overviewLines.length * 6) + 15;
+
+    // Minutes of Meeting
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("MINUTES OF MEETING", margin, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    const momPoints = Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : [];
+    if (momPoints.length === 0) {
+      doc.text("- No minutes recorded.", margin, y);
+      y += 10;
+    } else {
+      momPoints.forEach((point: string) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        const pLines = doc.splitTextToSize(`• ${point}`, 165);
+        doc.text(pLines, margin, y);
+        y += (pLines.length * 6) + 2;
+      });
+    }
+
+    y += 15;
+
+    // Actionable Items
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("STRATEGIC ACTION ITEMS", margin, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    const tasks = Array.isArray(insights.tasks) ? insights.tasks : [];
+    if (tasks.length === 0) {
+       doc.text("- No open tasks detected.", margin, y);
+    } else {
+      tasks.forEach((t: any) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        const status = t.completed ? "[DONE] " : "[OPEN] ";
+        const tText = `${status}${t.title} (${t.assignee} / ${t.dueDate})`;
+        const tLines = doc.splitTextToSize(`• ${tText}`, 165);
+        doc.text(tLines, margin, y);
+        y += (tLines.length * 6) + 2;
+      });
+    }
+
+    y += 15;
+
+    // Full Meeting Script
+    if (selectedRec.transcript) {
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      doc.text("FULL MEETING SCRIPT", margin, y);
+      y += 10;
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(100, 116, 139); // slate-500
+      
+      const scriptLines = doc.splitTextToSize(`"${selectedRec.transcript}"`, 170);
+      scriptLines.forEach((line: string) => {
+        if (y > 280) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += 5;
+      });
+    }
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text("Confidential Intelligence Payload - Generated by Handysolver AudioCRM", 105, 290, { align: "center" });
+
+    doc.save(`Handysolver_Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
+  };
+
   return (
     <div className="flex-1 bg-slate-50 text-slate-900 min-h-full p-4 sm:p-6 lg:p-10 font-sans">
       <div className="max-w-[1400px] mx-auto">
@@ -273,19 +418,41 @@ export default function LeadInsights({ user }: { user: any }) {
              <Calendar size={16} className="text-slate-400" />
              <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Archive</span>
           </div>
-          {recordings.length > 0 ? recordings.map((rec) => {
-            const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown Date';
-            const isSelected = selectedRecId === rec.id;
-            return (
-              <button
-                key={rec.id}
-                onClick={() => setSelectedRecId(rec.id)}
-                className={`shrink-0 px-5 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border ${isSelected ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-600 hover:bg-white hover:border-slate-300 border-slate-100 hover:shadow-md'}`}
-              >
-                {dateStr}
-              </button>
-            );
-          }) : (
+          {recordings.length > 0 ? (
+            <>
+              {recordings.map((rec) => {
+                const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown Date';
+                const isSelected = selectedRecId === rec.id;
+                return (
+                  <button
+                    key={rec.id}
+                    onClick={() => setSelectedRecId(rec.id)}
+                    className={`shrink-0 px-5 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border ${isSelected ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-600 hover:bg-white hover:border-slate-300 border-slate-100 hover:shadow-md'}`}
+                  >
+                    {dateStr}
+                  </button>
+                );
+              })}
+              {selectedRec && (
+                <div className="ml-auto flex items-center gap-3 mr-4">
+                  <button 
+                    onClick={handleExportPDF}
+                    className="shrink-0 px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
+                  >
+                    <Download size={14} /> Download Report
+                  </button>
+                  <button 
+                    onClick={handleRegenerate}
+                    disabled={generatingAI}
+                    className="shrink-0 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                  >
+                    {generatingAI ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                    {generatingAI ? 'Processing...' : 'Regenerate Intelligence'}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
             <span className="text-sm font-bold text-amber-500 py-3 px-4 italic">No intelligence operations logged yet.</span>
           )}
         </div>
@@ -479,11 +646,11 @@ export default function LeadInsights({ user }: { user: any }) {
           </motion.div>
         )}
 
-        {/* Bottom Split (Tasks + Transcript) */}
+        {/* Bottom Split (Tasks + MOM + Transcript) */}
         <div className="flex flex-col xl:flex-row gap-6 mb-12">
           
           {/* Actionable Steps */}
-          <div className="xl:w-1/2 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col">
+          <div className="xl:w-1/3 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col">
             <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4">
               <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-500"><CheckSquare size={18} /></div> Actionable Path
@@ -500,64 +667,49 @@ export default function LeadInsights({ user }: { user: any }) {
                 const isEditingTask = editingItem?.field === 'tasks' && editingItem?.index === idx;
 
                 return (
-                  <div key={idx} className={`p-5 rounded-2xl border transition-all flex items-start gap-5 group/task ${task.completed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100 hover:border-indigo-100 shadow-sm hover:shadow-md'}`}>
+                  <div key={idx} className={`p-4 rounded-xl border transition-all flex items-start gap-4 group/task ${task.completed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100 hover:border-indigo-100 shadow-sm hover:shadow-md'}`}>
 
                     <button
                       onClick={() => handleTaskToggle(idx)}
-                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border-2 transition-colors ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/20' : 'bg-white border-slate-300 hover:border-indigo-400'}`}
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border-2 transition-colors ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-300'}`}
                     >
-                      {task.completed && <Check size={16} strokeWidth={4} />}
+                      {task.completed && <Check size={12} strokeWidth={4} />}
                     </button>
 
                     <div className="flex-1 min-w-0">
                       {isEditingTask ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           <input type="text" value={JSON.parse(editingItem.value || "{}").title} onChange={e => {
                             const parsed = JSON.parse(editingItem.value || "{}");
                             parsed.title = e.target.value;
                             setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                          }} className="w-full text-base font-bold bg-slate-50 border-2 border-slate-200 p-3 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all text-slate-800" placeholder="Task Title" />
-                          <div className="flex gap-3">
-                            <input type="text" value={JSON.parse(editingItem.value || "{}").assignee} onChange={e => {
-                              const parsed = JSON.parse(editingItem.value || "{}");
-                              parsed.assignee = e.target.value;
-                              setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                            }} className="w-1/2 text-xs font-semibold bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-600" placeholder="Assignee (e.g. Owner)" />
-                            <input type="text" value={JSON.parse(editingItem.value || "{}").dueDate} onChange={e => {
-                              const parsed = JSON.parse(editingItem.value || "{}");
-                              parsed.dueDate = e.target.value;
-                              setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                            }} className="w-1/2 text-xs font-semibold bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-600" placeholder="Due Date (e.g. Nov 24)" />
-                          </div>
-                          <div className="flex justify-end gap-2 pt-2">
-                            <button onClick={() => setEditingItem(null)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-xl transition-colors">Abort</button>
+                          }} className="w-full text-sm font-bold bg-slate-50 border border-slate-200 p-2 rounded-lg outline-none" />
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingItem(null)} className="px-2 py-1 text-[10px] font-bold text-slate-500">Abort</button>
                             <button onClick={async () => {
                               const parsed = JSON.parse(editingItem.value);
                               const newArr = [...insights.tasks];
                               newArr[idx] = parsed;
                               await saveInsights({ ...insights, tasks: newArr });
                               setEditingItem(null);
-                            }} className="px-4 py-2 text-xs font-bold bg-slate-900 text-white hover:bg-indigo-600 flex items-center gap-1.5 rounded-xl transition-all shadow-md active:scale-95"><Check size={14} /> Commit</button>
+                            }} className="px-2 py-1 text-[10px] font-bold bg-slate-900 text-white rounded-lg shadow-md">Commit</button>
                           </div>
                         </div>
                       ) : (
                         <div>
-                          <h4 className={`font-extrabold text-base mb-2 truncate ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{task.title}</h4>
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 border border-slate-200/60 text-[10px] font-black text-slate-500 uppercase tracking-widest shadow-sm">
-                            <span className="w-5 h-5 rounded-md bg-white text-indigo-500 flex items-center justify-center -ml-2 border-slate-200 border shadow-sm">{task.assignee?.charAt(0)}</span>
-                            {task.assignee} <span className="text-slate-300">•</span> T-Minus: <span className={task.dueDate?.toLowerCase().includes('today') || task.dueDate?.toLowerCase().includes('tomorrow') ? 'text-rose-500' : 'text-indigo-500'}>{task.dueDate}</span>
-                          </span>
+                          <h4 className={`font-extrabold text-sm mb-1 truncate ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{task.title}</h4>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{task.assignee} • {task.dueDate}</span>
                         </div>
                       )}
                     </div>
 
                     {!isEditingTask && (
-                      <div className="hidden group-hover/task:flex items-center gap-1.5 opacity-0 group-hover/task:opacity-100 transition-opacity">
-                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-2 text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-200 hover:border-indigo-200 rounded-xl transition-all">
-                          <Edit3 size={16} />
+                      <div className="hidden group-hover/task:flex items-center gap-1 opacity-0 group-hover/task:opacity-100">
+                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1 text-slate-400 hover:text-indigo-600 transition-all">
+                          <Edit3 size={14} />
                         </button>
-                        <button onClick={() => handleTaskDelete(idx)} className="p-2 text-slate-400 hover:text-red-500 bg-white shadow-sm border border-slate-200 hover:border-red-200 rounded-xl transition-all">
-                          <Trash2 size={16} />
+                        <button onClick={() => handleTaskDelete(idx)} className="p-1 text-slate-400 hover:text-red-500 transition-all">
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     )}
@@ -567,23 +719,70 @@ export default function LeadInsights({ user }: { user: any }) {
             </div>
           </div>
 
+          {/* Minutes of Meeting */}
+          <div className="xl:w-1/3 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col relative overflow-hidden group">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4 relative z-10">
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500"><AlignLeft size={18} /></div> Minutes of Meeting
+              </h3>
+              <button 
+                onClick={() => handleArrayAdd('meetingMinutes')}
+                className="p-2 bg-white text-slate-400 hover:text-indigo-600 shadow-sm rounded-xl transition-all border border-slate-200 hover:border-indigo-200"
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+            
+            <div className="space-y-4 flex-1">
+              {(Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : []).map((point: string, idx: number) => {
+                const isEditingThis = editingItem?.field === 'meetingMinutes' && editingItem?.index === idx;
+                return (
+                  <div key={idx} className="group/item relative bg-white p-4 rounded-xl border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all">
+                    {isEditingThis ? (
+                      <div className="flex flex-col gap-3">
+                        <textarea
+                          autoFocus
+                          className="w-full text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-4 focus:ring-indigo-500/10 resize-y min-h-[80px]"
+                          value={editingItem.value}
+                          onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
+                        />
+                        <div className="flex justify-end gap-2">
+                           <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[10px] font-black text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
+                           <button onClick={handleArraySave} className="px-3 py-1.5 text-[10px] font-black bg-slate-900 text-white hover:bg-indigo-600 rounded-lg shadow-sm flex items-center gap-1.5"><Check size={12}/> Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-4">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0"></div>
+                        <span className="block pr-14 text-sm font-semibold text-slate-600 leading-relaxed">{point}</span>
+                        <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
+                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12}/></button>
+                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-500 bg-slate-50 hover:bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12}/></button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Transcript Core */}
-          <div className="xl:w-1/2 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col relative overflow-hidden group">
+          <div className="xl:w-1/3 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col relative overflow-hidden group">
             <div className="absolute top-10 right-10 text-9xl text-slate-50 font-serif leading-none italic pointer-events-none select-none z-0 rotate-12 -mr-8 -mt-8">"</div>
             <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4 relative z-10">
               <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><AlignLeft size={18} /></div> Source Transcript
               </h3>
               {selectedRec && (
-                 <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white 
-                 text-slate-400 hover:text-purple-600 border border-slate-200 hover:border-purple-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-xs font-bold px-4">
+                 <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white text-slate-400 hover:text-purple-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
                     Open Full <ArrowUpRight size={14} />
                  </Link>
               )}
             </div>
-            <div className="flex-1 bg-slate-50/80 p-6 rounded-2xl border border-slate-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover:bg-slate-50 transition-colors">
+            <div className="flex-1 bg-slate-50/80 p-6 rounded-2xl border border-slate-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover:bg-slate-50 transition-colors scollbar-hide">
               {selectedRec?.transcript ? (
-                <p className="text-[15px] text-slate-600 font-medium leading-[1.8] italic select-text">
+                <p className="text-[14px] text-slate-600 font-medium leading-[1.8] italic select-text">
                   "{selectedRec.transcript}"
                 </p>
               ) : (
@@ -591,14 +790,12 @@ export default function LeadInsights({ user }: { user: any }) {
                    <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                       <Zap size={24} className="text-slate-300" />
                    </div>
-                   No dialogue payload detected in current partition.
+                   No dialogue payload detected.
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Global Footer */}
         <div className="bg-slate-900 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
           
