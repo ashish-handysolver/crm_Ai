@@ -158,7 +158,7 @@ export default function GuestRecord() {
           const fileUri = await uploadFileToGemini(blob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.0-flash',
             config: {
               responseMimeType: "application/json",
             },
@@ -168,16 +168,27 @@ export default function GuestRecord() {
             ]}],
           });
 
-          
-          const rawText = response.text || "{}";
+          // Robust parsing for unified SDK
+          let rawText = "{}";
+          const resAny = response as any;
+          if (resAny.text && typeof resAny.text === 'string') {
+            rawText = resAny.text;
+          } else if (resAny.text && typeof resAny.text === 'function') {
+            rawText = resAny.text();
+          } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+            rawText = resAny.response.text();
+          } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            rawText = resAny.response.candidates[0].content.parts[0].text;
+          }
+
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
           try {
             const parsed = JSON.parse(jsonStr);
-            transcriptText = parsed.fullText || 'No transcript generated.';
+            transcriptText = String(parsed.fullText || 'No transcript generated.');
             transcriptData = parsed.segments || [];
           } catch (e) {
             console.error("JSON Parse Error on Transcript:", e);
-            transcriptText = rawText;
+            transcriptText = String(rawText || 'No transcript generated.');
           }
         }
       } catch (err: any) {

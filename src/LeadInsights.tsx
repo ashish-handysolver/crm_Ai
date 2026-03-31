@@ -106,16 +106,35 @@ export default function LeadInsights({ user }: { user: any }) {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.0-flash',
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        const rawText = response.text || "{}";
+        // Robust parsing for unified SDK
+        let rawText = "{}";
+        const resAny = response as any;
+        if (resAny.text && typeof resAny.text === 'string') {
+          rawText = resAny.text;
+        } else if (resAny.text && typeof resAny.text === 'function') {
+          rawText = resAny.text();
+        } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+          rawText = resAny.response.text();
+        } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          rawText = resAny.response.candidates[0].content.parts[0].text;
+        }
+
         const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(jsonStr);
 
+        // Sanitize strings to avoid [object Object] or binary patterns
+        if (parsed.fullText) parsed.fullText = String(parsed.fullText);
+        if (parsed.overview) parsed.overview = String(parsed.overview);
+        if (Array.isArray(parsed.meetingMinutes)) {
+          parsed.meetingMinutes = parsed.meetingMinutes.map((m: any) => String(m));
+        }
+
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
-          parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
+          parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: !!t.completed }));
         }
 
         console.log("AI Results Produced:", parsed);
@@ -156,7 +175,7 @@ export default function LeadInsights({ user }: { user: any }) {
       const ai = new GoogleGenAI({ apiKey });
 
       const genResult = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.0-flash",
         config: {
           responseMimeType: "application/json",
         },
@@ -166,12 +185,24 @@ export default function LeadInsights({ user }: { user: any }) {
         ]}]
       });
 
-      const rawContent = genResult.text || "{}";
+      // Robust parsing for unified SDK
+      let rawContent = "{}";
+      const resAny = genResult as any;
+      if (resAny.text && typeof resAny.text === 'string') {
+        rawContent = resAny.text;
+      } else if (resAny.text && typeof resAny.text === 'function') {
+        rawContent = resAny.text();
+      } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+        rawContent = resAny.response.text();
+      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        rawContent = resAny.response.candidates[0].content.parts[0].text;
+      }
+
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 
       await updateDoc(doc(db, 'recordings', selectedRec.id), {
-        transcript: parsed.fullText || selectedRec.transcript,
+        transcript: String(parsed.fullText || selectedRec.transcript || ''),
         transcriptData: parsed.segments || []
       });
     } catch (err) {
@@ -394,10 +425,11 @@ export default function LeadInsights({ user }: { user: any }) {
       doc.text("FULL MEETING SCRIPT", margin, y);
       y += 10;
       doc.setFontSize(9);
-      doc.setFont("helvetica", "italic");
+      doc.setFont("helvetica", "normal"); // Avoid italic encoding bugs
       doc.setTextColor(100, 116, 139); // slate-500
       
-      const scriptLines = doc.splitTextToSize(`"${selectedRec.transcript}"`, 170);
+      const cleanTranscript = String(selectedRec.transcript || "").replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); // Remove control chars
+      const scriptLines = doc.splitTextToSize(`"${cleanTranscript}"`, 170);
       scriptLines.forEach((line: string) => {
         if (y > 280) { doc.addPage(); y = 20; }
         doc.text(line, margin, y);

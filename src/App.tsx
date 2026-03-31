@@ -220,7 +220,7 @@ const RecordingView = () => {
       const ai = new GoogleGenAI({ apiKey });
 
       const genResult = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.0-flash",
         config: {
           responseMimeType: "application/json",
         },
@@ -230,18 +230,30 @@ const RecordingView = () => {
         ]}]
       });
 
-      const rawContent = genResult.text || "{}";
+      // Robust parsing for unified SDK
+      let rawContent = "{}";
+      const resAny = genResult as any;
+      if (resAny.text && typeof resAny.text === 'string') {
+        rawContent = resAny.text;
+      } else if (resAny.text && typeof resAny.text === 'function') {
+        rawContent = resAny.text();
+      } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+        rawContent = resAny.response.text();
+      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        rawContent = resAny.response.candidates[0].content.parts[0].text;
+      }
+
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 
       await updateDoc(doc(db, 'recordings', id), {
-        transcript: parsed.fullText || recording.transcript,
+        transcript: String(parsed.fullText || recording.transcript || ''),
         transcriptData: parsed.segments || []
       });
 
       setRecording((prev: any) => ({
         ...prev,
-        transcript: parsed.fullText || prev.transcript,
+        transcript: String(parsed.fullText || prev.transcript || ''),
         transcriptData: parsed.segments || []
       }));
     } catch (err) {

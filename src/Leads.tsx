@@ -137,7 +137,7 @@ export default function Leads({ user }: { user: any }) {
           const fileUri = await uploadFileToGemini(audioBlob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash", 
+            model: "gemini-2.0-flash", 
             config: {
               responseMimeType: "application/json",
             },
@@ -152,17 +152,28 @@ export default function Leads({ user }: { user: any }) {
             ]
           });
           
-          const rawText = response.text || "{}";
-          // Still use extraction logic just in case, though mimeType helps
+          // Robust parsing for unified SDK
+          let rawText = "{}";
+          const resAny = response as any;
+          if (resAny.text && typeof resAny.text === 'string') {
+            rawText = resAny.text;
+          } else if (resAny.text && typeof resAny.text === 'function') {
+            rawText = resAny.text();
+          } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+            rawText = resAny.response.text();
+          } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            rawText = resAny.response.candidates[0].content.parts[0].text;
+          }
+
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
           try {
             const parsed = JSON.parse(jsonStr);
-            transcriptText = parsed.fullText || "No transcript generated.";
+            transcriptText = String(parsed.fullText || "No transcript generated.");
             transcriptData = parsed.segments || [];
           } catch (e) {
             console.error("JSON Parse Error on Transcript:", e);
-            transcriptText = rawText; // Fallback
+            transcriptText = String(rawText || "No transcript generated."); // Fallback
           }
         }
       } catch (e: any) {
@@ -737,6 +748,16 @@ export default function Leads({ user }: { user: any }) {
                                      <Link to={`/analytics/${lead.id}`} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-100 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">
                                        <BarChart3 size={14} /> Full Details
                                      </Link>
+                                    
+                                    {(role === 'admin' || role === 'super_admin') && (
+                                      <button 
+                                        onClick={() => handleDeleteLead(lead.id)}
+                                        className="flex items-center gap-2 text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-100 hover:border-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
+                                      >
+                                        <Trash2 size={14} /> Delete Lead
+                                      </button>
+                                    )}
+
                                     {shareUrls[lead.id] ? (
                                       <div className="flex items-center gap-2 w-64 bg-white rounded-xl shadow-inner border border-slate-200 p-1">
                                         <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none" />
