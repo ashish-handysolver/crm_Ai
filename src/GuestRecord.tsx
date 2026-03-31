@@ -150,7 +150,15 @@ export default function GuestRecord() {
       const generatedId = uuidv4().slice(0, 8);
       const storageRef = ref(storage, `recordings/${generatedId}/audio.webm`);
       await uploadBytes(storageRef, blob);
-      const audioUrl = await getDownloadURL(storageRef);
+      
+      let audioUrl = "";
+      try {
+        audioUrl = await getDownloadURL(storageRef);
+      } catch (dlErr) {
+        console.warn("getDownloadURL failed due to bucket CORS. Using manual Public URL fallback.", dlErr);
+        // Fallback to direct public access URL. This bypasses the SDK's metadata XHR fetch.
+        audioUrl = `https://firebasestorage.googleapis.com/v0/b/${storageRef.bucket}/o/${encodeURIComponent(storageRef.fullPath)}?alt=media`;
+      }
 
       let transcriptText = 'No transcript generated.';
       let transcriptData = null;

@@ -8,6 +8,7 @@ interface AuthContextType {
   companyId: string | null;
   companyName: string | null;
   role: string | null;
+  active: boolean;
   onboardingComplete: boolean;
   loading: boolean;
 }
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   companyId: null,
   companyName: null,
   role: null,
+  active: true,
   onboardingComplete: true, // Default to true to avoid flicker
   loading: true
 });
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [active, setActive] = useState(true);
   const [onboardingComplete, setOnboardingComplete] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -51,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
             
             setOnboardingComplete(userData.onboardingComplete === true);
+            setActive(userData.active !== false); // Default to true if field missing
             
             if (userData.companyId) {
               getDoc(doc(db, 'companies', userData.companyId)).then((companyDoc) => {
@@ -88,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, companyId, companyName, role, onboardingComplete, loading }}>
+    <AuthContext.Provider value={{ user, companyId, companyName, role, active, onboardingComplete, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
-import { ref, getBytes } from 'firebase/storage';
+import { ref } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
@@ -100,26 +100,25 @@ export default function LeadInsights({ user }: { user: any }) {
 
         const ai = new GoogleGenAI({ apiKey });
         const prompt = `
-          Analyze this sales call transcript and extract actionable intelligence. 
+          Analyze this call and give simple insights. 
           Respond ONLY in strict JSON format. 
-          IMPORTANT: ALL generated insights and content MUST be in English, regardless of the transcript language.
+          IMPORTANT: ALL content MUST be in English.
 
-          Focus specifically on creating high-quality "meetingMinutes" which should be a comprehensive, bulleted summary of the discussion. 
-          Ensure every key topic, decision, and question from the meeting script is captured as a separate point in "meetingMinutes".
+          Focus on creating "meetingMinutes" which should be a simple list of what was talked about.
           
           Transcript: "${selectedRec.transcript}"
           
           Required JSON Structure:
           {
-            "painPoints": ["Identify friction points or obstacles mentioned by the lead"],
-            "requirements": ["List the core objectives and requirements shared by the lead"],
-            "nextActions": ["Determine strategic vectors and next logical steps for the sales process"],
-            "improvements": ["Suggest conversion boosters or specific areas to optimize for better conversion"],
-            "meetingMinutes": ["Key discussion point from call...", "Decision made regarding...", "Client asked about...", "Action agreed on..."],
-            "overview": "A concise 3-sentence executive summary of the prospect's situation and goals.",
+            "painPoints": ["Identify any issues or problems mentioned"],
+            "requirements": ["List the main goals or needs of the client"],
+            "nextActions": ["What are the next steps to take?"],
+            "improvements": ["Give some tips to help close the deal"],
+            "meetingMinutes": ["Key point 1...", "Key point 2...", "Task agreed on..."],
+            "overview": "A very simple 3-sentence summary of the situation.",
             "sentiment": "Positive",
             "tasks": [
-              { "title": "Actionable path item", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
+              { "title": "What to do next", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
             ]
           }
         `;
@@ -217,9 +216,10 @@ export default function LeadInsights({ user }: { user: any }) {
       const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
       if (!apiKey) return;
 
-      const storageRef = ref(storage, selectedRec.audioUrl);
-      const buffer = await getBytes(storageRef);
-      const blob = new Blob([buffer], { type: 'audio/webm' });
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(selectedRec.audioUrl)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to explicitly fetch audio via proxy");
+      const blob = await response.blob();
 
       const fileUri = await uploadFileToGemini(blob, apiKey);
       const ai = new GoogleGenAI({ apiKey });
@@ -412,7 +412,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Executive Summary
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("AI EXECUTIVE SUMMARY", margin, y);
+    doc.text("AI SUMMARY", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -423,7 +423,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Minutes of Meeting
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("MINUTES OF MEETING", margin, y);
+    doc.text("CALL NOTES", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -446,7 +446,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Actionable Items
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("STRATEGIC ACTION ITEMS", margin, y);
+    doc.text("NEXT STEPS", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -470,10 +470,10 @@ export default function LeadInsights({ user }: { user: any }) {
 
     // Detailed Intelligence Pillars
     const sections = [
-      { title: "FRICTION POINTS", data: insights.painPoints },
-      { title: "CORE OBJECTIVES", data: insights.requirements },
-      { title: "STRATEGIC VECTORS", data: insights.nextActions },
-      { title: "CONVERSION BOOSTERS", data: insights.improvements },
+      { title: "ISSUES", data: insights.painPoints },
+      { title: "GOALS", data: insights.requirements },
+      { title: "STEPS", data: insights.nextActions },
+      { title: "TIPS", data: insights.improvements },
     ];
 
     sections.forEach(section => {
@@ -509,7 +509,7 @@ export default function LeadInsights({ user }: { user: any }) {
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      doc.text("FULL MEETING SCRIPT", margin, y);
+      doc.text("TRANSCRIPT", margin, y);
       y += 10;
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal"); // Avoid italic encoding bugs
@@ -527,49 +527,49 @@ export default function LeadInsights({ user }: { user: any }) {
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184); // slate-400
-    doc.text("Confidential Intelligence Payload - Generated by Handysolver AudioCRM", 105, 290, { align: "center" });
+    doc.text("AI Report - Generated by Handysolver", 105, 290, { align: "center" });
 
-    doc.save(`Handysolver_Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
   };
 
   return (
     <div className="flex-1 bg-slate-50 text-slate-900 min-h-full p-4 sm:p-6 lg:p-10 font-sans">
       <div className="max-w-[1400px] mx-auto">
         <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors mb-6 group">
-          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Intelligence Ledger
+          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Clients
         </Link>
 
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="text-[10px] font-extrabold text-blue-500 tracking-widest uppercase mb-3 flex items-center gap-2">
-              <Zap size={14} className="animate-pulse" /> Automation Protocol Active
+              <Zap size={14} className="animate-pulse" /> AI Active
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-none">
-              {lead.company || lead.name} <span className="text-slate-400 font-light">Dossier</span>
+              {lead.company || lead.name} <span className="text-slate-400 font-light">Profile</span>
             </h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Lead Disposition</div>
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Status</div>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
-                {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Dead' : 'Active Engagement'}
+                {lead.status === 'Won' ? 'Won' : lead.status === 'Lost' ? 'Lost' : 'Talking'}
               </span>
             </div>
             <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Call Sentiment</div>
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Mood</div>
               <select
                 value={insights.sentiment}
                 onChange={handleSentimentChange}
                 className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] appearance-none cursor-pointer outline-none transition-colors ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100/50' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'}`}
                 disabled={!selectedRec}
               >
-                <option value="Positive">Positive Vectors</option>
-                <option value="Neutral">Neutral Vectors</option>
-                <option value="Negative">Negative Vectors</option>
-                <option value="Analyzing...">Pending Analysis</option>
+                <option value="Positive">Good</option>
+                <option value="Neutral">Okay</option>
+                <option value="Negative">Bad</option>
+                <option value="Analyzing...">Analyzing...</option>
               </select>
             </div>
           </motion.div>
@@ -579,7 +579,7 @@ export default function LeadInsights({ user }: { user: any }) {
         <div className="bg-white rounded-3xl p-2 mb-8 flex flex-nowrap items-center gap-2 overflow-x-auto shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 scollbar-hide">
           <div className="pl-4 pr-6 shrink-0 flex items-center gap-2 border-r border-slate-100">
             <Calendar size={16} className="text-slate-400" />
-            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Archive</span>
+            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">History</span>
           </div>
           {recordings.length > 0 ? (
             <>

@@ -3,9 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, AudioLines, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  signOut
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -20,7 +22,21 @@ export default function Login() {
     setError('');
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if user is active in Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.active === false) {
+          await signOut(auth);
+          setError("Contact admin: your account is deactivated.");
+          setLoading(false);
+          return;
+        }
+      }
+      
       navigate('/');
     } catch (err: any) {
       console.error("Login Error:", err);

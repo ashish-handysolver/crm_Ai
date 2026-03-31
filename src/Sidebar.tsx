@@ -81,15 +81,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-2">Overview</div>
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" colorClass="text-blue-400" hoverBgClass="" />
           <NavItem onClick={onClose} to="/clients" icon={<Users />} label="Clients" colorClass="text-indigo-400" hoverBgClass="" />
-          <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Upload Audio" colorClass="text-emerald-400" hoverBgClass="" />
+          <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Add Info" colorClass="text-emerald-400" hoverBgClass="" />
           
           
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Media</div>
-          <NavItem onClick={onClose} to="/history" icon={<History />} label="Recordings" colorClass="text-slate-300" hoverBgClass="" />
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Social</div>
+          <NavItem onClick={onClose} to="/history" icon={<History />} label="History" colorClass="text-slate-300" hoverBgClass="" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" colorClass="text-violet-400" hoverBgClass="" />
           
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Manage</div>
-          <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Admin Settings" colorClass="text-slate-300" hoverBgClass="" />
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 mb-4 mt-8">Config</div>
+          <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Settings" colorClass="text-slate-300" hoverBgClass="" />
         </nav>
 
         {/* Bottom fading edge */}

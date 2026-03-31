@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -129,7 +129,7 @@ export default function Leads({ user }: { user: any }) {
       audioUrl = await getDownloadURL(storageRef);
 
       // 2. Transcription logic via Gemini File API
-      let transcriptText = "No transcript generated.";
+      let transcriptText = "No info generated.";
       let transcriptData = null;
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
@@ -190,7 +190,7 @@ export default function Leads({ user }: { user: any }) {
         companyId, 
         leadId
       });
-      setSuccess("Call recorded securely!"); 
+      setSuccess("Call recorded safely!"); 
       setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
        console.error(err);
@@ -470,7 +470,8 @@ export default function Leads({ user }: { user: any }) {
                             </button>
                           )}
                           <Link to={`/analytics/${lead.id}`} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                            DETAILS <ArrowUpRight size={12} />
+                            <Sparkles size={12} />
+                            GET INSIGHTS
                           </Link>
                         </div>
                       </div>
@@ -495,7 +496,7 @@ export default function Leads({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/50 text-indigo-600 text-[10px] font-bold uppercase tracking-widest mb-3 border border-indigo-200/50">
               <TrendingUp size={14} className="animate-pulse" /> Clients
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Client List</h1>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Your Clients</h1>
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3">
             <div className="flex gap-3">
@@ -532,14 +533,16 @@ export default function Leads({ user }: { user: any }) {
         {/* Toolbar */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="relative w-full max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search clients, company..."
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
-            />
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                <Search size={22} strokeWidth={2.5} />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search by name, company, or info..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white border-2 border-slate-100 rounded-3xl py-5 pl-14 pr-6 text-base font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-8 focus:ring-indigo-500/5 transition-all shadow-sm"
+              />
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
