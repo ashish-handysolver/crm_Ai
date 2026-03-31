@@ -106,7 +106,7 @@ export default function LeadInsights({ user }: { user: any }) {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.0-flash-lite',
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
@@ -150,7 +150,7 @@ export default function LeadInsights({ user }: { user: any }) {
     };
 
     generateInsights();
-  }, [selectedRec, generatingAI]);
+  }, [selectedRec?.id]);
 
   const handleRegenerate = async () => {
     if (!selectedRec) return;
@@ -175,7 +175,7 @@ export default function LeadInsights({ user }: { user: any }) {
       const ai = new GoogleGenAI({ apiKey });
 
       const genResult = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.0-flash-lite",
         config: {
           responseMimeType: "application/json",
         },
