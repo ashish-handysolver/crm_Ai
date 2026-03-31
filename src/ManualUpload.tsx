@@ -66,6 +66,7 @@ export default function ManualUpload({ user }: { user: any }) {
       }
 
       // If audio file but NO transcript -> Gemini (using File API)
+      let transcriptData = null;
       if (audioFile && !finalTranscript) {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
         if (apiKey) {
@@ -73,17 +74,31 @@ export default function ManualUpload({ user }: { user: any }) {
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: "gemini-1.5-flash",
+            config: {
+              responseMimeType: "application/json",
+            },
             contents: [
               {
                 role: 'user',
                 parts: [
-                  { text: 'Please transcribe this manually uploaded recording of a sales/lead call. Provide only the text.' },
+                  { text: 'Transcribe this manually uploaded recording of a sales/lead call. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY the raw JSON string.' },
                   { fileData: { mimeType: audioFile.type || "audio/webm", fileUri } }
                 ]
               }
             ]
           });
-          finalTranscript = response.text || 'No transcript generated.';
+
+
+          const rawText = response.text || "{}";
+          const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          try {
+            const parsed = JSON.parse(jsonStr);
+            finalTranscript = parsed.fullText || 'No transcript generated.';
+            transcriptData = parsed.segments || [];
+          } catch (e) {
+            console.error("JSON Parse Error on Transcript:", e);
+            finalTranscript = rawText;
+          }
         } else {
           throw new Error("Cannot transcribe audio without Gemini API key. Please type a transcript manually.");
         }
@@ -93,8 +108,9 @@ export default function ManualUpload({ user }: { user: any }) {
 
       const recordingDoc: any = {
         id: generatedId,
-        audioUrl: audioUrl, // Use URL instead of base64 binary
+        audioUrl: audioUrl,
         transcript: finalTranscript,
+        transcriptData,
         createdAt: Timestamp.now(),
         companyId: companyId,
         leadId: selectedLeadId

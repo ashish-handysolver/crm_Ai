@@ -151,6 +151,7 @@ export default function GuestRecord() {
       const audioUrl = await getDownloadURL(storageRef);
 
       let transcriptText = 'No transcript generated.';
+      let transcriptData = null;
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
         if (apiKey) {
@@ -158,19 +159,33 @@ export default function GuestRecord() {
           const ai = new GoogleGenAI({ apiKey });
           const response = await ai.models.generateContent({
             model: 'gemini-1.5-flash',
+            config: {
+              responseMimeType: "application/json",
+            },
             contents: [{ role: 'user', parts: [
-              { text: 'Please transcribe this audio recording of a sales/lead call. Provide only the text.' },
+              { text: 'Transcribe this audio recording of a sales/lead call. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY the raw JSON string.' },
               { fileData: { mimeType: blob.type || 'audio/webm', fileUri } },
             ]}],
           });
-          transcriptText = response.text || 'No transcript generated.';
+
+          
+          const rawText = response.text || "{}";
+          const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          try {
+            const parsed = JSON.parse(jsonStr);
+            transcriptText = parsed.fullText || 'No transcript generated.';
+            transcriptData = parsed.segments || [];
+          } catch (e) {
+            console.error("JSON Parse Error on Transcript:", e);
+            transcriptText = rawText;
+          }
         }
       } catch (err: any) {
         setError('Transcription failed: ' + (err.message || 'Unknown error') + '. Saving audio anyway…');
       }
 
       const recordingDoc: any = {
-        id: generatedId, audioUrl, transcript: transcriptText,
+        id: generatedId, audioUrl, transcript: transcriptText, transcriptData,
         createdAt: Timestamp.now(), companyId: meeting.companyId,
       };
       if (meetingId) recordingDoc.meetingId = meetingId;

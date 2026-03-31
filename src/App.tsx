@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download } from 'lucide-react';
+import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadFileToGemini } from './utils/gemini';
 import {
   collection,
   doc,
@@ -17,13 +18,17 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import {
+  ref,
+  getBytes
+} from 'firebase/storage';
+import {
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
   signOut,
   User
 } from 'firebase/auth';
-import { db, auth } from './firebase';
+import { db, auth, storage } from './firebase';
 import Leads from './Leads';
 import Sidebar from './Sidebar';
 import LeadForm from './LeadForm';
@@ -44,6 +49,7 @@ import Profile from './Profile';
 import SuperAdmin from './SuperAdmin';
 import SuperLogin from './SuperLogin';
 import Settings from './Settings';
+import TranscriptPlayer from './TranscriptPlayer';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider } from './DemoContext';
@@ -113,11 +119,12 @@ const HistoryView = ({ user }: { user: User }) => {
     if (!companyId) return;
     const q = query(
       collection(db, 'recordings'),
-      where('companyId', '==', companyId),
-      orderBy('createdAt', 'desc')
+      where('companyId', '==', companyId)
     );
     const unsub = onSnapshot(q, (snapshot) => {
-      setRecordings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+      data.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      setRecordings(data);
     });
     return unsub;
   }, [companyId]);
@@ -195,6 +202,54 @@ const RecordingView = () => {
   const { id } = useParams();
   const [recording, setRecording] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    if (!recording || !recording.audioUrl || isSyncing || !id) return;
+    setIsSyncing(true);
+    try {
+      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+      if (!apiKey) return;
+      
+      const storageRef = ref(storage, recording.audioUrl);
+      const buffer = await getBytes(storageRef);
+      const blob = new Blob([buffer], { type: 'audio/webm' });
+
+      const fileUri = await uploadFileToGemini(blob, apiKey);
+
+      const ai = new GoogleGenAI({ apiKey });
+
+      const genResult = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        config: {
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: 'user', parts: [
+          { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY JSON." },
+          { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
+        ]}]
+      });
+
+      const rawContent = genResult.text || "{}";
+      const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(jsonStr);
+
+      await updateDoc(doc(db, 'recordings', id), {
+        transcript: parsed.fullText || recording.transcript,
+        transcriptData: parsed.segments || []
+      });
+
+      setRecording((prev: any) => ({
+        ...prev,
+        transcript: parsed.fullText || prev.transcript,
+        transcriptData: parsed.segments || []
+      }));
+    } catch (err) {
+      console.error("Transcription sync failed:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRec = async () => {
@@ -227,19 +282,37 @@ const RecordingView = () => {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Interaction Transcript</h1>
             <p className="text-slate-500 font-medium mt-1">Generated: {recording.createdAt?.toDate?.().toLocaleString()}</p>
           </div>
-          <button 
-             onClick={() => window.print()}
-             className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10"
-          >
-             <FileText size={18} /> Export PDF
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button 
+               onClick={handleSync}
+               disabled={isSyncing}
+               className="px-6 py-3 bg-white text-indigo-600 border border-slate-200 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg shadow-slate-200/5 disabled:opacity-50"
+            >
+               {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
+               {isSyncing ? 'Processing...' : 'Regenerate Transcript'}
+            </button>
+            <button 
+               onClick={() => window.print()}
+               className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10"
+            >
+               <FileText size={18} /> Export PDF
+            </button>
+          </div>
         </header>
 
         <section className="space-y-10">
           <div>
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Original Dialogue</h2>
             <div className="bg-slate-50/50 p-8 rounded-[2rem] border border-slate-100/50 text-slate-700 leading-[1.8] font-medium text-lg whitespace-pre-wrap">
-              {recording.transcript || "No transcript version encoded for this entry."}
+              {recording.transcript ? (
+                <TranscriptPlayer 
+                  audioUrl={recording.audioUrl}
+                  transcriptData={recording.transcriptData}
+                  fallbackText={recording.transcript}
+                />
+              ) : (
+                "No transcript version encoded for this entry."
+              )}
             </div>
           </div>
 

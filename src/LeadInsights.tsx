@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
+import { ref, getBytes } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
-import { db } from './firebase';
+import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock, RotateCcw, Download } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
+import TranscriptPlayer from './TranscriptPlayer';
+import { uploadFileToGemini } from './utils/gemini';
 
 export default function LeadInsights({ user }: { user: any }) {
   const { id } = useParams();
@@ -15,6 +18,7 @@ export default function LeadInsights({ user }: { user: any }) {
   const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [syncingTranscript, setSyncingTranscript] = useState(false);
 
   const [editingItem, setEditingItem] = useState<{ field: string, index: number, value: string } | null>(null);
   const [editingOverview, setEditingOverview] = useState<string | null>(null);
@@ -135,6 +139,46 @@ export default function LeadInsights({ user }: { user: any }) {
     await updateDoc(doc(db, 'recordings', selectedRec.id), {
       aiInsights: deleteField()
     });
+  };
+
+  const handleSyncTranscript = async () => {
+    if (!selectedRec || !selectedRec.audioUrl || syncingTranscript) return;
+    setSyncingTranscript(true);
+    try {
+      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+      if (!apiKey) return;
+
+      const storageRef = ref(storage, selectedRec.audioUrl);
+      const buffer = await getBytes(storageRef);
+      const blob = new Blob([buffer], { type: 'audio/webm' });
+
+      const fileUri = await uploadFileToGemini(blob, apiKey);
+      const ai = new GoogleGenAI({ apiKey });
+
+      const genResult = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        config: {
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: 'user', parts: [
+          { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
+          { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
+        ]}]
+      });
+
+      const rawContent = genResult.text || "{}";
+      const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(jsonStr);
+
+      await updateDoc(doc(db, 'recordings', selectedRec.id), {
+        transcript: parsed.fullText || selectedRec.transcript,
+        transcriptData: parsed.segments || []
+      });
+    } catch (err) {
+      console.error("Transcription sync failed:", err);
+    } finally {
+      setSyncingTranscript(false);
+    }
   };
 
 
@@ -435,6 +479,14 @@ export default function LeadInsights({ user }: { user: any }) {
               })}
               {selectedRec && (
                 <div className="ml-auto flex items-center gap-3 mr-4">
+                  <button 
+                    onClick={handleSyncTranscript}
+                    disabled={syncingTranscript}
+                    className="shrink-0 px-6 py-3 rounded-2xl bg-white text-indigo-500 hover:text-indigo-600 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-100 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                  >
+                    {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                    {syncingTranscript ? 'Transcribing...' : 'Regenerate Transcript'}
+                  </button>
                   <button 
                     onClick={handleExportPDF}
                     className="shrink-0 px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
@@ -774,17 +826,31 @@ export default function LeadInsights({ user }: { user: any }) {
               <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><AlignLeft size={18} /></div> Source Transcript
               </h3>
-              {selectedRec && (
-                 <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white text-slate-400 hover:text-purple-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
-                    Open Full <ArrowUpRight size={14} />
-                 </Link>
-              )}
+              <div className="flex gap-2">
+                {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
+                  <button 
+                    onClick={handleSyncTranscript}
+                    disabled={syncingTranscript}
+                    className="p-2 bg-white text-indigo-500 hover:text-indigo-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                    {syncingTranscript ? 'Syncing...' : 'Sync Subtitles'}
+                  </button>
+                )}
+                {selectedRec && (
+                   <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white text-slate-400 hover:text-purple-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
+                      Open Full <ArrowUpRight size={14} />
+                   </Link>
+                )}
+              </div>
             </div>
             <div className="flex-1 bg-slate-50/80 p-6 rounded-2xl border border-slate-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover:bg-slate-50 transition-colors scollbar-hide">
               {selectedRec?.transcript ? (
-                <p className="text-[14px] text-slate-600 font-medium leading-[1.8] italic select-text">
-                  "{selectedRec.transcript}"
-                </p>
+                <TranscriptPlayer 
+                  audioUrl={selectedRec.audioUrl}
+                  transcriptData={selectedRec.transcriptData}
+                  fallbackText={selectedRec.transcript}
+                />
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 font-medium italic overflow-hidden">
                    <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
