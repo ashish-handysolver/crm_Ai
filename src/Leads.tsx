@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadFileToGemini } from './utils/gemini';
-import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
 import { CustomFieldDef } from './CustomFields';
@@ -23,7 +23,7 @@ const DUMMY_LEADS = [
 ];
 
 export default function Leads({ user }: { user: any }) {
-  const { companyId } = useAuth();
+  const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [leads, setLeads] = useState<any[]>(DUMMY_LEADS);
@@ -311,6 +311,35 @@ export default function Leads({ user }: { user: any }) {
     }
   };
 
+  const handleDeleteLead = async (leadId: string) => {
+    if (!window.confirm("Are you sure you want to delete this lead? This will also remove all associated recordings and meetings.")) return;
+    
+    try {
+      setLoadingLeads(true);
+      const qRecs = query(collection(db, 'recordings'), where('leadId', '==', leadId));
+      const recSnap = await getDocs(qRecs);
+      for (const d of recSnap.docs) {
+        await deleteDoc(doc(db, 'recordings', d.id));
+      }
+      
+      const qMtgs = query(collection(db, 'meetings'), where('leadId', '==', leadId));
+      const mtgSnap = await getDocs(qMtgs);
+      for (const d of mtgSnap.docs) {
+        await deleteDoc(doc(db, 'meetings', d.id));
+      }
+      
+      await deleteDoc(doc(db, 'leads', leadId));
+      
+      setSuccess("Lead and all associated data successfully deleted.");
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete lead.");
+    } finally {
+      setLoadingLeads(false);
+    }
+  };
+
   const handleImport = () => {
     setIsImportModalOpen(true);
   };
@@ -386,9 +415,20 @@ export default function Leads({ user }: { user: any }) {
                            {lead.score || 0} AI
                         </div>
 
-                        <Link to={`/analytics/${lead.id}`} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                          DETAILS <ArrowUpRight size={12} />
-                        </Link>
+                        <div className="flex items-center gap-1">
+                          {(role === 'admin' || role === 'super_admin') && (
+                            <button 
+                              onClick={() => handleDeleteLead(lead.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                              title="Delete Lead"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                          <Link to={`/analytics/${lead.id}`} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                            DETAILS <ArrowUpRight size={12} />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -543,18 +583,27 @@ export default function Leads({ user }: { user: any }) {
                                  </button>
                                </div>
                              ) : (
+                                 <button 
+                                   onClick={() => startRecording(lead.id)}
+                                   className="p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2 font-bold text-xs"
+                                   title="Start Session"
+                                   disabled={!!recordingId}
+                                 >
+                                   <Mic size={16} /> Record
+                                 </button>
+                             )}
+                             <Link to={`/clients/${lead.id}/edit`} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+                               <Edit2 size={18} />
+                             </Link>
+                             {(role === 'admin' || role === 'super_admin') && (
                                <button 
-                                 onClick={() => startRecording(lead.id)}
-                                 className="p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2 font-bold text-xs"
-                                 title="Start Session"
-                                 disabled={!!recordingId}
+                                 onClick={() => handleDeleteLead(lead.id)}
+                                 className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                 title="Delete Lead"
                                >
-                                 <Mic size={16} /> Record
+                                 <Trash2 size={18} />
                                </button>
                              )}
-                            <Link to={`/clients/${lead.id}/edit`} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
-                              <Edit2 size={18} />
-                            </Link>
                            </>
                          )}
                          {isDemoMode && (
@@ -633,9 +682,18 @@ export default function Leads({ user }: { user: any }) {
                         </td> */}
                         <td className="py-5 px-8 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-indigo-100">
-                              <Edit2 size={16} />
-                            </Link>
+                             <Link to={`/clients/${lead.id}/edit`} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-indigo-100">
+                               <Edit2 size={16} />
+                             </Link>
+                             {(role === 'admin' || role === 'super_admin') && (
+                               <button 
+                                 onClick={() => handleDeleteLead(lead.id)}
+                                 className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100"
+                                 title="Delete Lead"
+                               >
+                                 <Trash2 size={16} />
+                               </button>
+                             )}
 
                              {isTranscribing && recordingId === null ? (
                                <div className="w-9 h-9 flex items-center justify-center bg-indigo-50 rounded-xl"><Loader2 size={16} className="animate-spin text-indigo-500" /></div>
