@@ -67,7 +67,7 @@ export default function SuperLogin() {
     <div className="min-h-screen bg-[#0A0D14] flex items-center justify-center p-4 font-sans selection:bg-rose-500 selection:text-white">
       {/* Background Glows */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/10 rounded-full blur-[120px]"></div>
+        <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-orange-500/10 rounded-full blur-[120px]"></div>
         <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-rose-500/10 rounded-full blur-[100px]"></div>
       </div>
 
@@ -84,7 +84,7 @@ export default function SuperLogin() {
           <p className="text-slate-400 font-medium">Access for authorized admins only</p>
         </div>
 
-        <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl">
+        <div className="bg-orange-50/[0.03] backdrop-blur-xl border border-orange-50/10 p-8 rounded-[2.5rem] shadow-2xl">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Email Address</label>
@@ -98,7 +98,7 @@ export default function SuperLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@system.com"
-                  className="w-full pl-12 pr-5 py-4 bg-white/5 border border-white/5 rounded-2xl text-white placeholder:text-slate-600 font-semibold focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all"
+                  className="w-full pl-12 pr-5 py-4 bg-orange-50/5 border border-orange-50/5 rounded-2xl text-white placeholder:text-slate-600 font-semibold focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all"
                 />
               </div>
             </div>
@@ -115,7 +115,7 @@ export default function SuperLogin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-12 pr-5 py-4 bg-white/5 border border-white/5 rounded-2xl text-white placeholder:text-slate-600 font-semibold focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all"
+                  className="w-full pl-12 pr-5 py-4 bg-orange-50/5 border border-orange-50/5 rounded-2xl text-white placeholder:text-slate-600 font-semibold focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all"
                 />
               </div>
             </div>

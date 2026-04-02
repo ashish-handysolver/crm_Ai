@@ -17,7 +17,7 @@ export interface CustomFieldDef {
 }
 
 const DEFAULT_SOURCES = ['LINKEDIN', 'REFERRAL', 'DIRECT', 'WEBSITE'];
-const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
+const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
 const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
 
 export default function CustomFields({ user }: { user: any }) {
@@ -136,25 +136,25 @@ export default function CustomFields({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
+        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
       </div>
     );
   }
 
-  const inputClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-sm text-slate-700 shadow-sm";
+  const inputClasses = "w-full px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 focus:bg-orange-50 outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-400 transition-all font-semibold text-sm text-slate-700 shadow-sm";
   const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block";
 
   return (
-    <div className="flex-1 bg-[#F9FBFF] text-slate-900 p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+    <div className="flex-1 bg-[#F9FBFF] text-black p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
       <div className="max-w-5xl mx-auto">
 
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-[10px] font-black text-indigo-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
-              <Sparkles size={14} className="fill-indigo-500 animate-pulse" /> Logic Vector Configuration
+            <div className="text-[10px] font-black text-orange-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
+              <Sparkles size={14} className="fill-orange-500 animate-pulse" /> Logic Vector Configuration
             </div>
-            <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900">System Parameters</h3>
+            <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-black">System Parameters</h3>
             <p className="text-slate-500 mt-4 text-lg font-medium max-w-xl leading-relaxed">
               Update Data Storage & Grouping
             </p>
@@ -164,7 +164,7 @@ export default function CustomFields({ user }: { user: any }) {
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
             onClick={handleSave}
             disabled={saving || isDemoMode}
-            className="shrink-0 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+            className="shrink-0 bg-black text-white px-10 py-4 rounded-2xl font-black hover:bg-orange-600 transition-all shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
             {isDemoMode ? 'Readonly Mode' : 'Save'}
@@ -184,17 +184,17 @@ export default function CustomFields({ user }: { user: any }) {
 
           {/* Main Custom Fields Column */}
           <div className="lg:col-span-2 space-y-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-indigo-100/50"></div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] overflow-hidden relative group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-orange-100/50"></div>
 
               <div className="p-8 sm:p-10 relative z-10">
-                <div className="flex items-center justify-between mb-10 pb-4 border-b border-slate-50">
+                <div className="flex items-center justify-between mb-10 pb-4 border-b border-orange-50">
                   <h2 className="text-base font-black text-slate-800 uppercase tracking-[0.15em] flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner"><Settings size={16} /></div>
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shadow-inner"><Settings size={16} /></div>
                     Custom Data Vectors
                   </h2>
                   {!isDemoMode && (
-                    <button onClick={addField} className="text-xs font-black text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 rounded-lg transition-all active:scale-95">
+                    <button onClick={addField} className="text-xs font-black text-orange-500 hover:text-orange-700 flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 rounded-lg transition-all active:scale-95">
                       <Plus size={14} /> Add New Fields
                     </button>
                   )}
@@ -203,8 +203,8 @@ export default function CustomFields({ user }: { user: any }) {
                 <div className="space-y-6">
                   <AnimatePresence>
                     {fields.length === 0 ? (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 px-10 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-200 shadow-sm"><Wand2 size={28} /></div>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 px-10 bg-orange-50/50 rounded-3xl border-2 border-dashed border-orange-100 flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-center text-slate-200 shadow-sm"><Wand2 size={28} /></div>
                         <p className="text-slate-400 font-bold italic text-sm">No custom field definitions detected in the matrix.</p>
                       </motion.div>
                     ) : fields.map((field, idx) => (
@@ -213,7 +213,7 @@ export default function CustomFields({ user }: { user: any }) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl flex flex-col gap-6 relative group/field hover:bg-white hover:border-indigo-100 transition-all duration-300"
+                        className="p-6 bg-orange-50/50 border border-orange-100 rounded-3xl flex flex-col gap-6 relative group/field hover:bg-orange-50 hover:border-orange-100 transition-all duration-300"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
@@ -234,12 +234,12 @@ export default function CustomFields({ user }: { user: any }) {
                           {field.type === 'DROPDOWN' && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="md:col-span-2 space-y-4">
                               <label className={labelClasses}>Operational Options</label>
-                              <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-white rounded-2xl border border-slate-100 shadow-inner">
+                              <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-orange-50 rounded-2xl border border-orange-100 shadow-inner">
                                 {field.options.length === 0 && <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest pt-1">Null Options Pool</span>}
                                 {field.options.map(opt => (
-                                  <span key={opt} className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100">
+                                  <span key={opt} className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 bg-orange-50 text-orange-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-orange-100 shadow-sm transition-all hover:bg-orange-100">
                                     {opt}
-                                    <button type="button" onClick={() => updateField(field.id, { options: field.options.filter(o => o !== opt) })} className="p-1 hover:bg-white hover:text-red-500 rounded-md transition-colors">
+                                    <button type="button" onClick={() => updateField(field.id, { options: field.options.filter(o => o !== opt) })} className="p-1 hover:bg-orange-50 hover:text-red-500 rounded-md transition-colors">
                                       <X size={10} />
                                     </button>
                                   </span>
@@ -272,7 +272,7 @@ export default function CustomFields({ user }: { user: any }) {
                                       setNewOptionInputs(prev => ({ ...prev, [field.id]: '' }));
                                     }
                                   }}
-                                  className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95"
+                                  className="px-6 py-2 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95"
                                 >
                                   ADD
                                 </button>
@@ -297,18 +297,18 @@ export default function CustomFields({ user }: { user: any }) {
           <div className="space-y-8">
 
             {/* Custom Sources */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
               <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-inner"><Tag size={16} /></div>
                 Acquisition Sources
               </h2>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{s} (SYS)</span>)}
+                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-orange-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-orange-100">{s} (SYS)</span>)}
                   {customSources.map(s => (
-                    <span key={s} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-indigo-100 shadow-sm group/chip transition-all hover:bg-indigo-100">
+                    <span key={s} className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-orange-100 shadow-sm group/chip transition-all hover:bg-orange-100">
                       {s}
-                      <button onClick={() => setCustomSources(prev => prev.filter(x => x !== s))} className="p-0.5 text-indigo-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                      <button onClick={() => setCustomSources(prev => prev.filter(x => x !== s))} className="p-0.5 text-orange-300 hover:text-red-500 transition-colors"><X size={10} /></button>
                     </span>
                   ))}
                 </div>
@@ -319,7 +319,7 @@ export default function CustomFields({ user }: { user: any }) {
                     placeholder="e.g. COLD_CALL"
                     className={`${inputClasses} !py-2.5 !px-3 font-bold`}
                   />
-                  <button onClick={addSource} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-indigo-600 transition-all active:scale-95 uppercase">
+                  <button onClick={addSource} className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all active:scale-95 uppercase">
                     ADD
                   </button>
                 </div>
@@ -327,14 +327,14 @@ export default function CustomFields({ user }: { user: any }) {
             </motion.div>
 
             {/* Custom Phases */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
               <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-500 flex items-center justify-center shadow-inner"><GitBranch size={16} /></div>
                 Lifecycle Phases
               </h2>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{p} (SYS)</span>)}
+                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-orange-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-orange-100">{p} (SYS)</span>)}
                   {customPhases.map(p => (
                     <span key={p} className="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-violet-100 shadow-sm group/chip transition-all hover:bg-violet-100">
                       {p}
@@ -349,7 +349,7 @@ export default function CustomFields({ user }: { user: any }) {
                     placeholder="e.g. PROPOSAL"
                     className={`${inputClasses} !py-2.5 !px-3 font-bold`}
                   />
-                  <button onClick={addPhase} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-violet-600 transition-all active:scale-95 uppercase">
+                  <button onClick={addPhase} className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black hover:bg-violet-600 transition-all active:scale-95 uppercase">
                     ADD
                   </button>
                 </div>
@@ -357,16 +357,16 @@ export default function CustomFields({ user }: { user: any }) {
             </motion.div>
 
             {/* Custom Lead Types */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
               <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shadow-inner"><Users size={16} /></div>
                 Lead Types
               </h2>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{p} (SYS)</span>)}
+                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-orange-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-orange-100">{p} (SYS)</span>)}
                   {customLeadTypes.map(p => (
-                    <span key={p} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-blue-100 shadow-sm group/chip transition-all hover:bg-blue-100">
+                    <span key={p} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-blue-100 shadow-sm group/chip transition-all hover:bg-orange-100">
                       {p}
                       <button onClick={() => setCustomLeadTypes(prev => prev.filter(x => x !== p))} className="p-0.5 text-blue-300 hover:text-red-500 transition-colors"><X size={10} /></button>
                     </span>
@@ -374,7 +374,7 @@ export default function CustomFields({ user }: { user: any }) {
                 </div>
                 <div className="flex gap-2">
                   <input type="text" value={newLeadType} onChange={e => setNewLeadType(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLeadType()} placeholder="e.g. PARTNER" className={`${inputClasses} !py-2.5 !px-3 font-bold`} />
-                  <button onClick={addLeadType} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-blue-600 transition-all active:scale-95 uppercase">ADD</button>
+                  <button onClick={addLeadType} className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all active:scale-95 uppercase">ADD</button>
                 </div>
               </div>
             </motion.div>

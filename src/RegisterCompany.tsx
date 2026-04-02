@@ -136,29 +136,29 @@ export default function RegisterCompany() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-sans selection:bg-indigo-500 selection:text-white" style={{ width: '100vw' }}>
+    <div className="flex min-h-screen bg-orange-50 font-sans selection:bg-orange-500 selection:text-white" style={{ width: '100vw' }}>
       {/* Left Area - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-white border-r border-slate-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-orange-50 border-r border-orange-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
 
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
           <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-blue-100/40 blur-3xl"></div>
-          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-indigo-100/40 blur-3xl"></div>
+          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-orange-100/40 blur-3xl"></div>
         </div>
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
 
           <Link to="/" className="flex items-center gap-3 group/logo mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20 shadow-lg border border-white/20 p-2 transition-transform duration-500 group-hover/logo:rotate-[10deg]">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/20 shadow-lg border border-orange-50/20 p-2 transition-transform duration-500 group-hover/logo:rotate-[10deg]">
               <AudioLines className="text-white" size={24} />
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 leading-none mb-1">Handysolver</span>
-              <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] leading-none">Intelligence Hub</span>
+              <span className="text-[9px] font-black text-orange-500 uppercase tracking-[0.2em] leading-none">Intelligence Hub</span>
             </div>
           </Link>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-2">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-black mb-2">
             Create your account
           </h1>
           <p className="text-slate-500 font-medium text-lg mb-6">
@@ -169,14 +169,14 @@ export default function RegisterCompany() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Building2 size={20} /></div>
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><Building2 size={20} /></div>
                 <input
                   type="text"
                   required
                   value={companyName}
                   onChange={e => setCompanyName(e.target.value)}
                   placeholder="e.g. Acme Corp"
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-900 shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold text-black shadow-sm"
                 />
               </div>
             </div>
@@ -185,15 +185,15 @@ export default function RegisterCompany() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Your Name</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><UserIcon size={20} /></div>
-                  <input type="text" required value={userName} onChange={e => setUserName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><UserIcon size={20} /></div>
+                  <input type="text" required value={userName} onChange={e => setUserName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold shadow-sm" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Mail size={20} /></div>
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><Mail size={20} /></div>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold shadow-sm" />
                 </div>
               </div>
             </div>
@@ -201,8 +201,8 @@ export default function RegisterCompany() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Lock size={20} /></div>
-                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><Lock size={20} /></div>
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold shadow-sm" />
               </div>
             </div>
 
@@ -216,9 +216,9 @@ export default function RegisterCompany() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#0F172A] text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-xl shadow-slate-900/10 group"
+              className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#0F172A] text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-xl shadow-black/10 group"
             >
-              <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+              <div className="absolute inset-0 bg-orange-50/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
               {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : <CheckCircle2 className="relative z-10 opacity-70" size={20} />}
               <span className="relative z-10 text-base">{loading ? 'Setting up...' : 'Create Account'}</span>
             </button>
@@ -226,7 +226,7 @@ export default function RegisterCompany() {
 
           <p className="mt-10 text-center text-sm font-medium text-slate-500">
             Already have an account?{' '}
-            <button onClick={handleGoToLogin} className="text-indigo-600 font-bold hover:text-indigo-500 transition-colors ml-1">
+            <button onClick={handleGoToLogin} className="text-orange-600 font-bold hover:text-orange-500 transition-colors ml-1">
               Sign in to Workspace
             </button>
           </p>
@@ -247,7 +247,7 @@ export default function RegisterCompany() {
       <div className="hidden lg:flex flex-1 relative bg-[#0A0D14] overflow-hidden items-center justify-center">
         {/* Abstract Glowing Background Elements */}
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-orange-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-1000"></div>
           <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse delay-700"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-blue-500/10 rounded-full blur-[150px] mix-blend-screen"></div>
 
@@ -258,13 +258,13 @@ export default function RegisterCompany() {
         {/* Hero Content */}
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative z-10 w-full max-w-2xl px-12">
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50/5 border border-orange-50/10 backdrop-blur-md mb-8">
             <Flame className="text-orange-400 w-4 h-4" />
-            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Multi-Tenant Intelligence</span>
+            <span className="text-orange-200 text-sm font-semibold tracking-wide uppercase">Multi-Tenant Intelligence</span>
           </div>
           <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tightest">
             Streamline.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-400 to-cyan-400">
               Manage. Connect.
             </span>
           </h2>
@@ -273,15 +273,15 @@ export default function RegisterCompany() {
           </p>
 
           {/* Floating UI Mockup element */}
-          <div className="bg-[#1E293B]/20 border border-white/10 backdrop-blur-3xl rounded-2xl p-8 shadow-2xl relative overflow-hidden flex items-end gap-3 h-56 group/graph">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>
+          <div className="bg-[#1E293B]/20 border border-orange-50/10 backdrop-blur-3xl rounded-2xl p-8 shadow-2xl relative overflow-hidden flex items-end gap-3 h-56 group/graph">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 to-orange-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>
             {[35, 65, 40, 85, 60, 80, 100].map((height, i) => (
               <motion.div
                 key={i}
                 initial={{ height: 0 }}
                 animate={{ height: `${height}%` }}
                 transition={{ duration: 1.2, delay: 0.5 + i * 0.1, type: "spring" }}
-                className="flex-1 bg-gradient-to-t from-blue-600/80 to-indigo-400/80 rounded-t-md relative group/bar hover:from-blue-500 hover:to-indigo-300 transition-all border-t border-white/20"
+                className="flex-1 bg-gradient-to-t from-orange-500/80 to-orange-400/80 rounded-t-md relative group/bar hover:from-orange-500 hover:to-orange-300 transition-all border-t border-orange-50/20"
               >
                 <div className="absolute inset-0 bg-blue-400/10 blur-sm opacity-0 group-hover/bar:opacity-100 transition-opacity"></div>
               </motion.div>

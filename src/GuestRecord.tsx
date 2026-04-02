@@ -74,7 +74,10 @@ export default function GuestRecord() {
   const autoSubmitRef = useRef(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const [includeSystemAudio, setIncludeSystemAudio] = useState(true);
+  const [systemAudioStatus, setSystemAudioStatus] = useState('');
 
   useEffect(() => {
     const fetchMeeting = async () => {
@@ -250,23 +253,75 @@ export default function GuestRecord() {
   const startRecording = async () => {
     try {
       setError('');
+      setSystemAudioStatus('');
       setRecordingSeconds(0);
       autoSubmitRef.current = false;
       if (!navigator.mediaDevices?.getUserMedia)
         throw new Error('Your browser does not support audio recording.');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 64000 });
+
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      let finalStream: MediaStream = micStream;
+      const streams: MediaStream[] = [micStream];
+
+      if (includeSystemAudio && navigator.mediaDevices?.getDisplayMedia) {
+        try {
+          const isChromium = !!(window as any).chrome || /chrom(e|ium)/.test(navigator.userAgent.toLowerCase());
+          const displayConstraints: any = {
+            video: true,
+            audio: isChromium
+              ? {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                systemAudio: 'include',
+              }
+              : true,
+          };
+
+          const sysStream = await navigator.mediaDevices.getDisplayMedia(displayConstraints);
+
+          if (sysStream && sysStream.getAudioTracks().length > 0) {
+            streams.push(sysStream);
+            const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+            const ctx = new AudioContextClass();
+            audioContextRef.current = ctx;
+            if (ctx.state === 'suspended') await ctx.resume();
+            const dest = ctx.createMediaStreamDestination();
+            ctx.createMediaStreamSource(micStream).connect(dest);
+            ctx.createMediaStreamSource(sysStream).connect(dest);
+            finalStream = dest.stream;
+            setSystemAudioStatus('System audio enabled via screen capture.');
+          } else {
+            if (sysStream) sysStream.getTracks().forEach(t => t.stop());
+            setSystemAudioStatus('System audio not shared. Recording microphone only.');
+          }
+        } catch (err: any) {
+          setSystemAudioStatus(`System audio capture failed: ${(err && err.message) || 'likely denied by user'}`);
+        }
+      }
+
+      const options: any = { audioBitsPerSecond: 64000 };
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          options.mimeType = type;
+          break;
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(finalStream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(blob);
-        stream.getTracks().forEach(t => t.stop());
-
-        // If auto-submit was triggered, wait a tiny bit for state to settle then transcribe
+        streams.forEach(s => s.getTracks().forEach(t => t.stop()));
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
         if (autoSubmitRef.current) {
-          // Wrap in a function to ensure it uses the latest blob
           setTimeout(() => {
             performTranscription(blob);
           }, 100);
@@ -283,17 +338,33 @@ export default function GuestRecord() {
 
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
-      mediaRecorderRef.current.pause();
-      setIsPaused(true);
-      stopTimer();
+      try {
+        if (typeof mediaRecorderRef.current.pause === 'function') {
+          mediaRecorderRef.current.pause();
+          setIsPaused(true);
+          stopTimer();
+        } else {
+          setError('Pause is not supported in this browser.');
+        }
+      } catch (err: any) {
+        setError((err && err.message) || 'Could not pause recording.');
+      }
     }
   };
 
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isRecording && isPaused) {
-      mediaRecorderRef.current.resume();
-      setIsPaused(false);
-      startTimer();
+      try {
+        if (typeof mediaRecorderRef.current.resume === 'function') {
+          mediaRecorderRef.current.resume();
+          setIsPaused(false);
+          startTimer();
+        } else {
+          setError('Resume is not supported in this browser.');
+        }
+      } catch (err: any) {
+        setError((err && err.message) || 'Could not resume recording.');
+      }
     }
   };
 
@@ -311,7 +382,7 @@ export default function GuestRecord() {
   if (error && !meeting) return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-[#08090e] p-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white/5 border border-white/10 rounded-[2.5rem] p-12 text-center max-w-sm w-full backdrop-blur-xl">
+        className="bg-orange-50/5 border border-orange-50/10 rounded-[2.5rem] p-12 text-center max-w-sm w-full backdrop-blur-xl">
         <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <AlertCircle className="text-red-400" size={32} />
         </div>
@@ -330,8 +401,8 @@ export default function GuestRecord() {
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-fuchsia-600/8 rounded-full blur-[100px]" />
-        <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-600/8 rounded-full blur-[80px]" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-orange-50uchsia-600/8 rounded-full blur-[100px]" />
+        <div className="absolute top-0 left-0 w-64 h-64 bg-orange-600/8 rounded-full blur-[80px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -343,7 +414,7 @@ export default function GuestRecord() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 sm:p-12 text-center backdrop-blur-xl"
+              className="bg-orange-50/5 border border-orange-50/10 rounded-[2.5rem] p-10 sm:p-12 text-center backdrop-blur-xl"
             >
               <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -360,7 +431,7 @@ export default function GuestRecord() {
               <p className="text-white/40 leading-relaxed mb-10 font-medium">{success}</p>
 
               <button onClick={resetAll}
-                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-white/8 hover:bg-white/12 border border-white/10 text-white/60 hover:text-white font-bold text-sm transition-all active:scale-95">
+                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-orange-50/8 hover:bg-orange-50/12 border border-orange-50/10 text-white/60 hover:text-white font-bold text-sm transition-all active:scale-95">
                 <RotateCcw size={15} /> Record Another
               </button>
             </motion.div>
@@ -374,7 +445,7 @@ export default function GuestRecord() {
               className="flex flex-col items-center"
             >
               {/* Header card */}
-              <motion.div className="w-full bg-white/5 border border-white/8 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center">
+              <motion.div className="w-full bg-orange-50/5 border border-orange-50/8 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center">
 
                 {/* Brand pill */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/15 border border-violet-500/20 mb-7">
@@ -388,10 +459,24 @@ export default function GuestRecord() {
                 <p className="text-white/35 text-sm font-medium leading-relaxed max-w-xs mx-auto">
                   Your response will be securely transcribed and attached to the client file.
                 </p>
+                <div className="mt-4 mb-2 flex items-center justify-center gap-2 text-xs text-white/75">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeSystemAudio}
+                      onChange={(e) => setIncludeSystemAudio(e.target.checked)}
+                      className="accent-orange-400"
+                    />
+                    Include system audio (screen share)
+                  </label>
+                </div>
+                {systemAudioStatus && (
+                  <div className="text-xs text-orange-200 mb-3">{systemAudioStatus}</div>
+                )}
               </motion.div>
 
               {/* Recording card */}
-              <div className="w-full bg-white/5 border border-white/8 rounded-[2.5rem] p-8 sm:p-10 backdrop-blur-xl flex flex-col items-center">
+              <div className="w-full bg-orange-50/5 border border-orange-50/8 rounded-[2.5rem] p-8 sm:p-10 backdrop-blur-xl flex flex-col items-center">
 
                 {/* Timer */}
                 <AnimatePresence>
@@ -431,16 +516,18 @@ export default function GuestRecord() {
                     </AnimatePresence>
 
                     <motion.button
-                      onClick={isRecording ? stopRecording : startRecording}
+                      onClick={isPaused ? resumeRecording : isRecording ? stopRecording : startRecording}
                       whileTap={{ scale: 0.93 }}
                       className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${isRecording
                           ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
                           : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
                         } ${isPaused ? 'opacity-70' : ''}`}
                     >
-                      {isRecording
-                        ? <Square className="text-white fill-white" size={36} />
-                        : <Mic className="text-white fill-white" size={36} />
+                      {isPaused
+                        ? <Play className="text-white fill-white" size={36} />
+                        : isRecording
+                          ? <Square className="text-white fill-white" size={36} />
+                          : <Mic className="text-white fill-white" size={36} />
                       }
                     </motion.button>
                   </div>
@@ -551,7 +638,7 @@ export default function GuestRecord() {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 60, opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-              className="bg-[#12141f] border border-white/10 rounded-[2rem] p-8 sm:p-10 w-full max-w-sm text-center shadow-2xl"
+              className="bg-[#12141f] border border-orange-50/10 rounded-[2rem] p-8 sm:p-10 w-full max-w-sm text-center shadow-2xl"
             >
               <motion.div
                 animate={{ rotate: [0, -8, 8, -8, 0] }}
@@ -572,7 +659,7 @@ export default function GuestRecord() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSafetyAlert(false)}
-                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-white/8 hover:bg-white/12 border border-white/10 text-white transition-all active:scale-95"
+                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-orange-50/8 hover:bg-orange-50/12 border border-orange-50/10 text-white transition-all active:scale-95"
                 >
                   Keep Going
                 </button>
