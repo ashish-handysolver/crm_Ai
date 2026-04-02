@@ -231,26 +231,26 @@ export default function CalendarPage({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
+        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
       </div>
     );
   }
 
-  const inputClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:bg-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-sm text-slate-700 shadow-sm";
+  const inputClasses = "w-full px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 focus:bg-orange-50 outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-400 transition-all font-semibold text-sm text-slate-700 shadow-sm";
   const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-1";
 
   return (
-    <div className="flex-1 bg-[#F9FBFF] text-slate-900 p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+    <div className="flex-1 bg-[#F9FBFF] text-black p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-[10px] font-black text-indigo-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
-              <Sparkles size={14} className="fill-indigo-500 animate-pulse" /> Temporal Sync Protocol
+            <div className="text-[10px] font-black text-orange-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
+              <Sparkles size={14} className="fill-orange-500 animate-pulse" /> Temporal Sync Protocol
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900 leading-none">Intelligence Calendar</h1>
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-black leading-none">Intelligence Calendar</h1>
             <p className="text-slate-500 mt-4 text-lg font-medium max-w-xl leading-relaxed">
               Coordinate strategic alignments and client junctions through our distributed temporal ledger.
             </p>
@@ -264,7 +264,7 @@ export default function CalendarPage({ user }: { user: any }) {
                 setSuccess('Telemetry Active: High-priority proximity sound tested.');
                 setTimeout(() => setSuccess(''), 4000);
               }}
-              className="group flex items-center gap-3 px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl text-sm font-black hover:border-indigo-200 hover:text-indigo-600 shadow-sm transition-all active:scale-95"
+              className="group flex items-center gap-3 px-8 py-4 bg-orange-50 border border-orange-200 text-slate-700 rounded-2xl text-sm font-black hover:border-orange-200 hover:text-orange-600 shadow-sm transition-all active:scale-95"
             >
               <Bell size={18} className="group-hover:rotate-12 transition-transform" />
               Push Telemetry (Test Sound)
@@ -287,18 +287,18 @@ export default function CalendarPage({ user }: { user: any }) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
 
           {/* Calendar Grid */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-indigo-100/30 transition-colors"></div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 bg-orange-50 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-orange-100 overflow-hidden relative group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50/50 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-orange-100/30 transition-colors"></div>
 
             {/* Month nav */}
-            <div className="flex items-center justify-between px-10 py-8 border-b border-slate-50 relative z-10">
-              <button onClick={prevMonth} className="p-3 bg-slate-50 hover:bg-white border border-slate-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronLeft size={20} /></button>
+            <div className="flex items-center justify-between px-10 py-8 border-b border-orange-50 relative z-10">
+              <button onClick={prevMonth} className="p-3 bg-orange-50 hover:bg-orange-50 border border-orange-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronLeft size={20} /></button>
               <h2 className="text-2xl font-black text-slate-800 tracking-tight">{MONTHS[currentMonth]} {currentYear}</h2>
-              <button onClick={nextMonth} className="p-3 bg-slate-50 hover:bg-white border border-slate-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronRight size={20} /></button>
+              <button onClick={nextMonth} className="p-3 bg-orange-50 hover:bg-orange-50 border border-orange-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronRight size={20} /></button>
             </div>
 
             {/* Day names */}
-            <div className="grid grid-cols-7 border-b border-slate-50 bg-slate-50/30 relative z-10">
+            <div className="grid grid-cols-7 border-b border-orange-50 bg-orange-50/30 relative z-10">
               {DAYS.map(d => (
                 <div key={d} className="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{d}</div>
               ))}
@@ -307,7 +307,7 @@ export default function CalendarPage({ user }: { user: any }) {
             {/* Date cells */}
             <div className="grid grid-cols-7 relative z-10">
               {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-28 sm:h-36 border-b border-r border-slate-50/60 bg-slate-50/10" />
+                <div key={`empty-${i}`} className="h-28 sm:h-36 border-b border-r border-orange-50/60 bg-orange-50/10" />
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
@@ -318,14 +318,14 @@ export default function CalendarPage({ user }: { user: any }) {
                   <div
                     key={day}
                     onClick={() => openModal(day)}
-                    className={`h-28 sm:h-36 border-b border-r border-slate-50/60 p-2 sm:p-4 cursor-pointer transition-all group/cell hover:bg-indigo-50/30 ${isToday ? 'bg-indigo-50/50' : ''}`}
+                    className={`h-28 sm:h-36 border-b border-r border-orange-50/60 p-2 sm:p-4 cursor-pointer transition-all group/cell hover:bg-orange-50/30 ${isToday ? 'bg-orange-50/50' : ''}`}
                   >
-                    <div className={`text-xs font-black w-8 h-8 flex items-center justify-center rounded-xl mb-3 transition-all ${isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 group-hover/cell:text-indigo-600 group-hover/cell:bg-white group-hover/cell:shadow-sm'}`}>
+                    <div className={`text-xs font-black w-8 h-8 flex items-center justify-center rounded-xl mb-3 transition-all ${isToday ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30' : 'text-slate-400 group-hover/cell:text-orange-600 group-hover/cell:bg-orange-50 group-hover/cell:shadow-sm'}`}>
                       {day}
                     </div>
                     <div className="space-y-1.5 overflow-hidden">
                       {dayMeetings.slice(0, 3).map(m => (
-                        <div key={m.id} className="text-[9px] font-black bg-white text-indigo-700 px-2 py-1 rounded-lg truncate border border-indigo-100 shadow-sm transition-all group-hover/cell:scale-105">
+                        <div key={m.id} className="text-[9px] font-black bg-orange-50 text-orange-700 px-2 py-1 rounded-lg truncate border border-orange-100 shadow-sm transition-all group-hover/cell:scale-105">
                           {m.scheduledAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · {m.title}
                         </div>
                       ))}
@@ -341,17 +341,17 @@ export default function CalendarPage({ user }: { user: any }) {
 
           {/* Upcoming Meetings Sidebar */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-900/10">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+            <div className="bg-black rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-orange-900/10">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
 
-              <h3 className="text-xs font-black text-indigo-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center"><Clock size={16} /></div>
+              <h3 className="text-xs font-black text-orange-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center"><Clock size={16} /></div>
                 Upcoming Meetings
               </h3>
 
               {upcoming.length === 0 ? (
                 <div className="text-center py-10">
-                  <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/20 mx-auto mb-4">
+                  <div className="w-12 h-12 bg-orange-50/5 border border-orange-50/10 rounded-2xl flex items-center justify-center text-white/20 mx-auto mb-4">
                     <CalendarIcon size={24} />
                   </div>
                   <p className="text-white/40 text-xs font-bold leading-relaxed">
@@ -365,12 +365,12 @@ export default function CalendarPage({ user }: { user: any }) {
                     return (
                       <motion.div
                         initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
-                        key={m.id} className="p-5 rounded-2xl bg-white/5 border border-white/10 group/item hover:bg-white/10 hover:border-indigo-400/30 transition-all relative overflow-hidden"
+                        key={m.id} className="p-5 rounded-2xl bg-orange-50/5 border border-orange-50/10 group/item hover:bg-orange-50/10 hover:border-orange-400/30 transition-all relative overflow-hidden"
                       >
                         <div className="flex items-start justify-between gap-3 relative z-10">
                           <div className="min-w-0">
                             <div className="font-black text-white text-sm truncate tracking-tight">{m.title}</div>
-                            <div className="flex items-center gap-2 text-[10px] text-indigo-400 font-black uppercase mt-1.5 tracking-widest">
+                            <div className="flex items-center gap-2 text-[10px] text-orange-400 font-black uppercase mt-1.5 tracking-widest">
                               <CalendarIcon size={12} />
                               {d?.toLocaleDateString([], { month: 'short', day: 'numeric' })} · {d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </div>
@@ -386,7 +386,7 @@ export default function CalendarPage({ user }: { user: any }) {
                         <div className="flex items-center gap-2 mt-4 relative z-10">
                           <button
                             onClick={() => window.open(`/m/${m.id}`, '_blank')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/40 text-orange-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95"
                           >
                             <Video size={11} /> Quick Record
                           </button>
@@ -411,22 +411,22 @@ export default function CalendarPage({ user }: { user: any }) {
       <AnimatePresence>
         {showModal && selectedDate && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl border border-white/20 relative z-10 overflow-hidden"
+              className="bg-orange-50 rounded-[2.5rem] shadow-2xl w-full max-w-xl border border-orange-50/20 relative z-10 overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-bl-[100px] -z-0 pointer-events-none"></div>
 
-              <div className="flex items-center justify-between px-10 py-8 border-b border-slate-50 relative z-10">
+              <div className="flex items-center justify-between px-10 py-8 border-b border-orange-50 relative z-10">
                 <div>
                   <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sync Initiation</h2>
-                  <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-2 flex items-center gap-2">
+                  <div className="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-2 flex items-center gap-2">
                     <CalendarIcon size={14} />
                     {selectedDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
-                <button onClick={() => setShowModal(false)} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-colors text-slate-400">
+                <button onClick={() => setShowModal(false)} className="p-3 bg-orange-50 hover:bg-orange-100 rounded-2xl transition-colors text-slate-400">
                   <X size={20} />
                 </button>
               </div>
@@ -481,11 +481,11 @@ export default function CalendarPage({ user }: { user: any }) {
                       </select>
                     </div>
 
-                    <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0">
+                    <div className="p-5 bg-orange-50/50 rounded-2xl border border-orange-100 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0">
                         <Bell size={16} />
                       </div>
-                      <p className="text-[10px] font-bold text-indigo-700 leading-relaxed uppercase tracking-widest">
+                      <p className="text-[10px] font-bold text-orange-700 leading-relaxed uppercase tracking-widest">
                         Telemetry initialized. Automated browser notification will fire T-10 minutes from execution.
                       </p>
                     </div>
@@ -505,10 +505,10 @@ export default function CalendarPage({ user }: { user: any }) {
               </div>
 
               <div className="px-10 pb-10 flex gap-4 relative z-10">
-                <button onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all text-sm uppercase tracking-widest">
+                <button onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-orange-50 transition-all text-sm uppercase tracking-widest">
                   Abort
                 </button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 py-4 rounded-2xl font-black bg-slate-900 text-white hover:bg-indigo-600 transition-all text-sm flex items-center justify-center gap-3 shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 tracking-widest">
+                <button onClick={handleSave} disabled={saving} className="flex-1 py-4 rounded-2xl font-black bg-black text-white hover:bg-orange-600 transition-all text-sm flex items-center justify-center gap-3 shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50 tracking-widest">
                   {saving ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} className="fill-white" />}
                   COMMIT SYNC
                 </button>

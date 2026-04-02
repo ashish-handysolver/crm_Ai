@@ -104,23 +104,23 @@ const NotificationBell = () => {
 
   return (
     <div className="relative">
-      <button onClick={() => setShowDropdown(!showDropdown)} className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">
+      <button onClick={() => setShowDropdown(!showDropdown)} className="relative p-2 text-slate-500 hover:bg-orange-50 rounded-xl transition-colors">
         <Bell size={20} />
         {hasNotifications && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>}
       </button>
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50">
-          <div className="p-4 border-b border-slate-50 bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Notifications</h3></div>
+        <div className="absolute right-0 mt-2 w-80 bg-orange-50 rounded-2xl shadow-xl shadow-slate-200/50 border border-orange-100 overflow-hidden z-50">
+          <div className="p-4 border-b border-orange-50 bg-orange-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Notifications</h3></div>
           <div className="max-h-[60vh] overflow-y-auto">
             {!pushEnabled && (
-              <div className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer" onClick={handleRequestPush}>
+              <div className="p-4 border-b border-orange-50 hover:bg-orange-50 transition-colors cursor-pointer" onClick={handleRequestPush}>
                 <div className="font-bold text-slate-800 text-sm mb-1">Enable Push Notifications</div>
                 <div className="text-xs text-slate-500 font-medium">Get alerted for upcoming meetings</div>
-                <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-2">Action Required</div>
+                <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mt-2">Action Required</div>
               </div>
             )}
             {meetings.length > 0 ? meetings.map(m => (
-              <div key={m.id} className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors"><div className="font-bold text-slate-800 text-sm mb-1">{m.title}</div><div className="text-xs text-slate-500 font-medium">{m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>{m.leadName && <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-2">{m.leadName}</div>}</div>
+              <div key={m.id} className="p-4 border-b border-orange-50 hover:bg-orange-50 transition-colors"><div className="font-bold text-slate-800 text-sm mb-1">{m.title}</div><div className="text-xs text-slate-500 font-medium">{m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>{m.leadName && <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mt-2">{m.leadName}</div>}</div>
             )) : <div className="p-6 text-center text-sm font-medium text-slate-400">No new notifications</div>}
           </div>
         </div>
@@ -133,13 +133,13 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
   const { companyName } = useAuth();
 
   return (
-    <nav className="sticky top-0 z-40 w-full bg-white/70 backdrop-blur-md border-b border-slate-100 px-4 py-3 sm:px-6 flex items-center justify-between">
+    <nav className="sticky top-0 z-40 w-full bg-orange-50/70 backdrop-blur-md border-b border-orange-100 px-4 py-3 sm:px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <button onClick={onMenuClick} className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">
+        <button onClick={onMenuClick} className="lg:hidden p-2 text-slate-500 hover:bg-orange-50 rounded-xl transition-colors">
           <MessageSquare size={20} />
         </button>
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-slate-900">{companyName || 'Handysolver'}</span>
+          <span className="text-sm font-bold text-black">{companyName || 'Handysolver'}</span>
           <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Workspace</span>
         </div>
       </div>
@@ -148,21 +148,21 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
         {showInstallButton && (
           <button
             onClick={onInstall}
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100"
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 transition-all border border-orange-100"
           >
             <Download size={14} /> Install App
           </button>
         )}
         <NotificationBell />
         <div className="hidden sm:flex flex-col items-end mr-2">
-          <span className="text-xs font-bold text-slate-900">{user.displayName || 'User'}</span>
+          <span className="text-xs font-bold text-black">{user.displayName || 'User'}</span>
           <span className="text-[10px] font-medium text-slate-400">{user.email}</span>
         </div>
         <Link to="/profile">
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
             alt="Profile"
-            className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm hover:scale-105 transition-transform"
+            className="w-10 h-10 rounded-xl object-cover border-2 border-orange-50 shadow-sm hover:scale-105 transition-transform"
           />
         </Link>
       </div>
@@ -191,7 +191,7 @@ const HistoryView = ({ user }: { user: User }) => {
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto">
       <header className="mb-10">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">All Recordings</h1>
+        <h1 className="text-3xl font-black text-black tracking-tight mb-2">All Recordings</h1>
         <p className="text-slate-500 font-medium">A list of all recordings and notes.</p>
       </header>
 
@@ -201,33 +201,33 @@ const HistoryView = ({ user }: { user: User }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             key={rec.id}
-            className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group"
+            className="bg-orange-50 p-6 rounded-[2rem] border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group"
           >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold shadow-inner">
+              <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center font-bold shadow-inner">
                 <History size={24} />
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-900">Recording</h3>
+                <h3 className="font-extrabold text-black">Recording</h3>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{rec.id.slice(0, 8)}</p>
               </div>
             </div>
 
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                <Calendar size={14} className="text-indigo-400" />
+                <Calendar size={14} className="text-orange-400" />
                 {rec.createdAt?.toDate?.().toLocaleString() || 'Recent'}
               </div>
-              <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
+              <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed font-medium bg-orange-50 p-4 rounded-2xl border border-orange-100/50">
                 {rec.transcript || 'No transcript version recorded.'}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+            <div className="flex items-center justify-between pt-4 border-t border-orange-50">
               <div className="flex gap-2">
                 <Link
                   to={`/r/${rec.id}`}
-                  className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                  className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
                 >
                   <ExternalLink size={20} />
                 </Link>
@@ -248,7 +248,7 @@ const HistoryView = ({ user }: { user: User }) => {
       </div>
 
       {recordings.length === 0 && (
-        <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+        <div className="text-center py-20 bg-orange-50 rounded-[3rem] border-2 border-dashed border-orange-100">
           <History size={48} className="mx-auto text-slate-200 mb-4" />
           <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No recordings found</p>
         </div>
@@ -477,7 +477,7 @@ const RecordingView = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center p-20">
-      <Loader2 className="animate-spin text-indigo-500" size={32} />
+      <Loader2 className="animate-spin text-orange-500" size={32} />
     </div>
   );
 
@@ -490,14 +490,14 @@ const RecordingView = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 sm:p-12 rounded-[3rem] shadow-xl shadow-slate-200/60 border border-slate-100"
+        className="bg-orange-50 p-8 sm:p-12 rounded-[3rem] shadow-xl shadow-slate-200/60 border border-orange-100"
       >
-        <header className="mb-12 border-b border-slate-100 pb-8 flex flex-col md:flex-row justify-between items-start gap-6">
+        <header className="mb-12 border-b border-orange-100 pb-8 flex flex-col md:flex-row justify-between items-start gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest mb-4">
               Report
             </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Transcript</h1>
+            <h1 className="text-3xl font-black text-black tracking-tight">Transcript</h1>
             <p className="text-slate-500 font-medium mt-1">
               {recording.createdAt?.toDate?.().toLocaleString() || 'Recent'}
             </p>
@@ -506,14 +506,14 @@ const RecordingView = () => {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="px-6 py-3 bg-white text-indigo-600 border border-slate-200 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg shadow-slate-200/5 disabled:opacity-50"
+              className="px-6 py-3 bg-orange-50 text-orange-600 border border-orange-200 rounded-2xl font-bold flex items-center gap-2 hover:bg-orange-50 transition-all shadow-lg shadow-slate-200/5 disabled:opacity-50"
             >
               {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
               {isSyncing ? 'Updating...' : 'Re-Transcribe'}
             </button>
             <button
               onClick={() => window.print()}
-              className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10"
+              className="px-6 py-3 bg-black text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-black/10"
             >
               <FileText size={18} /> Export PDF
             </button>
@@ -523,7 +523,7 @@ const RecordingView = () => {
         <section className="space-y-10">
           <div>
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Call Text</h2>
-            <div className="bg-slate-50/50 p-8 rounded-[2rem] border border-slate-100/50 text-slate-700 leading-[1.8] font-medium text-lg whitespace-pre-wrap">
+            <div className="bg-orange-50/50 p-8 rounded-[2rem] border border-orange-100/50 text-slate-700 leading-[1.8] font-medium text-lg whitespace-pre-wrap">
               {recording.transcript ? (
                 <TranscriptPlayer
                   audioUrl={recording.audioUrl}
@@ -538,11 +538,11 @@ const RecordingView = () => {
             </div>
           </div>
 
-          <div className="p-8 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/50 border-dashed">
-            <h2 className="text-indigo-600 font-black text-lg mb-2 flex items-center gap-2">
+          <div className="p-8 bg-orange-50/50 rounded-[2rem] border border-orange-100/50 border-dashed">
+            <h2 className="text-orange-600 font-black text-lg mb-2 flex items-center gap-2">
               <Languages size={20} /> AI Analysis
             </h2>
-            <p className="text-indigo-400 font-bold text-sm uppercase tracking-widest">AI Info</p>
+            <p className="text-orange-400 font-bold text-sm uppercase tracking-widest">AI Info</p>
           </div>
         </section>
       </motion.div>
@@ -652,7 +652,7 @@ const AppContent = () => {
   if (!user || !companyId) return null;
 
   return (
-    <div className="flex min-h-[100dvh] bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex-row w-full overflow-hidden">
+    <div className="flex min-h-[100dvh] bg-orange-50 text-black font-sans selection:bg-orange-500 selection:text-white flex-row w-full overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 relative h-[100dvh] overflow-y-auto w-full scroll-smooth">
         <Navbar

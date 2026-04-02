@@ -157,31 +157,31 @@ export default function LeadForm({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
+        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
       </div>
     );
   }
 
-  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-slate-200 bg-white focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-slate-700 shadow-sm placeholder:text-slate-400 placeholder:font-medium";
+  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-orange-200 bg-orange-50 focus:bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-400 transition-all font-semibold text-slate-700 shadow-sm placeholder:text-slate-400 placeholder:font-medium";
   const labelClasses = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5 block px-1";
 
   return (
-    <div className="flex-1 bg-[#F9FBFF] text-slate-900 p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+    <div className="flex-1 bg-[#F9FBFF] text-black p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
 
-        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-all mb-10 group">
-          <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 shadow-sm transition-colors">
+        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-orange-600 transition-all mb-10 group">
+          <div className="p-2 bg-orange-50 border border-orange-200 rounded-xl group-hover:border-orange-200 shadow-sm transition-colors">
             <ChevronLeft size={16} />
           </div>
           Back to Intelligence Ledger
         </Link>
 
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-          <div className="text-[10px] font-extrabold text-indigo-500 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+          <div className="text-[10px] font-extrabold text-orange-500 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
             <Sparkles size={14} className="animate-pulse" /> Asset Modification Protocol
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-black leading-tight">
             {isEditing ? 'Modify Lead' : 'New Lead'}
           </h1>
 
@@ -196,9 +196,9 @@ export default function LeadForm({ user }: { user: any }) {
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden relative group">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-orange-50 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-orange-100 overflow-hidden relative group">
           {/* Decorative Background Blob */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-indigo-100/50"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-orange-100/50"></div>
 
           <form onSubmit={handleSubmit} className="p-8 sm:p-12 relative z-10">
 
@@ -206,7 +206,7 @@ export default function LeadForm({ user }: { user: any }) {
             <div className="flex flex-col items-center mb-12">
               <div className="relative group cursor-pointer mb-4">
                 <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                <div className="w-28 h-28 rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-indigo-400 transition-all duration-300 relative">
+                <div className="w-28 h-28 rounded-[2rem] border-2 border-dashed border-orange-200 flex items-center justify-center bg-orange-50 overflow-hidden group-hover:border-orange-400 transition-all duration-300 relative">
                   {formData.avatar ? (
                     <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
                   ) : (
@@ -215,7 +215,7 @@ export default function LeadForm({ user }: { user: any }) {
                       <span className="text-[10px] font-black uppercase tracking-tighter">Image</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 bg-orange-600/0 group-hover:bg-orange-600/10 transition-colors flex items-center justify-center pointer-events-none">
                     <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
                   </div>
                 </div>
@@ -227,22 +227,22 @@ export default function LeadForm({ user }: { user: any }) {
 
               {/* Primary Identity Section */}
               <section>
-                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={16} /></div>
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center"><User size={16} /></div>
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">User Details</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="relative">
                     <label className={labelClasses}>Full Name</label>
                     <div className="relative">
-                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
                       <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. Alexander Sterling" />
                     </div>
                   </div>
                   <div>
                     <label className={labelClasses}>Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
                       <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="a.sterling@vanguard.io" />
                     </div>
                   </div>
@@ -251,7 +251,7 @@ export default function LeadForm({ user }: { user: any }) {
 
               {/* Organizational Vector Section */}
               <section>
-                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><Building2 size={16} /></div>
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Organization Details</h3>
                 </div>
@@ -259,21 +259,21 @@ export default function LeadForm({ user }: { user: any }) {
                   <div>
                     <label className={labelClasses}>Organization Name</label>
                     <div className="relative">
-                      <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
                       <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Vanguard Systems" />
                     </div>
                   </div>
                   <div>
                     <label className={labelClasses}>Organization Location</label>
                     <div className="relative">
-                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
                       <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="London, UK" />
                     </div>
                   </div>
                   <div>
                     <label className={labelClasses}>Mobile Number</label>
                     <div className="relative">
-                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
                       <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 8900" />
                     </div>
                   </div>
@@ -309,7 +309,7 @@ export default function LeadForm({ user }: { user: any }) {
 
               {/* Disposition & Scoring Section */}
               <section>
-                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Zap className="fill-emerald-500" size={16} /></div>
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Lead Status</h3>
                 </div>
@@ -329,10 +329,10 @@ export default function LeadForm({ user }: { user: any }) {
                   <div className="flex flex-col justify-center">
                     <label className={`${labelClasses} flex justify-between`}>
                       Intrest Level
-                      <span className="text-indigo-600 font-black">{formData.score}% Match</span>
+                      <span className="text-orange-600 font-black">{formData.score}% Match</span>
                     </label>
                     <div className="px-2 pt-2">
-                      <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500 transition-all shadow-inner" />
+                      <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-orange-100 rounded-full appearance-none cursor-pointer accent-orange-600 hover:accent-orange-500 transition-all shadow-inner" />
                       <div className="flex justify-between mt-3 px-1">
                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Low Intent</span>
                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Peak Conversion</span>
@@ -342,7 +342,7 @@ export default function LeadForm({ user }: { user: any }) {
                   <div>
                     <label className={labelClasses}>Creation Date</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-300 group-focus-within:text-indigo-500 transition-colors"><CalendarDays size={18} /></div>
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-300 group-focus-within:text-orange-500 transition-colors"><CalendarDays size={18} /></div>
                       <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-12`} />
                     </div>
                   </div>
@@ -352,7 +352,7 @@ export default function LeadForm({ user }: { user: any }) {
               {/* Dynamic Logic Matrices (Custom Fields) */}
               {customFieldDefs.length > 0 && (
                 <section>
-                  <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                  <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
                     <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center"><Globe size={16} /></div>
                     <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Supporting Links</h3>
                   </div>
@@ -380,15 +380,15 @@ export default function LeadForm({ user }: { user: any }) {
             </div>
 
             {/* Form Footer Action Bar */}
-            <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4">
-              <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+            <div className="mt-16 pt-10 border-t border-orange-100 flex flex-col sm:flex-row justify-end gap-4">
+              <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-orange-50 transition-all flex items-center justify-center gap-2">
                 <ChevronLeft size={18} /> Cancel
               </Link>
-              <button type="submit" disabled={saving} className="flex items-center justify-center gap-3 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50">
+              <button type="submit" disabled={saving} className="flex items-center justify-center gap-3 bg-black text-white px-10 py-4 rounded-2xl font-black hover:bg-orange-600 transition-all shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50">
                 {saving ? (
                   <Loader2 size={20} className="animate-spin" />
                 ) : (
-                  <Save size={20} className={isEditing ? 'text-indigo-300' : 'text-emerald-300'} />
+                  <Save size={20} className={isEditing ? 'text-orange-300' : 'text-emerald-300'} />
                 )}
                 {isEditing ? 'Update' : 'Save'}
               </button>
