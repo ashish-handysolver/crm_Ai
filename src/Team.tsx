@@ -294,8 +294,24 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                           </div>
                         </div>
                         <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0 pl-[88px] sm:pl-0">
-                          <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                             <RefreshCw size={10} className="group-hover:animate-spin" /> Node Initialized
+                          <div className="flex items-center gap-2 mb-1">
+                            {member.uid !== user.uid && !isDemoMode && (
+                              <button 
+                                onClick={async () => {
+                                  const newStatus = member.active !== false ? false : true;
+                                  await setDoc(doc(db, 'users', member.id), { active: newStatus }, { merge: true });
+                                }}
+                                className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border transition-all ${member.active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'}`}
+                              >
+                                {member.active !== false ? 'Active' : 'Inactive'}
+                              </button>
+                            )}
+                            {member.uid === user.uid && (
+                               <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg text-[9px] uppercase font-black border border-emerald-100">Self</span>
+                            )}
+                            <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                               <RefreshCw size={10} className="group-hover:animate-spin" /> Node Initialized
+                            </div>
                           </div>
                           <div className="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm group-hover:border-indigo-100 group-hover:text-indigo-600 transition-colors">
                             {member.createdAt?.toDate ? member.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Alpha Partition'}

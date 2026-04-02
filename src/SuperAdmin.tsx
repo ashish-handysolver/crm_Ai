@@ -401,7 +401,19 @@ export default function SuperAdmin() {
                             </td>
                             <td className="py-5 px-6 text-xs font-semibold text-slate-400">Not recorded</td>
                             <td className="py-5 px-8 text-right">
-                              <button className="p-2 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={18} /></button>
+                              <div className="flex items-center justify-end gap-3">
+                                <button 
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const newStatus = u.active !== false ? false : true;
+                                    await setDoc(doc(db, 'users', u.id), { active: newStatus }, { merge: true });
+                                  }}
+                                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${u.active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'}`}
+                                >
+                                  {u.active !== false ? 'Active' : 'Inactive'}
+                                </button>
+                                <button className="p-2 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={18} /></button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -536,7 +548,21 @@ export default function SuperAdmin() {
                                      <tr key={u.id} className="text-sm">
                                         <td className="py-4 px-6 font-bold">{u.displayName}</td>
                                         <td className="py-4 px-6"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg text-[10px] uppercase font-black">{u.role}</span></td>
-                                        <td className="py-4 px-6 text-right"><button className="text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16} /></button></td>
+                                        <td className="py-4 px-6 text-right">
+                                          <div className="flex items-center justify-end gap-3">
+                                            <button 
+                                              onClick={async () => {
+                                                const newStatus = u.active !== false ? false : true;
+                                                await setDoc(doc(db, 'users', u.id), { active: newStatus }, { merge: true });
+                                                fetchOrgDetails(selectedOrg);
+                                              }}
+                                              className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border transition-all ${u.active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'}`}
+                                            >
+                                              {u.active !== false ? 'Active' : 'Inactive'}
+                                            </button>
+                                            <button className="text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16} /></button>
+                                          </div>
+                                        </td>
                                      </tr>
                                   ))}
                                </tbody>
