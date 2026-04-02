@@ -53,16 +53,14 @@ export default function Analytics({ user }: { user: any }) {
               <BarChart3 size={14} /> Advanced Metrics
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-3">Lead Analytics</h1>
-            <p className="text-slate-500 text-base md:text-lg max-w-2xl font-medium leading-relaxed">
-              Gain deep behavioral insights into your lead network through AI-driven predictive scoring and pattern recognition.
-            </p>
+
           </motion.div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           <AnimatePresence mode="popLayout">
             {leads.length === 0 ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                 className="col-span-full py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200/60 text-center flex flex-col items-center justify-center max-w-2xl mx-auto w-full"
               >
@@ -85,7 +83,7 @@ export default function Analytics({ user }: { user: any }) {
                   className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 hover:border-indigo-100/80 transition-all group flex flex-col relative overflow-hidden h-full"
                 >
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  
+
                   <div className="flex items-start gap-4 mb-8 relative z-10">
                     <div className="relative shrink-0">
                       <img
@@ -106,23 +104,23 @@ export default function Analytics({ user }: { user: any }) {
                   </div>
 
                   <div className="space-y-5 flex-1 relative z-10">
-                     <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
-                       <div className="flex justify-between items-center text-sm mb-3">
-                          <span className="flex items-center gap-1.5 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                            <Target size={12} className="text-indigo-400" /> Prediction Score
-                          </span>
-                          <span className="font-extrabold text-indigo-600 text-base">{lead.score || 0}%</span>
-                       </div>
-                       <div className="w-full bg-slate-200/50 h-2.5 rounded-full overflow-hidden shadow-inner relative">
-                          <motion.div 
-                            initial={{ width: 0 }} 
-                            whileInView={{ width: `${lead.score || 0}%` }} 
-                            viewport={{ once: true }} 
-                            transition={{ duration: 1, delay: 0.2 + (index * 0.1) }}
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" 
-                          />
-                       </div>
-                     </div>
+                    <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+                      <div className="flex justify-between items-center text-sm mb-3">
+                        <span className="flex items-center gap-1.5 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                          <Target size={12} className="text-indigo-400" /> Prediction Score
+                        </span>
+                        <span className="font-extrabold text-indigo-600 text-base">{lead.score || 0}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200/50 h-2.5 rounded-full overflow-hidden shadow-inner relative">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${lead.score || 0}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: 0.2 + (index * 0.1) }}
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <Link
@@ -130,7 +128,7 @@ export default function Analytics({ user }: { user: any }) {
                     className="w-full mt-6 bg-slate-900 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-indigo-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-900/10 group-hover:shadow-indigo-500/25 active:scale-[0.98] relative overflow-hidden z-10"
                   >
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                    <Sparkles size={16} className="relative z-10" /> 
+                    <Sparkles size={16} className="relative z-10" />
                     <span className="relative z-10">View Full Insights</span>
                     <ArrowRight size={16} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                   </Link>

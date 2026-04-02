@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw } from 'lucide-react';
+import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -71,6 +71,44 @@ interface FirestoreErrorInfo {
   collectionName?: string;
 }
 
+const NotificationBell = () => {
+  const { companyId } = useAuth();
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!companyId) return;
+    const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
+    const unsub = onSnapshot(q, snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const now = new Date();
+      const upcoming = data.filter(m => m.scheduledAt?.toDate?.() > now)
+        .sort((a, b) => a.scheduledAt.toMillis() - b.scheduledAt.toMillis());
+      setMeetings(upcoming);
+    });
+    return unsub;
+  }, [companyId]);
+
+  return (
+    <div className="relative">
+      <button onClick={() => setShowDropdown(!showDropdown)} className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">
+        <Bell size={20} />
+        {meetings.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>}
+      </button>
+      {showDropdown && (
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50">
+          <div className="p-4 border-b border-slate-50 bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Upcoming Meetings</h3></div>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {meetings.length === 0 ? <div className="p-6 text-center text-sm font-medium text-slate-400">No upcoming meetings</div> : meetings.map(m => (
+              <div key={m.id} className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors"><div className="font-bold text-slate-800 text-sm mb-1">{m.title}</div><div className="text-xs text-slate-500 font-medium">{m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>{m.leadName && <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-2">{m.leadName}</div>}</div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: User, onMenuClick: () => void, onInstall: () => void, showInstallButton: boolean }) => {
   const { companyName } = useAuth();
 
@@ -95,6 +133,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
             <Download size={14} /> Install App
           </button>
         )}
+        <NotificationBell />
         <div className="hidden sm:flex flex-col items-end mr-2">
           <span className="text-xs font-bold text-slate-900">{user.displayName || 'User'}</span>
           <span className="text-[10px] font-medium text-slate-400">{user.email}</span>
@@ -132,8 +171,8 @@ const HistoryView = ({ user }: { user: User }) => {
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto">
       <header className="mb-10">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">History</h1>
-        <p className="text-slate-500 font-medium">List of all your calls and notes.</p>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">All Recordings</h1>
+        <p className="text-slate-500 font-medium">A list of all recordings and notes.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -149,7 +188,7 @@ const HistoryView = ({ user }: { user: User }) => {
                 <History size={24} />
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-900">Call Info</h3>
+                <h3 className="font-extrabold text-slate-900">Recording</h3>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{rec.id.slice(0, 8)}</p>
               </div>
             </div>
@@ -191,7 +230,7 @@ const HistoryView = ({ user }: { user: User }) => {
       {recordings.length === 0 && (
         <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
           <History size={48} className="mx-auto text-slate-200 mb-4" />
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No historical logs available</p>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No recordings found</p>
         </div>
       )}
     </div>
@@ -240,166 +279,166 @@ const RecordingView = () => {
     }
   };
 
- const handleSync = async () => {
-  if (!recording || !recording.audioUrl || isSyncing || !id) return;
-  
-  setIsSyncing(true);
-  
-  try {
-    // 1. Get API Key from Environment Variables
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("Gemini API Key is missing in environment variables (VITE_GEMINI_API_KEY).");
-    }
+  const handleSync = async () => {
+    if (!recording || !recording.audioUrl || isSyncing || !id) return;
 
-    let audioBlob: Blob | null = null;
+    setIsSyncing(true);
 
-    // --- Start Audio Retrieval Logic ---
     try {
-      const storagePath = getStoragePathFromUrl(recording.audioUrl);
-      if (storagePath) {
-        const storageRef = ref(storage, storagePath);
-        const buffer = await getBytes(storageRef);
-        audioBlob = new Blob([buffer], { type: 'audio/webm' });
-        console.log("Audio acquired from Firebase Storage:", audioBlob.size);
+      // 1. Get API Key from Environment Variables
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API Key is missing in environment variables (VITE_GEMINI_API_KEY).");
       }
-    } catch (readErr) {
-      console.warn("Firebase getBytes failed, trying direct fetch:", readErr);
-    }
 
-    if (!audioBlob) {
+      let audioBlob: Blob | null = null;
+
+      // --- Start Audio Retrieval Logic ---
       try {
-        const response = await fetch(recording.audioUrl);
-        if (!response.ok) throw new Error(`Direct fetch failed (${response.status})`);
-        audioBlob = await response.blob();
-      } catch (directErr) {
-        console.warn("Direct fetch failed, trying corsproxy:", directErr);
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error(`Failed to fetch via proxy (${response.status})`);
-        audioBlob = await response.blob();
+        const storagePath = getStoragePathFromUrl(recording.audioUrl);
+        if (storagePath) {
+          const storageRef = ref(storage, storagePath);
+          const buffer = await getBytes(storageRef);
+          audioBlob = new Blob([buffer], { type: 'audio/webm' });
+          console.log("Audio acquired from Firebase Storage:", audioBlob.size);
+        }
+      } catch (readErr) {
+        console.warn("Firebase getBytes failed, trying direct fetch:", readErr);
       }
-    }
 
-    if (!audioBlob) throw new Error("Unable to retrieve audio blob for transcription.");
-    // --- End Audio Retrieval Logic ---
-
-    // 2. Upload to Gemini File API
-    const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-    
-    // 3. Initialize AI with correct Model List
-    const ai = new GoogleGenAI({ apiKey });
-    
-    // Only use models that actually exist in the Gemini API
-    const validModels = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-2.0-pro-exp'
-    ];
-
-    let success = false;
-    let finalTranscriptData = null;
-
-    for (const modelName of validModels) {
-      try {
-        console.log(`Attempting transcription with model: ${modelName}`);
-        
-        const prompt = "Transcribe this audio recording. ALL generated text MUST be translated to English, regardless of the language spoken in the audio. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (in English), 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
-
-        const response = await ai.models.generateContent({
-          model: modelName,
-          config: {
-            // CRITICAL for 25-minute audio:
-            maxOutputTokens: 8192, 
-            responseMimeType: "application/json",
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: prompt },
-                { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
-              ]
-            }
-          ]
-        });
-        
-        const rawText = response.text || "{}";
-
-        // Clean markdown backticks if the model ignores responseMimeType
-        const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        const parseTranscript = (text: string) => {
-          try {
-            return JSON.parse(text);
-          } catch (e) {
-            const firstBrace = text.indexOf('{');
-            const lastBrace = text.lastIndexOf('}');
-            if (firstBrace >= 0 && lastBrace > firstBrace) {
-              const candidate = text.slice(firstBrace, lastBrace + 1);
-              try {
-                return JSON.parse(candidate);
-              } catch (innerErr) {
-                console.warn('Failed to parse extracted JSON candidate:', innerErr);
-              }
-            }
-            throw e;
-          }
-        };
-
+      if (!audioBlob) {
         try {
-          finalTranscriptData = parseTranscript(jsonStr);
-        } catch (parseError) {
-          console.warn('Failed to parse transcription JSON from model response; using raw text fallback.', parseError, jsonStr);
-          finalTranscriptData = { fullText: rawText, segments: [] };
+          const response = await fetch(recording.audioUrl);
+          if (!response.ok) throw new Error(`Direct fetch failed (${response.status})`);
+          audioBlob = await response.blob();
+        } catch (directErr) {
+          console.warn("Direct fetch failed, trying corsproxy:", directErr);
+          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
+          const response = await fetch(proxyUrl);
+          if (!response.ok) throw new Error(`Failed to fetch via proxy (${response.status})`);
+          audioBlob = await response.blob();
         }
-
-        success = true;
-        console.log(`Successfully transcribed with ${modelName}`);
-        break; // Exit loop on success
-
-      } catch (err: any) {
-        const status = err?.status || err?.code;
-        if (status === 429) {
-          console.error(`Model ${modelName} hit rate limit (429). Waiting 3 seconds before fallback...`);
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          continue; // Try the next model in the list
-        } else if (status === 404) {
-          console.error(`Model ${modelName} not found (404).`);
-          continue;
-        }
-        throw err; // Stop if it's a different kind of error (e.g., auth)
       }
+
+      if (!audioBlob) throw new Error("Unable to retrieve audio blob for transcription.");
+      // --- End Audio Retrieval Logic ---
+
+      // 2. Upload to Gemini File API
+      const fileUri = await uploadFileToGemini(audioBlob, apiKey);
+
+      // 3. Initialize AI with correct Model List
+      const ai = new GoogleGenAI({ apiKey });
+
+      // Only use models that actually exist in the Gemini API
+      const validModels = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-2.0-pro-exp'
+      ];
+
+      let success = false;
+      let finalTranscriptData = null;
+
+      for (const modelName of validModels) {
+        try {
+          console.log(`Attempting transcription with model: ${modelName}`);
+
+          const prompt = "Transcribe this audio recording. ALL generated text MUST be translated to English, regardless of the language spoken in the audio. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (in English), 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
+
+          const response = await ai.models.generateContent({
+            model: modelName,
+            config: {
+              // CRITICAL for 25-minute audio:
+              maxOutputTokens: 25000,
+              responseMimeType: "application/json",
+            },
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  { text: prompt },
+                  { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
+                ]
+              }
+            ]
+          });
+
+          const rawText = response.text || "{}";
+
+          // Clean markdown backticks if the model ignores responseMimeType
+          const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+          const parseTranscript = (text: string) => {
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              const firstBrace = text.indexOf('{');
+              const lastBrace = text.lastIndexOf('}');
+              if (firstBrace >= 0 && lastBrace > firstBrace) {
+                const candidate = text.slice(firstBrace, lastBrace + 1);
+                try {
+                  return JSON.parse(candidate);
+                } catch (innerErr) {
+                  console.warn('Failed to parse extracted JSON candidate:', innerErr);
+                }
+              }
+              throw e;
+            }
+          };
+
+          try {
+            finalTranscriptData = parseTranscript(jsonStr);
+          } catch (parseError) {
+            console.warn('Failed to parse transcription JSON from model response; using raw text fallback.', parseError, jsonStr);
+            finalTranscriptData = { fullText: rawText, segments: [] };
+          }
+
+          success = true;
+          console.log(`Successfully transcribed with ${modelName}`);
+          break; // Exit loop on success
+
+        } catch (err: any) {
+          const status = err?.status || err?.code;
+          if (status === 429) {
+            console.error(`Model ${modelName} hit rate limit (429). Waiting 3 seconds before fallback...`);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            continue; // Try the next model in the list
+          } else if (status === 404) {
+            console.error(`Model ${modelName} not found (404).`);
+            continue;
+          }
+          throw err; // Stop if it's a different kind of error (e.g., auth)
+        }
+      }
+
+      if (!success || !finalTranscriptData) {
+        throw new Error("All Gemini models are busy (Quota 429) or unavailable. Please wait 60 seconds and try again.");
+      }
+
+      // 4. Update Database
+      await updateDoc(doc(db, 'recordings', id), {
+        transcript: String(finalTranscriptData.fullText || recording.transcript || ''),
+        transcriptData: finalTranscriptData.segments || [],
+        updatedAt: Timestamp.now()
+      });
+
+      // 5. Update local state
+      setRecording((prev: any) => ({
+        ...prev,
+        transcript: String(finalTranscriptData.fullText || prev.transcript || ''),
+        transcriptData: finalTranscriptData.segments || []
+      }));
+
+      alert("Transcription updated successfully!");
+
+    } catch (err: any) {
+      console.error("Transcription sync failed:", err);
+      alert(err.message || "An error occurred during transcription.");
+    } finally {
+      setIsSyncing(false);
     }
-
-    if (!success || !finalTranscriptData) {
-      throw new Error("All Gemini models are busy (Quota 429) or unavailable. Please wait 60 seconds and try again.");
-    }
-
-    // 4. Update Database
-    await updateDoc(doc(db, 'recordings', id), {
-      transcript: String(finalTranscriptData.fullText || recording.transcript || ''),
-      transcriptData: finalTranscriptData.segments || [],
-      updatedAt: Timestamp.now()
-    });
-
-    // 5. Update local state
-    setRecording((prev: any) => ({
-      ...prev,
-      transcript: String(finalTranscriptData.fullText || prev.transcript || ''),
-      transcriptData: finalTranscriptData.segments || []
-    }));
-
-    alert("Transcription updated successfully!");
-
-  } catch (err: any) {
-    console.error("Transcription sync failed:", err);
-    alert(err.message || "An error occurred during transcription.");
-  } finally {
-    setIsSyncing(false);
-  }
-};
+  };
 
   useEffect(() => {
     const fetchRec = async () => {
@@ -436,7 +475,7 @@ const RecordingView = () => {
         <header className="mb-12 border-b border-slate-100 pb-8 flex flex-col md:flex-row justify-between items-start gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest mb-4">
-              AI Report
+              Report
             </div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Transcript</h1>
             <p className="text-slate-500 font-medium mt-1">
@@ -450,7 +489,7 @@ const RecordingView = () => {
               className="px-6 py-3 bg-white text-indigo-600 border border-slate-200 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg shadow-slate-200/5 disabled:opacity-50"
             >
               {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
-              {isSyncing ? 'Updating...' : 'Update'}
+              {isSyncing ? 'Updating...' : 'Re-Transcribe'}
             </button>
             <button
               onClick={() => window.print()}
@@ -606,7 +645,8 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/r/:id" element={<RecordingView />} />
-            <Route path="/history" element={<HistoryView user={user} />} />
+            {/* <Route path="/history" element={<HistoryView user={user} />} /> */}
+            <Route path="/history" element={<Reports user={user} />} />
             <Route path="/clients" element={<Leads user={user} />} />
             <Route path="/clients/new" element={<LeadForm user={user} />} />
             <Route path="/clients/:id/edit" element={<LeadForm user={user} />} />

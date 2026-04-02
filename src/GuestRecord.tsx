@@ -157,7 +157,7 @@ export default function GuestRecord() {
         if (apiKey) {
           const fileUri = await uploadFileToGemini(blob, apiKey);
           const ai = new GoogleGenAI({ apiKey });
-          
+
           const validModels = [
             'gemini-2.5-flash',
             'gemini-2.0-flash',
@@ -169,14 +169,14 @@ export default function GuestRecord() {
           for (const modelName of validModels) {
             try {
               console.log(`Attempting transcription with model: ${modelName}`);
-              
+
               const prompt = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
 
               const response = await ai.models.generateContent({
                 model: modelName,
                 config: {
                   // CRITICAL for 25-minute audio:
-                  maxOutputTokens: 8192, 
+                  maxOutputTokens: 250000,
                   responseMimeType: "application/json",
                 },
                 contents: [
@@ -263,7 +263,7 @@ export default function GuestRecord() {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(blob);
         stream.getTracks().forEach(t => t.stop());
-        
+
         // If auto-submit was triggered, wait a tiny bit for state to settle then transcribe
         if (autoSubmitRef.current) {
           // Wrap in a function to ensure it uses the latest blob
@@ -375,7 +375,7 @@ export default function GuestRecord() {
             >
               {/* Header card */}
               <motion.div className="w-full bg-white/5 border border-white/8 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center">
-                
+
                 {/* Brand pill */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/15 border border-violet-500/20 mb-7">
                   <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
@@ -433,11 +433,10 @@ export default function GuestRecord() {
                     <motion.button
                       onClick={isRecording ? stopRecording : startRecording}
                       whileTap={{ scale: 0.93 }}
-                      className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${
-                        isRecording
+                      className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${isRecording
                           ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
                           : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
-                      } ${isPaused ? 'opacity-70' : ''}`}
+                        } ${isPaused ? 'opacity-70' : ''}`}
                     >
                       {isRecording
                         ? <Square className="text-white fill-white" size={36} />

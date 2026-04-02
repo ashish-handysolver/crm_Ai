@@ -19,7 +19,7 @@ export default function ManualUpload({ user }: { user: any }) {
   const [selectedLeadId, setSelectedLeadId] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [manualText, setManualText] = useState('');
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -49,7 +49,7 @@ export default function ManualUpload({ user }: { user: any }) {
       setError('Please upload a file or type some notes.');
       return;
     }
-    
+
     setError('');
     setIsSubmitting(true);
 
@@ -197,7 +197,7 @@ export default function ManualUpload({ user }: { user: any }) {
       };
 
       await setDoc(doc(db, 'recordings', generatedId), recordingDoc);
-      
+
       setSuccess(true);
       setTimeout(() => navigate('/history'), 2000);
 
@@ -220,28 +220,27 @@ export default function ManualUpload({ user }: { user: any }) {
   return (
     <div className="flex-1 bg-slate-50 p-4 md:p-8 lg:p-12 min-h-full">
       <div className="max-w-3xl mx-auto">
-        
+
         <header className="mb-8 md:mb-12 text-center md:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/50 text-indigo-600 text-xs font-bold uppercase tracking-widest mb-4">
-            <Sparkles size={14} />
-            Add Manually
+            <Sparkles size={14} /> Add Info
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">Add Information</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">Add Info</h1>
           <p className="text-slate-500 text-base leading-relaxed max-w-2xl">
-            Upload an audio recording or a document (Word/PDF), or just paste your notes. We will save it for this client.
+            Upload a recording, document, or paste notes for a client.
           </p>
         </header>
 
         <AnimatePresence mode="wait">
           {success ? (
-            <motion.div 
+            <motion.div
               key="success"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} 
-              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
               className="bg-white rounded-[2.5rem] p-12 text-center border border-emerald-100 shadow-2xl shadow-emerald-900/10 relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent pointer-events-none"></div>
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}
                 className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/30"
               >
@@ -251,11 +250,11 @@ export default function ManualUpload({ user }: { user: any }) {
               <p className="text-slate-500 text-lg font-medium max-w-md mx-auto">The information has been successfully saved. Going to history...</p>
             </motion.div>
           ) : (
-            <motion.form 
+            <motion.form
               key="form"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              onSubmit={handleSubmit} 
+              onSubmit={handleSubmit}
               className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl shadow-slate-200/50 border border-white"
             >
               {error && (
@@ -270,9 +269,9 @@ export default function ManualUpload({ user }: { user: any }) {
                 <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3 ml-1">
                     <UserCircle size={18} className="text-indigo-500" />
-                    Select Client <span className="text-red-500">*</span>
+                    Client <span className="text-red-500">*</span>
                   </label>
-                  <select 
+                  <select
                     value={selectedLeadId}
                     onChange={e => setSelectedLeadId(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-base font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-slate-700 shadow-sm appearance-none cursor-pointer"
@@ -289,9 +288,9 @@ export default function ManualUpload({ user }: { user: any }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Audio Upload Zone */}
                   <div className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-white'}`}>
-                    <input 
-                      type="file" 
-                      accept="audio/*" 
+                    <input
+                      type="file"
+                      accept="audio/*"
                       onChange={e => {
                         const file = e.target.files?.[0] || null;
                         if (file) setUploadFile(file);
@@ -303,7 +302,7 @@ export default function ManualUpload({ user }: { user: any }) {
                     </div>
                     <div className="text-center">
                       <p className={`font-bold text-base mb-1 ${uploadFile && isAudio ? 'text-indigo-900' : 'text-slate-700'}`}>
-                        {uploadFile && isAudio ? 'Recording Ready' : 'Audio Recording'}
+                        {uploadFile && isAudio ? 'Recording Ready' : 'Upload Audio'}
                       </p>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                         {uploadFile && isAudio ? uploadFile.name : 'MP3, WAV, WEBM'}
@@ -313,9 +312,9 @@ export default function ManualUpload({ user }: { user: any }) {
 
                   {/* Document Upload Zone */}
                   <div className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-white'}`}>
-                    <input 
-                      type="file" 
-                      accept=".pdf,.doc,.docx,.txt" 
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt"
                       onChange={e => {
                         const file = e.target.files?.[0] || null;
                         if (file) setUploadFile(file);
@@ -327,7 +326,7 @@ export default function ManualUpload({ user }: { user: any }) {
                     </div>
                     <div className="text-center">
                       <p className={`font-bold text-base mb-1 ${uploadFile && isDoc ? 'text-indigo-900' : 'text-slate-700'}`}>
-                        {uploadFile && isDoc ? 'Document Ready' : 'Doc / Prompt File'}
+                        {uploadFile && isDoc ? 'Document Ready' : 'Upload Document'}
                       </p>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                         {uploadFile && isDoc ? uploadFile.name : 'Word, PDF, TXT'}
@@ -342,10 +341,10 @@ export default function ManualUpload({ user }: { user: any }) {
                     <div className="absolute top-4 left-4 text-slate-400 pointer-events-none">
                       <Sparkles size={18} className="text-indigo-400" />
                     </div>
-                    <textarea 
+                    <textarea
                       value={manualText}
                       onChange={e => setManualText(e.target.value)}
-                      placeholder="Or type/paste your notes (prompt) here..."
+                      placeholder="Or, paste notes here..."
                       className="w-full min-h-[160px] bg-slate-50 border border-slate-200 rounded-[2rem] pl-12 pr-6 py-4 text-sm font-medium focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none text-slate-700 placeholder:text-slate-400 leading-relaxed shadow-inner"
                     />
                   </div>
@@ -354,7 +353,7 @@ export default function ManualUpload({ user }: { user: any }) {
 
               {/* Footer Actions */}
               <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <span className="text-xs font-bold text-slate-400 px-2 py-1 bg-slate-100 rounded-md">At least ONE input (File or Notes) is required</span>
+                <span className="text-xs font-bold text-slate-400 px-2 py-1 bg-slate-100 rounded-md">File or notes required</span>
                 <button
                   type="submit"
                   disabled={isSubmitting || isDemoMode}
@@ -363,7 +362,7 @@ export default function ManualUpload({ user }: { user: any }) {
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
                   {isSubmitting ? <Loader2 className="animate-spin relative z-10" size={20} /> : isDemoMode ? <Eye className="relative z-10" size={20} /> : <UploadCloud className="relative z-10" size={20} />}
                   <span className="relative z-10">
-                    {isSubmitting ? 'Saving...' : isDemoMode ? 'Readonly Mode' : 'Save Info'}
+                    {isSubmitting ? 'Saving...' : isDemoMode ? 'Readonly Mode' : 'Save'}
                   </span>
                 </button>
               </div>

@@ -20,7 +20,8 @@ export default function LeadForm({ user }: { user: any }) {
   const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
   const [customSources, setCustomSources] = useState<string[]>([]);
   const [customPhases, setCustomPhases] = useState<string[]>([]);
-  
+  const [customLeadTypes, setCustomLeadTypes] = useState<string[]>([]);
+
   const [formData, setFormData] = useState<any>({
     name: '',
     email: '',
@@ -28,6 +29,7 @@ export default function LeadForm({ user }: { user: any }) {
     location: '',
     phone: '',
     source: 'DIRECT',
+    leadType: 'B2B',
     score: 50,
     phase: 'DISCOVERY',
     avatar: ''
@@ -42,12 +44,12 @@ export default function LeadForm({ user }: { user: any }) {
           if (docSnap.exists()) {
             setFormData({ avatar: '', ...docSnap.data() } as any);
           } else {
-             // Mock data population if it's the dummy IDs, so edit works visually
-             if (id === '1') setFormData({ name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' });
-             else if (id === '2') setFormData({ name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', score: 62, phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e' });
-             else if (id === '3') setFormData({ name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', score: 92, phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f' });
-             else if (id === '4') setFormData({ name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', score: 15, phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g' });
-             else setError("Lead details could not be retrieved from the matrix.");
+            // Mock data population if it's the dummy IDs, so edit works visually
+            if (id === '1') setFormData({ name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' });
+            else if (id === '2') setFormData({ name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', score: 62, phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e' });
+            else if (id === '3') setFormData({ name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', score: 92, phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f' });
+            else if (id === '4') setFormData({ name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', score: 15, phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g' });
+            else setError("Lead details could not be retrieved from the matrix.");
           }
         } catch (err) {
           console.error(err);
@@ -72,6 +74,7 @@ export default function LeadForm({ user }: { user: any }) {
       if (snap.exists()) {
         setCustomSources(snap.data().customSources || []);
         setCustomPhases(snap.data().customPhases || []);
+        setCustomLeadTypes(snap.data().customLeadTypes || []);
       }
     }).catch(console.error);
   }, [companyId]);
@@ -85,12 +88,12 @@ export default function LeadForm({ user }: { user: any }) {
 
       const leadId = isEditing ? id : uuidv4();
       const payload = {
-         ...formData,
-         id: leadId,
-         updatedAt: Timestamp.now(),
-         ...(isEditing ? {} : { createdAt: Timestamp.now(), companyId: companyId })
+        ...formData,
+        id: leadId,
+        updatedAt: Timestamp.now(),
+        ...(isEditing ? {} : { createdAt: Timestamp.now(), companyId: companyId })
       };
-      
+
       await setDoc(doc(db, 'leads', leadId as string), payload);
       navigate('/clients');
     } catch (err: any) {
@@ -148,214 +151,221 @@ export default function LeadForm({ user }: { user: any }) {
   return (
     <div className="flex-1 bg-[#F9FBFF] text-slate-900 p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
-        
+
         <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-all mb-10 group">
           <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 shadow-sm transition-colors">
             <ChevronLeft size={16} />
           </div>
           Back to Intelligence Ledger
         </Link>
-        
+
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-            <div className="text-[10px] font-extrabold text-indigo-500 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
-               <Sparkles size={14} className="animate-pulse" /> Asset Modification Protocol
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-              {isEditing ? 'Modify Lead' : 'Initialize New Lead'}
-            </h1>
-            <p className="text-slate-500 mt-4 text-lg font-medium max-w-2xl">
-               Maintain the integrity of the sales pipeline by ensuring all lead vectors are accurately categorized within the dossier.
-            </p>
+          <div className="text-[10px] font-extrabold text-indigo-500 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+            <Sparkles size={14} className="animate-pulse" /> Asset Modification Protocol
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+            {isEditing ? 'Modify Lead' : 'New Lead'}
+          </h1>
+
         </motion.header>
 
         {error && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8 p-5 bg-rose-50 text-rose-600 rounded-2xi flex items-center gap-4 text-sm font-bold border border-rose-100 shadow-xl shadow-rose-500/5">
-              <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
-                <AlertCircle size={20} />
-              </div>
-              {error}
-            </motion.div>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8 p-5 bg-rose-50 text-rose-600 rounded-2xi flex items-center gap-4 text-sm font-bold border border-rose-100 shadow-xl shadow-rose-500/5">
+            <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
+              <AlertCircle size={20} />
+            </div>
+            {error}
+          </motion.div>
         )}
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden relative group">
-           {/* Decorative Background Blob */}
+          {/* Decorative Background Blob */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-indigo-100/50"></div>
-          
+
           <form onSubmit={handleSubmit} className="p-8 sm:p-12 relative z-10">
-            
+
             {/* Avatar Section */}
             <div className="flex flex-col items-center mb-12">
-               <div className="relative group cursor-pointer mb-4">
-                 <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                 <div className="w-28 h-28 rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-indigo-400 transition-all duration-300 relative">
-                    {formData.avatar ? (
-                      <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 text-slate-300">
-                        <User size={36} />
-                        <span className="text-[10px] font-black uppercase tracking-tighter">Null Image</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors flex items-center justify-center pointer-events-none">
-                       <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
+              <div className="relative group cursor-pointer mb-4">
+                <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <div className="w-28 h-28 rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-indigo-400 transition-all duration-300 relative">
+                  {formData.avatar ? (
+                    <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-slate-300">
+                      <User size={36} />
+                      <span className="text-[10px] font-black uppercase tracking-tighter">Image</span>
                     </div>
-                 </div>
-               </div>
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biometric Identity Photo</span>
+                  )}
+                  <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors flex items-center justify-center pointer-events-none">
+                    <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
+                  </div>
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity Photo</span>
             </div>
 
             <div className="space-y-12">
-              
+
               {/* Primary Identity Section */}
               <section>
-                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={16} /></div>
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Primary Identity</h3>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><User size={16} /></div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">User Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="relative">
+                    <label className={labelClasses}>Full Name</label>
                     <div className="relative">
-                      <label className={labelClasses}>Full Identification Name</label>
-                      <div className="relative">
-                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                        <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. Alexander Sterling" />
-                      </div>
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. Alexander Sterling" />
                     </div>
-                    <div>
-                      <label className={labelClasses}>Communication Endpoint (Email)</label>
-                      <div className="relative">
-                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                        <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="a.sterling@vanguard.io" />
-                      </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="a.sterling@vanguard.io" />
                     </div>
-                 </div>
+                  </div>
+                </div>
               </section>
 
               {/* Organizational Vector Section */}
               <section>
-                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><Building2 size={16} /></div>
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Organizational Vector</h3>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <label className={labelClasses}>Entity Corporation</label>
-                      <div className="relative">
-                        <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                        <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Vanguard Systems" />
-                      </div>
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><Building2 size={16} /></div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Organization Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <label className={labelClasses}>Organization Name</label>
+                    <div className="relative">
+                      <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Vanguard Systems" />
                     </div>
-                    <div>
-                      <label className={labelClasses}>Geographic Coordinates</label>
-                      <div className="relative">
-                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                        <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="London, UK" />
-                      </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Organization Location</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="London, UK" />
                     </div>
-                    <div>
-                      <label className={labelClasses}>Direct Dial Parameter</label>
-                      <div className="relative">
-                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                        <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 8900" />
-                      </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Mobile Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 8900" />
                     </div>
-                    <div>
-                      <label className={labelClasses}>Acquisition Source</label>
-                      <select name="source" value={formData.source} onChange={handleChange} className={inputClasses}>
-                        <option value="LINKEDIN">LinkedIn Network</option>
-                        <option value="REFERRAL">Internal Referral</option>
-                        <option value="DIRECT">Direct Traffic</option>
-                        <option value="WEBSITE">Main Terminal (Website)</option>
-                        {customSources.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                 </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Lead Source</label>
+                    <select name="source" value={formData.source} onChange={handleChange} className={inputClasses}>
+                      <option value="LINKEDIN">LinkedIn Network</option>
+                      <option value="REFERRAL">Internal Referral</option>
+                      <option value="DIRECT">Direct Traffic</option>
+                      <option value="WEBSITE">Main Terminal (Website)</option>
+                      {customSources.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Lead Type</label>
+                    <select name="leadType" value={formData.leadType || 'B2B'} onChange={handleChange} className={inputClasses}>
+                      <option value="B2B">B2B</option>
+                      <option value="B2C">B2C</option>
+                      <option value="ENTERPRISE">Enterprise</option>
+                      {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
               </section>
 
               {/* Disposition & Scoring Section */}
               <section>
-                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Zap className="fill-emerald-500" size={16} /></div>
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Disposition & Logic</h3>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <label className={labelClasses}>Lifecycle Phase</label>
-                      <select name="phase" value={formData.phase} onChange={handleChange} className={inputClasses}>
-                        <option value="DISCOVERY">Discovery Protocol</option>
-                        <option value="NURTURING">Nurturing Cycle</option>
-                        <option value="QUALIFIED">Qualified Status</option>
-                        <option value="INACTIVE">Inactive / Archived</option>
-                        {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <label className={`${labelClasses} flex justify-between`}>
-                         Interest Score Matrix
-                         <span className="text-indigo-600 font-black">{formData.score}% Match</span>
-                      </label>
-                      <div className="px-2 pt-2">
-                         <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500 transition-all shadow-inner" />
-                         <div className="flex justify-between mt-3 px-1">
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Low Intent</span>
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Peak Conversion</span>
-                         </div>
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Zap className="fill-emerald-500" size={16} /></div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Lead Status</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <label className={labelClasses}>Lead Phase</label>
+                    <select name="phase" value={formData.phase} onChange={handleChange} className={inputClasses}>
+                      <option value="DISCOVERY">Discovery Protocol</option>
+                      <option value="NURTURING">Nurturing Cycle</option>
+                      <option value="QUALIFIED">Qualified Status</option>
+                      <option value="INACTIVE">Inactive / Archived</option>
+                      {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <label className={`${labelClasses} flex justify-between`}>
+                      Intrest Level
+                      <span className="text-indigo-600 font-black">{formData.score}% Match</span>
+                    </label>
+                    <div className="px-2 pt-2">
+                      <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500 transition-all shadow-inner" />
+                      <div className="flex justify-between mt-3 px-1">
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Low Intent</span>
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Peak Conversion</span>
                       </div>
                     </div>
-                 </div>
+                  </div>
+                </div>
               </section>
 
               {/* Dynamic Logic Matrices (Custom Fields) */}
               {customFieldDefs.length > 0 && (
                 <section>
-                   <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-                      <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center"><Globe size={16} /></div>
-                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Dynamic Logic Parameters</h3>
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     {customFieldDefs.map(field => (
-                       <div key={field.id}>
-                         <label className={labelClasses}>{field.name}</label>
-                         {field.type === 'DROPDOWN' ? (
-                           <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses}>
-                             <option value="">Select Option</option>
-                             {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                           </select>
-                         ) : field.type === 'DATE' ? (
-                           <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
-                         ) : field.type === 'DATETIME' ? (
-                           <input type="datetime-local" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
-                         ) : (
-                           <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name} payload`} />
-                         )}
-                       </div>
-                     ))}
-                   </div>
+                  <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center"><Globe size={16} /></div>
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Supporting Links</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {customFieldDefs.map(field => (
+                      <div key={field.id}>
+                        <label className={labelClasses}>{field.name}</label>
+                        {field.type === 'DROPDOWN' ? (
+                          <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses}>
+                            <option value="">Select Option</option>
+                            {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                          </select>
+                        ) : field.type === 'DATE' ? (
+                          <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
+                        ) : field.type === 'DATETIME' ? (
+                          <input type="datetime-local" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
+                        ) : (
+                          <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name} payload`} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </section>
               )}
             </div>
-            
+
             {/* Form Footer Action Bar */}
             <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4">
-               <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                  <ChevronLeft size={18} /> Cancel Cycle
-               </Link>
-               <button type="submit" disabled={saving} className="flex items-center justify-center gap-3 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50">
-                  {saving ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <Save size={20} className={isEditing ? 'text-indigo-300' : 'text-emerald-300'} />
-                  )}
-                  {isEditing ? 'Update Persona' : 'Commit New Entry'}
-               </button>
+              <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                <ChevronLeft size={18} /> Cancel
+              </Link>
+              <button type="submit" disabled={saving} className="flex items-center justify-center gap-3 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50">
+                {saving ? (
+                  <Loader2 size={20} className="animate-spin" />
+                ) : (
+                  <Save size={20} className={isEditing ? 'text-indigo-300' : 'text-emerald-300'} />
+                )}
+                {isEditing ? 'Update' : 'Save'}
+              </button>
             </div>
           </form>
         </motion.div>
 
         {/* Informational Footer */}
         <div className="mt-12 text-center">
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-               System Security: All data is encrypted via AES-256 Protocol & Scoped to Company ID: {companyId?.slice(0, 8)}...
-            </p>
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+            System Security: All data is encrypted via AES-256 Protocol & Scoped to Company ID: {companyId?.slice(0, 8)}...
+          </p>
         </div>
 
       </div>
