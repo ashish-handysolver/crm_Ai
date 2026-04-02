@@ -82,13 +82,34 @@ export default function ManualUpload({ user }: { user: any }) {
             promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps. Return a JSON object with a 'fullText' string (the summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
           }
 
-<<<<<<< HEAD
-          const modelCandidates = [
-            process.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash',
-            'gemini-1.5',
-            'gemini-1.0',
-            'gemini-2.0-flash'
+          const availableModelCandidates = [
+            'gemini-2.0-mini',
+            'gemini-2.0-flash',
+            'gemini-2.0-flash-lite',
+            'gemini-1.5-turbo',
+            'gemini-1.5-flash',
+            'gemini-1.0'
           ];
+
+          const envModel = (import.meta as any).env.VITE_GEMINI_MODEL || (process.env as any).GEMINI_MODEL;
+          const userModelList = envModel ? [envModel] : [];
+
+          let listingModels: string[] = [];
+          try {
+            const listResult = await ai.models.list({});
+            const candidateFromList = (listResult as any)?.models || (listResult as any)?.model || [];
+            if (Array.isArray(candidateFromList)) {
+              listingModels = candidateFromList.map((m: any) => (m?.name || m || '').toString()).filter(Boolean);
+            }
+          } catch (e) {
+            console.warn('Could not retrieve model list from Gemini, continuing with default candidates.', e);
+          }
+
+          const modelCandidates = Array.from(new Set([
+            ...userModelList,
+            ...availableModelCandidates.filter(m => listingModels.length === 0 || listingModels.includes(m)),
+            ...availableModelCandidates
+          ]));
 
           let response: any = null;
           let usedModel: string | null = null;
@@ -102,27 +123,13 @@ export default function ManualUpload({ user }: { user: any }) {
                     role: 'user',
                     parts: [
                       { text: promptText },
-                      { 
-                        fileData: { 
-                          mimeType: uploadFile.type || (isPdf ? "application/pdf" : isWord ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : isTxt ? "text/plain" : "audio/webm"), 
-                          fileUri 
-                        } 
+                      {
+                        fileData: {
+                          mimeType: uploadFile.type || (isPdf ? 'application/pdf' : isWord ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : isTxt ? 'text/plain' : 'audio/webm'),
+                          fileUri
+                        }
                       }
                     ]
-=======
-          const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  { text: promptText },
-                  { 
-                    fileData: { 
-                      mimeType: uploadFile.type || (isPdf ? "application/pdf" : isWord ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : isTxt ? "text/plain" : "audio/webm"), 
-                      fileUri 
-                    } 
->>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
                   }
                 ]
               });
@@ -150,13 +157,10 @@ export default function ManualUpload({ user }: { user: any }) {
             }
           }
 
-<<<<<<< HEAD
           if (!response || !usedModel) {
             throw new Error('All Gemini models exhausted or unavailable. Please check billing/quota.');
           }
 
-=======
->>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
           // Robust parsing
           let rawText = "{}";
           const resAny = response as any;

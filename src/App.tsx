@@ -18,7 +18,8 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import {
-  ref
+  ref,
+  getBytes
 } from 'firebase/storage';
 import {
   signInWithPopup,
@@ -239,127 +240,142 @@ const RecordingView = () => {
     }
   };
 
-  const handleSync = async () => {
-    if (!recording || !recording.audioUrl || isSyncing || !id) return;
-    setIsSyncing(true);
+ const handleSync = async () => {
+  if (!recording || !recording.audioUrl || isSyncing || !id) return;
+  
+  setIsSyncing(true);
+  
+  try {
+    // 1. Get API Key from Environment Variables
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Gemini API Key is missing in environment variables (VITE_GEMINI_API_KEY).");
+    }
+
+    let audioBlob: Blob | null = null;
+
+    // --- Start Audio Retrieval Logic ---
     try {
-      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
-      if (!apiKey) throw new Error("API Key missing.");
+      const storagePath = getStoragePathFromUrl(recording.audioUrl);
+      if (storagePath) {
+        const storageRef = ref(storage, storagePath);
+        const buffer = await getBytes(storageRef);
+        audioBlob = new Blob([buffer], { type: 'audio/webm' });
+        console.log("Audio acquired from Firebase Storage:", audioBlob.size);
+      }
+    } catch (readErr) {
+      console.warn("Firebase getBytes failed, trying direct fetch:", readErr);
+    }
 
-      let audioBlob: Blob | null = null;
-      // 1) Try Firebase Storage SDK read (preferred, avoids CORS issues)
+    if (!audioBlob) {
       try {
-        const storagePath = getStoragePathFromUrl(recording.audioUrl);
-        if (storagePath) {
-          const storageRef = ref(storage, storagePath);
-          const buffer = await getBytes(storageRef);
-          audioBlob = new Blob([buffer], { type: 'audio/webm' });
-          console.log("Audio Blob acquired from Firebase Storage getBytes:", audioBlob.size);
-        }
-      } catch (readErr) {
-        console.warn("Firebase getBytes failed, trying direct fetch:", readErr);
+        const response = await fetch(recording.audioUrl);
+        if (!response.ok) throw new Error(`Direct fetch failed (${response.status})`);
+        audioBlob = await response.blob();
+      } catch (directErr) {
+        console.warn("Direct fetch failed, trying corsproxy:", directErr);
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`Failed to fetch via proxy (${response.status})`);
+        audioBlob = await response.blob();
       }
+    }
 
-      // 2) Fallback: standard fetch to the URL (with CORS proxy if needed)
-      if (!audioBlob) {
-        try {
-          const response = await fetch(recording.audioUrl);
-          if (!response.ok) throw new Error(`Direct fetch failed (${response.status})`);
-          audioBlob = await response.blob();
-          console.log("Audio Blob acquired directly via URL:", audioBlob.size);
-        } catch (directErr) {
-          console.warn("Direct fetch failed, trying corsproxy:", directErr);
-          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
-          const response = await fetch(proxyUrl);
-          if (!response.ok) throw new Error(`Failed to fetch via proxy (${response.status})`);
-          audioBlob = await response.blob();
-          console.log("Audio Blob acquired via proxy:", audioBlob.size);
-        }
-      }
+    if (!audioBlob) throw new Error("Unable to retrieve audio blob for transcription.");
+    // --- End Audio Retrieval Logic ---
 
-      if (!audioBlob) throw new Error("Unable to retrieve audio blob for transcription.");
+    // 2. Upload to Gemini File API
+    const fileUri = await uploadFileToGemini(audioBlob, apiKey);
+    
+    // 3. Initialize AI with correct Model List
+    const ai = new GoogleGenAI({ apiKey });
+    
+    // Only use models that actually exist in the Gemini API
+    const validModels = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-pro-exp'
+    ];
 
-      const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-      const ai = new GoogleGenAI({ apiKey });
+    let success = false;
+    let finalTranscriptData = null;
 
-      const modelCandidates = [
-        process.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash',
-        'gemini-1.5',
-        'gemini-1.0',
-        'gemini-2.0-flash'
-      ];
+    for (const modelName of validModels) {
+      try {
+        console.log(`Attempting transcription with model: ${modelName}`);
+        
+        const prompt = "Transcribe this audio recording. ALL generated text MUST be translated to English, regardless of the language spoken in the audio. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (in English), 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
 
-      let genResult: any = null;
-      let usedModel: string | null = null;
-      for (const model of modelCandidates) {
-        try {
-          genResult = await ai.models.generateContent({
-            model,
-            contents: [{
-              role: 'user', parts: [
-                { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON string." },
+        const response = await ai.models.generateContent({
+          model: modelName,
+          config: {
+            // CRITICAL for 25-minute audio:
+            maxOutputTokens: 8192, 
+            responseMimeType: "application/json",
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: prompt },
                 { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
               ]
-            }]
-          });
-          usedModel = model;
-          console.log(`Transcription generated with model ${model}`);
-          break;
-        } catch (err: any) {
-          const status = err?.status || err?.code;
-          const message = (err?.message || '').toLowerCase();
-          const retryConditions = [
-            status === 429,
-            message.includes('quota'),
-            message.includes('too many requests'),
-            message.includes('resource_exhausted'),
-            status === 404,
-            message.includes('not found'),
-            message.includes('is not found')
-          ];
+            }
+          ]
+        });
+        
+        const rawText = response.text || "{}";
 
-          if (retryConditions.some(Boolean)) {
-            console.warn(`Model ${model} unavailable/quota issue, trying next:`, err?.message || err);
-            continue;
-          }
-          throw err;
+        // Clean markdown backticks if the model ignores responseMimeType
+        const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        finalTranscriptData = JSON.parse(jsonStr);
+        
+        success = true;
+        console.log(`Successfully transcribed with ${modelName}`);
+        break; // Exit loop on success
+
+      } catch (err: any) {
+        const status = err?.status || err?.code;
+        if (status === 429) {
+          console.error(`Model ${modelName} hit rate limit (429). Waiting 3 seconds before fallback...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          continue; // Try the next model in the list
+        } else if (status === 404) {
+          console.error(`Model ${modelName} not found (404).`);
+          continue;
         }
+        throw err; // Stop if it's a different kind of error (e.g., auth)
       }
-
-      if (!genResult || !usedModel) {
-        throw new Error('All Gemini models exhausted or unavailable. Check quota and API key.');
-      }
-
-      // Robust parsing for unified SDK
-      let rawContent = "{}";
-      const resAny = genResult as any;
-      if (resAny.response?.text && typeof resAny.response.text === 'function') {
-        rawContent = resAny.response.text();
-      } else if (resAny.text && typeof resAny.text === 'function') {
-        rawContent = resAny.text();
-      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        rawContent = resAny.response.candidates[0].content.parts[0].text;
-      }
-
-      const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(jsonStr);
-
-      await updateDoc(doc(db, 'recordings', id), {
-        transcript: String(parsed.fullText || recording.transcript || ''),
-        transcriptData: parsed.segments || []
-      });
-
-      setRecording((prev: any) => ({
-        ...prev,
-        transcript: String(parsed.fullText || prev.transcript || ''),
-        transcriptData: parsed.segments || []
-      }));
-    } catch (err) {
-      console.error("Transcription sync failed:", err);
-    } finally {
-      setIsSyncing(false);
     }
-  };
+
+    if (!success || !finalTranscriptData) {
+      throw new Error("All Gemini models are busy (Quota 429) or unavailable. Please wait 60 seconds and try again.");
+    }
+
+    // 4. Update Database
+    await updateDoc(doc(db, 'recordings', id), {
+      transcript: String(finalTranscriptData.fullText || recording.transcript || ''),
+      transcriptData: finalTranscriptData.segments || [],
+      updatedAt: Timestamp.now()
+    });
+
+    // 5. Update local state
+    setRecording((prev: any) => ({
+      ...prev,
+      transcript: String(finalTranscriptData.fullText || prev.transcript || ''),
+      transcriptData: finalTranscriptData.segments || []
+    }));
+
+    alert("Transcription updated successfully!");
+
+  } catch (err: any) {
+    console.error("Transcription sync failed:", err);
+    alert(err.message || "An error occurred during transcription.");
+  } finally {
+    setIsSyncing(false);
+  }
+};
 
   useEffect(() => {
     const fetchRec = async () => {
