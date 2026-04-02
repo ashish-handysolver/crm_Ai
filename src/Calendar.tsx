@@ -23,7 +23,7 @@ interface Meeting {
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function CalendarPage({ user }: { user: any }) {
   const { companyId } = useAuth();
@@ -64,8 +64,8 @@ export default function CalendarPage({ user }: { user: any }) {
       // Ring pattern: 7 cycles × ~1.4s = ~10 seconds of ringing
       for (let i = 0; i < 7; i++) {
         const base = i * 1.4;
-        playTone(480, 440, base,        0.4); // first ring
-        playTone(480, 440, base + 0.6,  0.4); // second ring
+        playTone(480, 440, base, 0.4); // first ring
+        playTone(480, 440, base + 0.6, 0.4); // second ring
       }
       setTimeout(() => ctx.close(), 11000);
     } catch (e) {
@@ -88,8 +88,8 @@ export default function CalendarPage({ user }: { user: any }) {
     if (isDemoMode) {
       const formattedMeetings = demoData.meetings.map(m => ({
         ...m,
-        scheduledAt: m.scheduledAt ? { 
-          ...m.scheduledAt, 
+        scheduledAt: m.scheduledAt ? {
+          ...m.scheduledAt,
           toDate: () => new Date(m.scheduledAt.seconds * 1000),
           toMillis: () => m.scheduledAt.seconds * 1000
         } : null
@@ -252,21 +252,21 @@ export default function CalendarPage({ user }: { user: any }) {
             </div>
             <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900 leading-none">Intelligence Calendar</h1>
             <p className="text-slate-500 mt-4 text-lg font-medium max-w-xl leading-relaxed">
-               Coordinate strategic alignments and client junctions through our distributed temporal ledger.
+              Coordinate strategic alignments and client junctions through our distributed temporal ledger.
             </p>
           </motion.div>
-          
+
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
             <button
-              onClick={() => { 
-                Notification.requestPermission(); 
+              onClick={() => {
+                Notification.requestPermission();
                 playPulseSound();
-                setSuccess('Telemetry Active: High-priority proximity sound tested.'); 
-                setTimeout(() => setSuccess(''), 4000); 
+                setSuccess('Telemetry Active: High-priority proximity sound tested.');
+                setTimeout(() => setSuccess(''), 4000);
               }}
               className="group flex items-center gap-3 px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl text-sm font-black hover:border-indigo-200 hover:text-indigo-600 shadow-sm transition-all active:scale-95"
             >
-              <Bell size={18} className="group-hover:rotate-12 transition-transform" /> 
+              <Bell size={18} className="group-hover:rotate-12 transition-transform" />
               Push Telemetry (Test Sound)
             </button>
           </motion.div>
@@ -285,11 +285,11 @@ export default function CalendarPage({ user }: { user: any }) {
         </AnimatePresence>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-          
+
           {/* Calendar Grid */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden relative group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-indigo-100/30 transition-colors"></div>
-            
+
             {/* Month nav */}
             <div className="flex items-center justify-between px-10 py-8 border-b border-slate-50 relative z-10">
               <button onClick={prevMonth} className="p-3 bg-slate-50 hover:bg-white border border-slate-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronLeft size={20} /></button>
@@ -313,7 +313,7 @@ export default function CalendarPage({ user }: { user: any }) {
                 const day = i + 1;
                 const dayMeetings = getMeetingsForDay(day);
                 const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-                
+
                 return (
                   <div
                     key={day}
@@ -343,19 +343,19 @@ export default function CalendarPage({ user }: { user: any }) {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
             <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-900/10">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-              
+
               <h3 className="text-xs font-black text-indigo-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center"><Clock size={16} /></div>
-                 Future Junctions
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center"><Clock size={16} /></div>
+                Upcoming Meetings
               </h3>
-              
+
               {upcoming.length === 0 ? (
                 <div className="text-center py-10">
                   <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/20 mx-auto mb-4">
-                     <CalendarIcon size={24} />
+                    <CalendarIcon size={24} />
                   </div>
                   <p className="text-white/40 text-xs font-bold leading-relaxed">
-                    No future temporal alignments detected.<br/>Select a node to initiate.
+                    No future temporal alignments detected.<br />Select a node to initiate.
                   </p>
                 </div>
               ) : (
@@ -363,7 +363,7 @@ export default function CalendarPage({ user }: { user: any }) {
                   {upcoming.map((m, idx) => {
                     const d = m.scheduledAt?.toDate?.();
                     return (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
                         key={m.id} className="p-5 rounded-2xl bg-white/5 border border-white/10 group/item hover:bg-white/10 hover:border-indigo-400/30 transition-all relative overflow-hidden"
                       >
@@ -402,25 +402,7 @@ export default function CalendarPage({ user }: { user: any }) {
             </div>
 
             {/* Legend / Information */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm">
-               <div className="flex items-center gap-3 text-emerald-500 mb-6 font-black text-[10px] tracking-widest uppercase">
-                  <Info size={16} /> Integration Matrix
-               </div>
-               <div className="space-y-4">
-                  <div className="flex items-center gap-4 group/leg">
-                     <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-lg shadow-indigo-600/30 animate-pulse" />
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover/leg:text-indigo-600 transition-colors">Current Temporal Node</span>
-                  </div>
-                  <div className="flex items-center gap-4 group/leg">
-                     <div className="w-2.5 h-2.5 rounded-full bg-slate-100 border border-slate-200" />
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover/leg:text-slate-600 transition-colors">Standard Logic Gates</span>
-                  </div>
-                  <div className="flex items-center gap-4 group/leg">
-                     <div className="w-2.5 h-2.5 rounded-[4px] bg-indigo-50 border border-indigo-100 shadow-sm" />
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover/leg:text-indigo-700 transition-colors">Active Event Clusters</span>
-                  </div>
-               </div>
-            </div>
+
           </motion.div>
         </div>
       </div>
@@ -430,17 +412,17 @@ export default function CalendarPage({ user }: { user: any }) {
         {showModal && selectedDate && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl border border-white/20 relative z-10 overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none"></div>
-              
+
               <div className="flex items-center justify-between px-10 py-8 border-b border-slate-50 relative z-10">
                 <div>
                   <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sync Initiation</h2>
                   <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-2 flex items-center gap-2">
-                    <CalendarIcon size={14} /> 
+                    <CalendarIcon size={14} />
                     {selectedDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
@@ -457,68 +439,68 @@ export default function CalendarPage({ user }: { user: any }) {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <div className="space-y-6">
-                      <div>
-                        <label className={labelClasses}>Meeting Designation</label>
+                  <div className="space-y-6">
+                    <div>
+                      <label className={labelClasses}>Meeting Designation</label>
+                      <input
+                        type="text"
+                        value={form.title}
+                        onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                        placeholder="e.g. Strategic Discovery"
+                        className={inputClasses}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={labelClasses}>Temporal Execution Time</label>
+                      <div className="relative">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                         <input
-                          type="text"
-                          value={form.title}
-                          onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                          placeholder="e.g. Strategic Discovery"
-                          className={inputClasses}
+                          type="time"
+                          value={form.time}
+                          onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                          className={`${inputClasses} pl-12`}
                         />
                       </div>
+                    </div>
+                  </div>
 
-                      <div>
-                        <label className={labelClasses}>Temporal Execution Time</label>
-                        <div className="relative">
-                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                          <input
-                            type="time"
-                            value={form.time}
-                            onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
-                            className={`${inputClasses} pl-12`}
-                          />
-                        </div>
+                  <div className="space-y-6">
+                    <div>
+                      <label className={labelClasses}>Intelligence Lead Entity</label>
+                      <select
+                        value={form.leadId}
+                        onChange={e => {
+                          const lead = leads.find(l => l.id === e.target.value);
+                          setForm(f => ({ ...f, leadId: e.target.value, leadName: lead?.name || '' }));
+                        }}
+                        className={`${inputClasses} !appearance-none`}
+                      >
+                        <option value="">— Null Selection —</option>
+                        {leads.map(l => <option key={l.id} value={l.id}>{l.name} {l.company ? `(${l.company})` : ''}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0">
+                        <Bell size={16} />
                       </div>
-                   </div>
+                      <p className="text-[10px] font-bold text-indigo-700 leading-relaxed uppercase tracking-widest">
+                        Telemetry initialized. Automated browser notification will fire T-10 minutes from execution.
+                      </p>
+                    </div>
+                  </div>
 
-                   <div className="space-y-6">
-                      <div>
-                        <label className={labelClasses}>Intelligence Lead Entity</label>
-                        <select
-                          value={form.leadId}
-                          onChange={e => {
-                            const lead = leads.find(l => l.id === e.target.value);
-                            setForm(f => ({ ...f, leadId: e.target.value, leadName: lead?.name || '' }));
-                          }}
-                          className={`${inputClasses} !appearance-none`}
-                        >
-                          <option value="">— Null Selection —</option>
-                          {leads.map(l => <option key={l.id} value={l.id}>{l.name} {l.company ? `(${l.company})` : ''}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-start gap-3">
-                         <div className="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0">
-                            <Bell size={16} />
-                         </div>
-                         <p className="text-[10px] font-bold text-indigo-700 leading-relaxed uppercase tracking-widest">
-                            Telemetry initialized. Automated browser notification will fire T-10 minutes from execution.
-                         </p>
-                      </div>
-                   </div>
-
-                   <div className="md:col-span-2">
-                      <label className={labelClasses}>Supplemental Notes & Vectors</label>
-                      <textarea
-                        value={form.notes}
-                        onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                        placeholder="Define meeting objectives and strategic talking points..."
-                        rows={4}
-                        className={`${inputClasses} resize-none py-4`}
-                      />
-                   </div>
+                  <div className="md:col-span-2">
+                    <label className={labelClasses}>Supplemental Notes & Vectors</label>
+                    <textarea
+                      value={form.notes}
+                      onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                      placeholder="Define meeting objectives and strategic talking points..."
+                      rows={4}
+                      className={`${inputClasses} resize-none py-4`}
+                    />
+                  </div>
                 </div>
               </div>
 

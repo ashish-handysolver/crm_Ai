@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField, addDoc, Timestamp } from 'firebase/firestore';
 import { ref, getBytes } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock, RotateCcw, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock, RotateCcw, Download, X } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
@@ -24,6 +24,10 @@ export default function LeadInsights({ user }: { user: any }) {
   const [editingOverview, setEditingOverview] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
   const attemptedRecs = useRef<Set<string>>(new Set());
+
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [meetingForm, setMeetingForm] = useState({ title: '', date: '', time: '10:00', notes: '' });
+  const [savingMeeting, setSavingMeeting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -218,6 +222,36 @@ export default function LeadInsights({ user }: { user: any }) {
     }
   };
 
+  const handleSaveMeeting = async () => {
+    if (!meetingForm.title.trim() || !meetingForm.date) {
+      alert("Title and date are required.");
+      return;
+    }
+    setSavingMeeting(true);
+    try {
+      const [h, min] = meetingForm.time.split(':').map(Number);
+      const scheduledDate = new Date(meetingForm.date);
+      scheduledDate.setHours(h, min, 0, 0);
+
+      await addDoc(collection(db, 'meetings'), {
+        title: meetingForm.title,
+        leadId: lead.id,
+        leadName: lead.name || '',
+        notes: meetingForm.notes,
+        scheduledAt: Timestamp.fromDate(scheduledDate),
+        companyId: lead.companyId,
+        ownerUid: user?.uid || '',
+        reminderSent: false,
+      });
+      setShowMeetingModal(false);
+      setMeetingForm({ title: '', date: '', time: '10:00', notes: '' });
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to save meeting.");
+    } finally {
+      setSavingMeeting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -348,7 +382,7 @@ export default function LeadInsights({ user }: { user: any }) {
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("CLIENT DOSSIER", margin, y);
+    doc.text("CLIENT Details", margin, y);
     y += 8;
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
@@ -398,28 +432,28 @@ export default function LeadInsights({ user }: { user: any }) {
     y += 15;
 
     // Actionable Items
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("STRATEGIC ACTION ITEMS", margin, y);
-    y += 10;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    // doc.setFontSize(14);
+    // doc.setFont("helvetica", "bold");
+    // doc.text("STRATEGIC ACTION ITEMS", margin, y);
+    // y += 10;
+    // doc.setFontSize(10);
+    // doc.setFont("helvetica", "normal");
 
-    const tasks = Array.isArray(insights.tasks) ? insights.tasks : [];
-    if (tasks.length === 0) {
-      doc.text("- No open tasks detected.", margin, y);
-    } else {
-      tasks.forEach((t: any) => {
-        if (y > 270) { doc.addPage(); y = 20; }
-        const status = t.completed ? "[DONE] " : "[OPEN] ";
-        const tText = `${status}${t.title} (${t.assignee} / ${t.dueDate})`;
-        const tLines = doc.splitTextToSize(`• ${tText}`, 165);
-        doc.text(tLines, margin, y);
-        y += (tLines.length * 6) + 2;
-      });
-    }
+    // const tasks = Array.isArray(insights.tasks) ? insights.tasks : [];
+    // if (tasks.length === 0) {
+    //   doc.text("- No open tasks detected.", margin, y);
+    // } else {
+    //   tasks.forEach((t: any) => {
+    //     if (y > 270) { doc.addPage(); y = 20; }
+    //     const status = t.completed ? "[DONE] " : "[OPEN] ";
+    //     const tText = `${status}${t.title} (${t.assignee} / ${t.dueDate})`;
+    //     const tLines = doc.splitTextToSize(`• ${tText}`, 165);
+    //     doc.text(tLines, margin, y);
+    //     y += (tLines.length * 6) + 2;
+    //   });
+    // }
 
-    y += 15;
+    // y += 15;
 
     // Full Meeting Script
     if (selectedRec.transcript) {
@@ -685,20 +719,21 @@ export default function LeadInsights({ user }: { user: any }) {
         </div>
 
         {/* ── Scheduled Meetings ── */}
-        {meetings.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-3 mb-5">
-              <div className="p-2 rounded-xl bg-violet-50 text-violet-500">
-                <CalendarDays size={18} />
-              </div>
-              <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Scheduled Meetings</h3>
-              <span className="ml-auto text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-full">
-                {meetings.length} session{meetings.length !== 1 ? 's' : ''}
-              </span>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 rounded-xl bg-violet-50 text-violet-500">
+              <CalendarDays size={18} />
             </div>
+            <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Scheduled Meetings</h3>
+            <span className="ml-auto text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-full">
+              {meetings.length} session{meetings.length !== 1 ? 's' : ''}
+            </span>
+            <button onClick={() => setShowMeetingModal(true)} className="px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition-colors shadow-sm ml-2">
+              + Add Meeting
+            </button>
+          </div>
 
+          {meetings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {meetings.map((m, idx) => {
                 const d = m.scheduledAt?.toDate?.();
@@ -706,41 +741,32 @@ export default function LeadInsights({ user }: { user: any }) {
                 return (
                   <motion.div key={m.id}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-                    className={`p-5 rounded-2xl border transition-all ${isPast
-                        ? 'bg-slate-50 border-slate-100 opacity-60'
-                        : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'
-                      }`}
+                    className={`p-5 rounded-2xl border transition-all ${isPast ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'}`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPast ? 'bg-slate-100' : 'bg-violet-50'
-                        }`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPast ? 'bg-slate-100' : 'bg-violet-50'}`}>
                         <CalendarDays size={16} className={isPast ? 'text-slate-400' : 'text-violet-500'} />
                       </div>
-                      {isPast && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Past</span>
-                      )}
-                      {!isPast && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-100 px-2 py-1 rounded-full animate-pulse">Upcoming</span>
-                      )}
+                      {isPast && <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Past</span>}
+                      {!isPast && <span className="text-[9px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-100 px-2 py-1 rounded-full animate-pulse">Upcoming</span>}
                     </div>
                     <div className="font-extrabold text-slate-800 text-sm mb-2 leading-snug">{m.title}</div>
                     {d && (
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        <Clock size={11} />
-                        {d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                        &nbsp;·&nbsp;
-                        {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        <Clock size={11} /> {d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} &nbsp;·&nbsp; {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                       </div>
                     )}
-                    {m.notes && (
-                      <p className="mt-2 text-[11px] text-slate-400 font-medium line-clamp-2 leading-relaxed">{m.notes}</p>
-                    )}
+                    {m.notes && <p className="mt-2 text-[11px] text-slate-400 font-medium line-clamp-2 leading-relaxed">{m.notes}</p>}
                   </motion.div>
                 );
               })}
             </div>
-          </motion.div>
-        )}
+          ) : (
+            <div className="text-center p-8 bg-white rounded-2xl border border-slate-100 text-sm font-medium text-slate-400">
+              No meetings scheduled yet.
+            </div>
+          )}
+        </motion.div>
 
         {/* Bottom Split (Tasks + MOM + Transcript) */}
         <div className="flex flex-col xl:flex-row gap-6 mb-12">
@@ -932,6 +958,52 @@ export default function LeadInsights({ user }: { user: any }) {
         </div>
 
       </div>
+
+      {/* Create Meeting Modal */}
+      <AnimatePresence>
+        {showMeetingModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMeetingModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl border border-white/20 relative z-10 overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                <h2 className="text-2xl font-black text-slate-800">Schedule Meeting</h2>
+                <button onClick={() => setShowMeetingModal(false)} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-8 space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Meeting Title</label>
+                  <input type="text" value={meetingForm.title} onChange={e => setMeetingForm(f => ({ ...f, title: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-semibold text-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Date</label>
+                    <input type="date" value={meetingForm.date} onChange={e => setMeetingForm(f => ({ ...f, date: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-semibold text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Time</label>
+                    <input type="time" value={meetingForm.time} onChange={e => setMeetingForm(f => ({ ...f, time: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-semibold text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Notes</label>
+                  <textarea value={meetingForm.notes} onChange={e => setMeetingForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-semibold text-sm resize-none" rows={3} />
+                </div>
+              </div>
+              <div className="p-8 bg-slate-50 flex gap-4">
+                <button onClick={() => setShowMeetingModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all text-sm uppercase tracking-widest">Cancel</button>
+                <button onClick={handleSaveMeeting} disabled={savingMeeting} className="flex-1 py-4 rounded-2xl font-black bg-slate-900 text-white hover:bg-indigo-600 transition-all text-sm flex items-center justify-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 uppercase tracking-widest">
+                  {savingMeeting ? <Loader2 size={18} className="animate-spin" /> : null} Save Meeting
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

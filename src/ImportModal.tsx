@@ -20,6 +20,7 @@ const SYSTEM_FIELDS = [
   { id: 'phone', label: 'Contact Number', required: false },
   { id: 'location', label: 'Location', required: false },
   { id: 'source', label: 'Source (e.g. LINKEDIN)', required: false },
+  { id: 'leadType', label: 'Lead Type (e.g. B2B)', required: false },
   { id: 'score', label: 'Score (0-100)', required: false },
   { id: 'phase', label: 'Phase (e.g. DISCOVERY)', required: false }
 ];
@@ -62,7 +63,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
     if (!uploadedFile) return;
-    
+
     setFile(uploadedFile);
     setError('');
 
@@ -72,11 +73,11 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       if (rows.length < 2) {
         throw new Error('CSV file must have at least a header row and one data row.');
       }
-      
+
       const headers = rows[0].map(h => h.trim());
       setCsvHeaders(headers);
       setCsvRows(rows.slice(1));
-      
+
       // Auto-map where possible
       const newMappings: Record<string, number> = {};
       dynamicSystemFields.forEach(sysField => {
@@ -86,13 +87,13 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
         }
       });
       setMappings(newMappings);
-      
+
       setStep(2);
     } catch (err: any) {
       setError(err.message || 'Failed to parse CSV file.');
       setFile(null);
     }
-    
+
     // reset input
     e.target.value = '';
   };
@@ -100,14 +101,15 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
   const handleDownloadSample = () => {
     const headers = dynamicSystemFields.map(f => f.id).join(',');
     const sampleRow = dynamicSystemFields.map(f => {
-        if (f.id === 'name') return 'John Doe';
-        if (f.id === 'email') return 'john@example.com';
-        if (f.id === 'score') return '85';
-        if (f.id === 'phase') return 'DISCOVERY';
-        return f.label;
+      if (f.id === 'name') return 'John Doe';
+      if (f.id === 'email') return 'john@example.com';
+      if (f.id === 'score') return '85';
+      if (f.id === 'phase') return 'DISCOVERY';
+      if (f.id === 'leadType') return 'B2B';
+      return f.label;
     }).join(',');
     const csvContent = `${headers}\n${sampleRow}`;
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -124,7 +126,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       setError('You must be logged in to import leads.');
       return;
     }
-    
+
     // Validate required fields
     if (mappings['name'] === undefined) {
       setError('You must map the Lead Name field before importing.');
@@ -140,10 +142,10 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       let successCount = 0;
       for (let i = 0; i < csvRows.length; i++) {
         const row = csvRows[i];
-        
+
         // Skip empty rows
         if (!row || row.length < 2) continue;
-        
+
         // Ensure required name exists
         const nameIdx = mappings['name'];
         if (!row[nameIdx]?.trim()) continue;
@@ -154,6 +156,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
           updatedAt: Timestamp.now(),
           score: 50, // default
           phase: 'DISCOVERY', // default
+          leadType: 'B2B', // default
         };
 
         // Apply mappings
@@ -170,15 +173,15 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
 
         const id = uuidv4().slice(0, 8);
         await setDoc(doc(db, 'leads', id), leadData);
-        
+
         successCount++;
         setImportProgress(prev => ({ ...prev, current: i + 1 }));
       }
-      
+
       setTimeout(() => {
         onClose(); // Auto close on success
       }, 2000);
-      
+
     } catch (err: any) {
       setError(err.message || 'Failed to import records.');
       setIsImporting(false);
@@ -190,15 +193,15 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 min-h-screen">
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }} 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
           onClick={() => !isImporting && onClose()}
         />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -222,7 +225,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
             <div className="flex items-center justify-between relative max-w-lg mx-auto">
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full z-0" />
               <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500 z-0" style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }} />
-              
+
               {[1, 2, 3].map(s => (
                 <div key={s} className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 shadow-sm ${step >= s ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white scale-110' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
                   {step > s ? <CheckCircle2 size={20} /> : s}
@@ -263,14 +266,14 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                   </div>
                   <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
                 </label>
-                
+
                 <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-full max-w-lg">
                   <span className="flex-1 h-px bg-slate-200" />
                   OR
                   <span className="flex-1 h-px bg-slate-200" />
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleDownloadSample}
                   className="flex items-center gap-2 text-blue-600 font-bold hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-6 py-3 rounded-2xl transition-all"
                 >
@@ -308,7 +311,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                             {(sysField as any).required && <span className="text-red-500 ml-1.5 font-bold">*</span>}
                           </td>
                           <td className="py-3 px-6">
-                            <select 
+                            <select
                               className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold text-slate-700 shadow-sm appearance-none cursor-pointer"
                               value={mappings[sysField.id] !== undefined ? mappings[sysField.id] : -1}
                               onChange={(e) => {
@@ -345,9 +348,9 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                     </div>
                     <h3 className="text-2xl font-extrabold mb-3 text-slate-800">Processing Import...</h3>
                     <p className="text-slate-500 font-medium mb-8">Please wait while we sync your data to the CRM.</p>
-                    
+
                     <div className="w-full max-w-md bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner p-0.5">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300 relative overflow-hidden"
                         style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
                       >
@@ -365,7 +368,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                       </div>
                     </div>
                     <h3 className="text-3xl font-extrabold mb-3 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Import Complete!</h3>
-                    <p className="text-slate-500 font-medium text-lg">Your workspace has successfully ingested <br/><span className="text-slate-800 font-bold">{importProgress.total}</span> total leads.</p>
+                    <p className="text-slate-500 font-medium text-lg">Your workspace has successfully ingested <br /><span className="text-slate-800 font-bold">{importProgress.total}</span> total leads.</p>
                   </motion.div>
                 )}
               </motion.div>
@@ -375,7 +378,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
           {/* Footer */}
           <div className="p-6 md:px-8 border-t border-slate-100 bg-slate-50/80 flex justify-between shrink-0 rounded-b-[2rem]">
             {step === 2 && (
-              <button 
+              <button
                 onClick={() => setStep(1)}
                 className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all shadow-sm"
                 disabled={isImporting}
@@ -385,7 +388,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
             )}
             <div className="ml-auto">
               {step === 2 && (
-                <button 
+                <button
                   onClick={handleExecuteImport}
                   className="px-8 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center gap-2"
                 >
@@ -394,7 +397,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                 </button>
               )}
               {step === 3 && importProgress.current >= importProgress.total && (
-                <button 
+                <button
                   onClick={onClose}
                   className="px-10 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/25 transition-all"
                 >

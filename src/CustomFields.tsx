@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, Timestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import { Loader2, Settings, Plus, Trash2, Save, AlertCircle, CheckCircle2, Tag, GitBranch, Sparkles, Wand2, Info, ChevronRight, X } from 'lucide-react';
+import { Loader2, Settings, Plus, Trash2, Save, AlertCircle, CheckCircle2, Tag, GitBranch, Sparkles, Wand2, Info, ChevronRight, X, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
@@ -17,7 +17,8 @@ export interface CustomFieldDef {
 }
 
 const DEFAULT_SOURCES = ['LINKEDIN', 'REFERRAL', 'DIRECT', 'WEBSITE'];
-const DEFAULT_PHASES  = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
+const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
+const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
 
 export default function CustomFields({ user }: { user: any }) {
   const { companyId } = useAuth();
@@ -30,8 +31,10 @@ export default function CustomFields({ user }: { user: any }) {
 
   const [customSources, setCustomSources] = useState<string[]>([]);
   const [customPhases, setCustomPhases] = useState<string[]>([]);
+  const [customLeadTypes, setCustomLeadTypes] = useState<string[]>([]);
   const [newSource, setNewSource] = useState('');
   const [newPhase, setNewPhase] = useState('');
+  const [newLeadType, setNewLeadType] = useState('');
   const [newOptionInputs, setNewOptionInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export default function CustomFields({ user }: { user: any }) {
         if (companySnap.exists()) {
           setCustomSources(companySnap.data().customSources || []);
           setCustomPhases(companySnap.data().customPhases || []);
+          setCustomLeadTypes(companySnap.data().customLeadTypes || []);
         }
       } catch (err: any) {
         setError('Matrix Failure: ' + err.message);
@@ -99,6 +103,13 @@ export default function CustomFields({ user }: { user: any }) {
     setNewPhase('');
   };
 
+  const addLeadType = () => {
+    const val = newLeadType.trim().toUpperCase();
+    if (!val || customLeadTypes.includes(val)) return;
+    setCustomLeadTypes(prev => [...prev, val]);
+    setNewLeadType('');
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError('');
@@ -106,13 +117,13 @@ export default function CustomFields({ user }: { user: any }) {
     try {
       if (!companyId) throw new Error("Null Context: No company detected.");
       for (const f of fields) {
-        if (!f.name.trim()) throw new Error(`Invalid Schema: Field ID ${f.id.slice(0,4)} requires a label.`);
+        if (!f.name.trim()) throw new Error(`Invalid Schema: Field ID ${f.id.slice(0, 4)} requires a label.`);
         if (f.type === 'DROPDOWN' && f.options.length === 0) throw new Error(`Incomplete Logic: Dropdown "${f.name}" requires option parameters.`);
         await setDoc(doc(db, 'custom_fields', f.id), { ...f, companyId: companyId });
       }
 
       const compRef = doc(db, 'companies', companyId);
-      await setDoc(compRef, { customSources, customPhases }, { merge: true });
+      await setDoc(compRef, { customSources, customPhases, customLeadTypes }, { merge: true });
 
       setSuccess('Logic Synthesis Complete: All configurations committed to the core.');
       setTimeout(() => setSuccess(''), 5000);
@@ -137,26 +148,26 @@ export default function CustomFields({ user }: { user: any }) {
   return (
     <div className="flex-1 bg-[#F9FBFF] text-slate-900 p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
       <div className="max-w-5xl mx-auto">
-        
+
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="text-[10px] font-black text-indigo-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
               <Sparkles size={14} className="fill-indigo-500 animate-pulse" /> Logic Vector Configuration
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900">System Parameters</h1>
+            <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900">System Parameters</h3>
             <p className="text-slate-500 mt-4 text-lg font-medium max-w-xl leading-relaxed">
-               Modify the fundamental data schemas and categorization logic used across your entire workspace network.
+              Update Data Storage & Grouping
             </p>
           </motion.div>
-          
-          <motion.button 
-             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-             onClick={handleSave} 
-             disabled={saving || isDemoMode} 
-             className="shrink-0 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+
+          <motion.button
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+            onClick={handleSave}
+            disabled={saving || isDemoMode}
+            className="shrink-0 bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-            {isDemoMode ? 'Readonly Mode' : 'Commit Parameters'}
+            {isDemoMode ? 'Readonly Mode' : 'Save'}
           </motion.button>
         </header>
 
@@ -170,23 +181,23 @@ export default function CustomFields({ user }: { user: any }) {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Main Custom Fields Column */}
           <div className="lg:col-span-2 space-y-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-indigo-100/50"></div>
-              
+
               <div className="p-8 sm:p-10 relative z-10">
                 <div className="flex items-center justify-between mb-10 pb-4 border-b border-slate-50">
-                   <h2 className="text-base font-black text-slate-800 uppercase tracking-[0.15em] flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner"><Settings size={16} /></div>
-                      Custom Data Vectors
-                   </h2>
-                   {!isDemoMode && (
-                     <button onClick={addField} className="text-xs font-black text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 rounded-lg transition-all active:scale-95">
-                        <Plus size={14} /> NEW VECTOR
-                     </button>
-                   )}
+                  <h2 className="text-base font-black text-slate-800 uppercase tracking-[0.15em] flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner"><Settings size={16} /></div>
+                    Custom Data Vectors
+                  </h2>
+                  {!isDemoMode && (
+                    <button onClick={addField} className="text-xs font-black text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 rounded-lg transition-all active:scale-95">
+                      <Plus size={14} /> Add New Fields
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-6">
@@ -197,10 +208,10 @@ export default function CustomFields({ user }: { user: any }) {
                         <p className="text-slate-400 font-bold italic text-sm">No custom field definitions detected in the matrix.</p>
                       </motion.div>
                     ) : fields.map((field, idx) => (
-                      <motion.div 
-                        key={field.id} 
-                        initial={{ opacity: 0, x: -10 }} 
-                        animate={{ opacity: 1, x: 0 }} 
+                      <motion.div
+                        key={field.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl flex flex-col gap-6 relative group/field hover:bg-white hover:border-indigo-100 transition-all duration-300"
                       >
@@ -212,11 +223,11 @@ export default function CustomFields({ user }: { user: any }) {
                           <div>
                             <label className={labelClasses}>System Type</label>
                             <select value={field.type} onChange={(e) => updateField(field.id, { type: e.target.value as any })} className={inputClasses}>
-                              <option value="TEXT">Short Text (UTF-8)</option>
-                              <option value="NUMBER">Numeric Vector</option>
-                              <option value="DROPDOWN">Dropdown Logic</option>
-                              <option value="DATE">Date Timestamp</option>
-                              <option value="DATETIME">Full ISO Timestamp</option>
+                              <option value="TEXT">Short Text</option>
+                              <option value="NUMBER">Number </option>
+                              <option value="DROPDOWN">Dropdown Fields</option>
+                              <option value="DATE">Date</option>
+                              <option value="DATETIME">Date & Time</option>
                             </select>
                           </div>
 
@@ -271,7 +282,7 @@ export default function CustomFields({ user }: { user: any }) {
                         </div>
                         {!isDemoMode && (
                           <button onClick={() => removeField(field.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
-                             <Trash2 size={16} />
+                            <Trash2 size={16} />
                           </button>
                         )}
                       </motion.div>
@@ -284,82 +295,91 @@ export default function CustomFields({ user }: { user: any }) {
 
           {/* Sidebar / Category Column */}
           <div className="space-y-8">
-            
+
             {/* Custom Sources */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
-               <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-inner"><Tag size={16} /></div>
-                  Acquisition Sources
-               </h2>
-               <div className="space-y-6">
-                 <div className="flex flex-wrap gap-2">
-                    {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{s} (SYS)</span>)}
-                    {customSources.map(s => (
-                      <span key={s} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-indigo-100 shadow-sm group/chip transition-all hover:bg-indigo-100">
-                        {s}
-                        <button onClick={() => setCustomSources(prev => prev.filter(x => x !== s))} className="p-0.5 text-indigo-300 hover:text-red-500 transition-colors"><X size={10} /></button>
-                      </span>
-                    ))}
-                 </div>
-                 <div className="flex gap-2">
-                    <input
-                      type="text" value={newSource} onChange={e => setNewSource(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addSource()}
-                      placeholder="e.g. COLD_CALL"
-                      className={`${inputClasses} !py-2.5 !px-3 font-bold`}
-                    />
-                    <button onClick={addSource} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-indigo-600 transition-all active:scale-95 uppercase">
-                      ADD
-                    </button>
-                 </div>
-               </div>
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-inner"><Tag size={16} /></div>
+                Acquisition Sources
+              </h2>
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{s} (SYS)</span>)}
+                  {customSources.map(s => (
+                    <span key={s} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-indigo-100 shadow-sm group/chip transition-all hover:bg-indigo-100">
+                      {s}
+                      <button onClick={() => setCustomSources(prev => prev.filter(x => x !== s))} className="p-0.5 text-indigo-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text" value={newSource} onChange={e => setNewSource(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addSource()}
+                    placeholder="e.g. COLD_CALL"
+                    className={`${inputClasses} !py-2.5 !px-3 font-bold`}
+                  />
+                  <button onClick={addSource} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-indigo-600 transition-all active:scale-95 uppercase">
+                    ADD
+                  </button>
+                </div>
+              </div>
             </motion.div>
 
             {/* Custom Phases */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
-               <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-500 flex items-center justify-center shadow-inner"><GitBranch size={16} /></div>
-                  Lifecycle Phases
-               </h2>
-               <div className="space-y-6">
-                 <div className="flex flex-wrap gap-2">
-                    {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{p} (SYS)</span>)}
-                    {customPhases.map(p => (
-                      <span key={p} className="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-violet-100 shadow-sm group/chip transition-all hover:bg-violet-100">
-                        {p}
-                        <button onClick={() => setCustomPhases(prev => prev.filter(x => x !== p))} className="p-0.5 text-violet-300 hover:text-red-500 transition-colors"><X size={10} /></button>
-                      </span>
-                    ))}
-                 </div>
-                 <div className="flex gap-2">
-                    <input
-                      type="text" value={newPhase} onChange={e => setNewPhase(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addPhase()}
-                      placeholder="e.g. PROPOSAL"
-                      className={`${inputClasses} !py-2.5 !px-3 font-bold`}
-                    />
-                    <button onClick={addPhase} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-violet-600 transition-all active:scale-95 uppercase">
-                      ADD
-                    </button>
-                 </div>
-               </div>
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-500 flex items-center justify-center shadow-inner"><GitBranch size={16} /></div>
+                Lifecycle Phases
+              </h2>
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{p} (SYS)</span>)}
+                  {customPhases.map(p => (
+                    <span key={p} className="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-violet-100 shadow-sm group/chip transition-all hover:bg-violet-100">
+                      {p}
+                      <button onClick={() => setCustomPhases(prev => prev.filter(x => x !== p))} className="p-0.5 text-violet-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text" value={newPhase} onChange={e => setNewPhase(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addPhase()}
+                    placeholder="e.g. PROPOSAL"
+                    className={`${inputClasses} !py-2.5 !px-3 font-bold`}
+                  />
+                  <button onClick={addPhase} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-violet-600 transition-all active:scale-95 uppercase">
+                    ADD
+                  </button>
+                </div>
+              </div>
             </motion.div>
 
-            {/* Info Card */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden flex flex-col gap-4">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-               <div className="flex items-center gap-3 text-indigo-400">
-                  <Info size={18} />
-                  <span className="text-[10px] font-black tracking-widest uppercase">Integration Protocol</span>
-               </div>
-               <p className="text-xs font-semibold leading-relaxed text-slate-400">
-                  Changes to these parameters will reflect immediately across all lead forms, filter matrices, and CSV import protocols. Handle with caution to maintain data consistency.
-               </p>
-               <div className="flex flex-col gap-2 mt-2">
-                  <div className="flex items-center gap-3 text-[10px] font-black text-slate-500"><ChevronRight size={10} className="text-indigo-500" /> AES-256 SCEMA ENCRYPTION</div>
-                  <div className="flex items-center gap-3 text-[10px] font-black text-slate-500"><ChevronRight size={10} className="text-indigo-500" /> MULTI-TENANT ISOLATION</div>
-               </div>
+            {/* Custom Lead Types */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shadow-inner"><Users size={16} /></div>
+                Lead Types
+              </h2>
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-slate-100">{p} (SYS)</span>)}
+                  {customLeadTypes.map(p => (
+                    <span key={p} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-blue-100 shadow-sm group/chip transition-all hover:bg-blue-100">
+                      {p}
+                      <button onClick={() => setCustomLeadTypes(prev => prev.filter(x => x !== p))} className="p-0.5 text-blue-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input type="text" value={newLeadType} onChange={e => setNewLeadType(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLeadType()} placeholder="e.g. PARTNER" className={`${inputClasses} !py-2.5 !px-3 font-bold`} />
+                  <button onClick={addLeadType} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-blue-600 transition-all active:scale-95 uppercase">ADD</button>
+                </div>
+              </div>
             </motion.div>
+
+
 
           </div>
         </div>

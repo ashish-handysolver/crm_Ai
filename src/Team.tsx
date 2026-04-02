@@ -14,7 +14,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState('user');
-  
+
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -40,7 +40,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyId) return;
-    
+
     setActionLoading(true);
     setError('');
     setSuccess('');
@@ -83,7 +83,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
       setPassword('');
       setDisplayName('');
       setRole('user');
-      
+
       setTimeout(() => setSuccess(''), 5000);
     } catch (err: any) {
       console.error("Error adding user:", err);
@@ -119,27 +119,25 @@ export default function Team({ user, companyId }: { user: any, companyId: string
             <div className="text-[10px] font-black text-indigo-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
               <Zap size={14} className="fill-indigo-500 animate-pulse" /> Personnel Management Protocol
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900">Team Matrix</h1>
-            <p className="text-slate-500 mt-4 text-lg font-medium max-w-xl leading-relaxed">
-              Orchestrate your organization's human resources and permission vectors with high-precision security.
-            </p>
+            <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900">Team Members</h3>
+
           </motion.div>
-          
+
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="shrink-0">
-             {!isDemoMode && (
-               <button 
-                  onClick={() => setIsAdding(!isAdding)}
-                  className={`w-full md:w-auto px-10 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 ${isAdding ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-slate-200/20' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-slate-900/20'}`}
-                >
-                  {isAdding ? <ChevronLeft size={18} /> : <UserPlus size={18} />}
-                  {isAdding ? 'Back to Roster' : 'Initialize New Member'}
-                </button>
-             )}
-             {isDemoMode && (
-                <div className="px-6 py-3 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                   <Lock size={16} /> Demo Restricted
-                </div>
-             )}
+            {!isDemoMode && (
+              <button
+                onClick={() => setIsAdding(!isAdding)}
+                className={`w-full md:w-auto px-10 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 ${isAdding ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-slate-200/20' : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-slate-900/20'}`}
+              >
+                {isAdding ? <ChevronLeft size={18} /> : <UserPlus size={18} />}
+                {isAdding ? 'Go Back' : 'Add New Member'}
+              </button>
+            )}
+            {isDemoMode && (
+              <div className="px-6 py-3 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <Lock size={16} /> Demo Restricted
+              </div>
+            )}
           </motion.div>
         </header>
 
@@ -154,7 +152,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
 
         <AnimatePresence mode="wait">
           {isAdding ? (
-            <motion.div 
+            <motion.div
               key="add-form"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -162,17 +160,17 @@ export default function Team({ user, companyId }: { user: any, companyId: string
               className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] overflow-hidden relative group"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-indigo-100/50 transition-colors"></div>
-              
+
               <div className="p-8 sm:p-12 relative z-10">
                 <div className="flex items-center gap-4 mb-10 pb-4 border-b border-slate-50">
-                   <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner"><Key size={20} /></div>
-                   <h2 className="text-xl font-black text-slate-800 tracking-tight">Provision Member Account</h2>
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner"><Key size={20} /></div>
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Provision Member Account</h2>
                 </div>
 
                 <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
                     <div>
-                      <label className={labelClasses}>Full Identification Name</label>
+                      <label className={labelClasses}>Full Name</label>
                       <div className="relative">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input type="text" required value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. Jane Doe" className={inputClasses} />
@@ -180,7 +178,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                     </div>
 
                     <div>
-                      <label className={labelClasses}>Communication Endpoint (Email)</label>
+                      <label className={labelClasses}>Email</label>
                       <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="jane@yourcompany.com" className={inputClasses} />
@@ -188,7 +186,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                     </div>
 
                     <div>
-                      <label className={labelClasses}>Security Passkey (Initial)</label>
+                      <label className={labelClasses}>Password</label>
                       <div className="relative">
                         <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 6 characters" minLength={6} className={inputClasses} />
@@ -207,7 +205,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                           <label key={r.id} className={`group border-2 rounded-2xl p-5 cursor-pointer flex items-start gap-4 transition-all duration-300 shadow-sm hover:shadow-md ${role === r.id ? `border-${r.color}-500 bg-${r.color}-50 shadow-${r.color}-500/10` : 'border-slate-100 hover:border-slate-200'}`}>
                             <input type="radio" name="role" value={r.id} checked={role === r.id} onChange={() => setRole(r.id)} className="hidden" />
                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${role === r.id ? `border-${r.color}-500 bg-${r.color}-500` : 'border-slate-300'}`}>
-                               {role === r.id && <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />}
+                              {role === r.id && <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />}
                             </div>
                             <div>
                               <div className={`font-black tracking-tight text-base mb-1 ${role === r.id ? `text-${r.color}-700` : 'text-slate-700'}`}>{r.label}</div>
@@ -236,7 +234,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
               </div>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="list-view"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -245,30 +243,30 @@ export default function Team({ user, companyId }: { user: any, companyId: string
               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] overflow-hidden">
                 <div className="p-8 sm:px-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/20">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Briefcase size={14} /> Organization Personnel Roster
+                    <Briefcase size={14} /> Organization Member
                   </h3>
                   <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{teamMembers.length} ACTIVE NODES</div>
                 </div>
-                
+
                 {loading ? (
                   <div className="p-32 flex flex-col items-center justify-center gap-4">
-                     <Loader2 className="animate-spin text-indigo-500" size={48} />
-                     <span className="text-xs font-black text-slate-300 uppercase tracking-widest">Polling Ledger...</span>
+                    <Loader2 className="animate-spin text-indigo-500" size={48} />
+                    <span className="text-xs font-black text-slate-300 uppercase tracking-widest">Polling Ledger...</span>
                   </div>
                 ) : teamMembers.length === 0 ? (
                   <div className="p-32 text-center flex flex-col items-center gap-4">
-                     <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 shadow-inner">
-                        <Users size={32} />
-                     </div>
-                     <p className="text-slate-400 font-bold italic">No active personnel detected in current company partition.</p>
+                    <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 shadow-inner">
+                      <Users size={32} />
+                    </div>
+                    <p className="text-slate-400 font-bold italic">No active personnel detected in current company partition.</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-50">
                     {teamMembers.map((member, idx) => (
-                      <motion.div 
-                        key={member.id} 
-                        initial={{ opacity: 0, x: -10 }} 
-                        animate={{ opacity: 1, x: 0 }} 
+                      <motion.div
+                        key={member.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.05 }}
                         className="p-8 sm:px-10 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-[#F9FBFF] transition-all group"
                       >
@@ -289,14 +287,14 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                               </div>
                             </div>
                             <div className="text-sm font-semibold text-slate-400 flex items-center gap-2 mt-1">
-                               <Mail size={12} /> <span className="truncate">{member.email}</span>
+                              <Mail size={12} /> <span className="truncate">{member.email}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0 pl-[88px] sm:pl-0">
                           <div className="flex items-center gap-2 mb-1">
                             {member.uid !== user.uid && !isDemoMode && (
-                              <button 
+                              <button
                                 onClick={async () => {
                                   const newStatus = member.active !== false ? false : true;
                                   await setDoc(doc(db, 'users', member.id), { active: newStatus }, { merge: true });
@@ -307,10 +305,10 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                               </button>
                             )}
                             {member.uid === user.uid && (
-                               <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg text-[9px] uppercase font-black border border-emerald-100">Self</span>
+                              <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg text-[9px] uppercase font-black border border-emerald-100">Self</span>
                             )}
                             <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                               <RefreshCw size={10} className="group-hover:animate-spin" /> Node Initialized
+                              <RefreshCw size={10} className="group-hover:animate-spin" /> Node Initialized
                             </div>
                           </div>
                           <div className="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm group-hover:border-indigo-100 group-hover:text-indigo-600 transition-colors">
