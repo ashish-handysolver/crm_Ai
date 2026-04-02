@@ -210,6 +210,35 @@ const RecordingView = () => {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const getStoragePathFromUrl = (audioUrl: string): string | null => {
+    if (!audioUrl) return null;
+
+    // If already a storage path
+    if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('gs://')) {
+      return audioUrl;
+    }
+
+    try {
+      if (audioUrl.startsWith('gs://')) {
+        const withoutPrefix = audioUrl.replace(/^gs:\/\//, '');
+        const slash = withoutPrefix.indexOf('/');
+        return slash >= 0 ? withoutPrefix.substring(slash + 1) : null;
+      }
+
+      const parsed = new URL(audioUrl);
+      const pathParts = parsed.pathname.split('/').filter(Boolean);
+      const oIndex = pathParts.indexOf('o');
+      if (oIndex >= 0 && pathParts.length > oIndex + 1) {
+        return decodeURIComponent(pathParts[oIndex + 1]);
+      }
+
+      return null;
+    } catch (urlErr) {
+      console.warn('Invalid audio URL:', urlErr);
+      return null;
+    }
+  };
+
   const handleSync = async () => {
     if (!recording || !recording.audioUrl || isSyncing || !id) return;
     setIsSyncing(true);
@@ -217,6 +246,103 @@ const RecordingView = () => {
       const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
       if (!apiKey) throw new Error("API Key missing.");
 
+<<<<<<< HEAD
+      let audioBlob: Blob | null = null;
+      // 1) Try Firebase Storage SDK read (preferred, avoids CORS issues)
+      try {
+        const storagePath = getStoragePathFromUrl(recording.audioUrl);
+        if (storagePath) {
+          const storageRef = ref(storage, storagePath);
+          const buffer = await getBytes(storageRef);
+          audioBlob = new Blob([buffer], { type: 'audio/webm' });
+          console.log("Audio Blob acquired from Firebase Storage getBytes:", audioBlob.size);
+        }
+      } catch (readErr) {
+        console.warn("Firebase getBytes failed, trying direct fetch:", readErr);
+      }
+
+      // 2) Fallback: standard fetch to the URL (with CORS proxy if needed)
+      if (!audioBlob) {
+        try {
+          const response = await fetch(recording.audioUrl);
+          if (!response.ok) throw new Error(`Direct fetch failed (${response.status})`);
+          audioBlob = await response.blob();
+          console.log("Audio Blob acquired directly via URL:", audioBlob.size);
+        } catch (directErr) {
+          console.warn("Direct fetch failed, trying corsproxy:", directErr);
+          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
+          const response = await fetch(proxyUrl);
+          if (!response.ok) throw new Error(`Failed to fetch via proxy (${response.status})`);
+          audioBlob = await response.blob();
+          console.log("Audio Blob acquired via proxy:", audioBlob.size);
+        }
+      }
+
+      if (!audioBlob) throw new Error("Unable to retrieve audio blob for transcription.");
+
+      const fileUri = await uploadFileToGemini(audioBlob, apiKey);
+      const ai = new GoogleGenAI({ apiKey });
+
+      const modelCandidates = [
+        process.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash',
+        'gemini-1.5',
+        'gemini-1.0',
+        'gemini-2.0-flash'
+      ];
+
+      let genResult: any = null;
+      let usedModel: string | null = null;
+      for (const model of modelCandidates) {
+        try {
+          genResult = await ai.models.generateContent({
+            model,
+            contents: [{
+              role: 'user', parts: [
+                { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON string." },
+                { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
+              ]
+            }]
+          });
+          usedModel = model;
+          console.log(`Transcription generated with model ${model}`);
+          break;
+        } catch (err: any) {
+          const status = err?.status || err?.code;
+          const message = (err?.message || '').toLowerCase();
+          const retryConditions = [
+            status === 429,
+            message.includes('quota'),
+            message.includes('too many requests'),
+            message.includes('resource_exhausted'),
+            status === 404,
+            message.includes('not found'),
+            message.includes('is not found')
+          ];
+
+          if (retryConditions.some(Boolean)) {
+            console.warn(`Model ${model} unavailable/quota issue, trying next:`, err?.message || err);
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      if (!genResult || !usedModel) {
+        throw new Error('All Gemini models exhausted or unavailable. Check quota and API key.');
+      }
+
+      // Robust parsing for unified SDK
+      let rawContent = "{}";
+      const resAny = genResult as any;
+      if (resAny.response?.text && typeof resAny.response.text === 'function') {
+        rawContent = resAny.response.text();
+      } else if (resAny.text && typeof resAny.text === 'function') {
+        rawContent = resAny.text();
+      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        rawContent = resAny.response.candidates[0].content.parts[0].text;
+      }
+
+=======
       console.log("HANDYSOLVER_CORE_VERSION: CORS_V4_FIX_ACTIVE");
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
       const response = await fetch(proxyUrl);
@@ -248,6 +374,7 @@ const RecordingView = () => {
         rawContent = resAny.response.candidates[0].content.parts[0].text;
       }
 
+>>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 

@@ -82,6 +82,34 @@ export default function ManualUpload({ user }: { user: any }) {
             promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps. Return a JSON object with a 'fullText' string (the summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
           }
 
+<<<<<<< HEAD
+          const modelCandidates = [
+            process.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash',
+            'gemini-1.5',
+            'gemini-1.0',
+            'gemini-2.0-flash'
+          ];
+
+          let response: any = null;
+          let usedModel: string | null = null;
+
+          for (const model of modelCandidates) {
+            try {
+              response = await ai.models.generateContent({
+                model,
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [
+                      { text: promptText },
+                      { 
+                        fileData: { 
+                          mimeType: uploadFile.type || (isPdf ? "application/pdf" : isWord ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : isTxt ? "text/plain" : "audio/webm"), 
+                          fileUri 
+                        } 
+                      }
+                    ]
+=======
           const response = await ai.models.generateContent({
             model: "gemini-1.5-flash",
             contents: [
@@ -94,12 +122,41 @@ export default function ManualUpload({ user }: { user: any }) {
                       mimeType: uploadFile.type || (isPdf ? "application/pdf" : isWord ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : isTxt ? "text/plain" : "audio/webm"), 
                       fileUri 
                     } 
+>>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
                   }
                 ]
-              }
-            ]
-          });
+              });
+              usedModel = model;
+              console.log(`Transcription generated with model ${model}`);
+              break;
+            } catch (err: any) {
+              const status = err?.status || err?.code;
+              const message = (err?.message || '').toLowerCase();
+              const retryConditions = [
+                status === 429,
+                message.includes('quota'),
+                message.includes('too many requests'),
+                message.includes('resource_exhausted'),
+                status === 404,
+                message.includes('not found'),
+                message.includes('is not found')
+              ];
 
+              if (retryConditions.some(Boolean)) {
+                console.warn(`Model ${model} unavailable/quota issue, trying next:`, err?.message || err);
+                continue;
+              }
+              throw err;
+            }
+          }
+
+<<<<<<< HEAD
+          if (!response || !usedModel) {
+            throw new Error('All Gemini models exhausted or unavailable. Please check billing/quota.');
+          }
+
+=======
+>>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
           // Robust parsing
           let rawText = "{}";
           const resAny = response as any;
