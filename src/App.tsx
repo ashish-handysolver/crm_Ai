@@ -329,8 +329,32 @@ const RecordingView = () => {
 
         // Clean markdown backticks if the model ignores responseMimeType
         const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        finalTranscriptData = JSON.parse(jsonStr);
-        
+
+        const parseTranscript = (text: string) => {
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            const firstBrace = text.indexOf('{');
+            const lastBrace = text.lastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace) {
+              const candidate = text.slice(firstBrace, lastBrace + 1);
+              try {
+                return JSON.parse(candidate);
+              } catch (innerErr) {
+                console.warn('Failed to parse extracted JSON candidate:', innerErr);
+              }
+            }
+            throw e;
+          }
+        };
+
+        try {
+          finalTranscriptData = parseTranscript(jsonStr);
+        } catch (parseError) {
+          console.warn('Failed to parse transcription JSON from model response; using raw text fallback.', parseError, jsonStr);
+          finalTranscriptData = { fullText: rawText, segments: [] };
+        }
+
         success = true;
         console.log(`Successfully transcribed with ${modelName}`);
         break; // Exit loop on success
