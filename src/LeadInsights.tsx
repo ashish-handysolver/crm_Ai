@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
-import { ref } from 'firebase/storage';
+import { ref, getBytes } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
@@ -23,23 +23,7 @@ export default function LeadInsights({ user }: { user: any }) {
   const [editingItem, setEditingItem] = useState<{ field: string, index: number, value: string } | null>(null);
   const [editingOverview, setEditingOverview] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
-
-  const generateFallbackInsights = (transcript: string) => {
-    const cleanTranscript = (transcript || '').replace(/\s+/g, ' ').trim();
-    const sentences = cleanTranscript.split(/(?<=[.!?])\s+/).filter(Boolean);
-    const meetingMinutes = sentences.slice(0, 6).map(s => s.trim()).filter(Boolean);
-
-    return {
-      painPoints: [],
-      requirements: [],
-      nextActions: [],
-      improvements: [],
-      meetingMinutes: meetingMinutes.length ? meetingMinutes : ['Transcript exists but AI provider is unavailable due to quota limits.'],
-      overview: meetingMinutes.slice(0, 3).join(' ') || 'Unable to generate a detailed overview due to API quota limits.',
-      sentiment: 'Neutral',
-      tasks: [],
-    };
-  };
+  const attemptedRecs = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!id) return;
@@ -81,7 +65,7 @@ export default function LeadInsights({ user }: { user: any }) {
     });
 
     return () => { unsub(); munsubMeetings(); };
-  }, [id]);
+  }, [id, lead, selectedRecId]);
 
   useEffect(() => {
     if (lead !== null) setLoading(false);
@@ -91,8 +75,10 @@ export default function LeadInsights({ user }: { user: any }) {
 
   useEffect(() => {
     if (!selectedRec || !selectedRec.transcript || selectedRec.aiInsights || generatingAI) return;
+    if (attemptedRecs.current.has(selectedRec.id)) return; // Prevent infinite retry loops
 
     const generateInsights = async () => {
+      attemptedRecs.current.add(selectedRec.id);
       setGeneratingAI(true);
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
@@ -100,77 +86,70 @@ export default function LeadInsights({ user }: { user: any }) {
 
         const ai = new GoogleGenAI({ apiKey });
         const prompt = `
-          Analyze this call and give simple insights. 
+          Analyze this sales call transcript and extract actionable intelligence. 
           Respond ONLY in strict JSON format. 
-          IMPORTANT: ALL content MUST be in English.
+          ALL generated insights, summaries, and outputs MUST be written in English, regardless of the language spoken in the transcript.
 
-          Focus on creating "meetingMinutes" which should be a simple list of what was talked about.
+          Focus specifically on creating high-quality "meetingMinutes" which should be a comprehensive, bulleted summary of the discussion. 
+          Ensure every key topic, decision, and question from the meeting script is captured as a separate point in "meetingMinutes".
           
           Transcript: "${selectedRec.transcript}"
           
           Required JSON Structure:
           {
-            "painPoints": ["Identify any issues or problems mentioned"],
-            "requirements": ["List the main goals or needs of the client"],
-            "nextActions": ["What are the next steps to take?"],
-            "improvements": ["Give some tips to help close the deal"],
-            "meetingMinutes": ["Key point 1...", "Key point 2...", "Task agreed on..."],
-            "overview": "A very simple 3-sentence summary of the situation.",
+            "painPoints": ["point 1", "point 2", "point 3"],
+            "requirements": ["req 1", "req 2", "req 3"],
+            "nextActions": ["action 1", "action 2"],
+            "improvements": ["improvement 1", "improvement 2"],
+            "meetingMinutes": ["Key discussion point from call...", "Decision made regarding...", "Client asked about...", "Action agreed on..."],
+            "overview": "A concise 3-sentence executive summary of the prospect's situation and goals.",
             "sentiment": "Positive",
             "tasks": [
-              { "title": "What to do next", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
+              { "title": "...", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
             ]
           }
         `;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }]
-        });
+        const validModels = [
+          'gemini-2.5-flash',
+          'gemini-2.0-flash',
+          'gemini-2.0-flash-lite',
+          'gemini-2.0-pro-exp'
+        ];
 
-        // Robust parsing for unified SDK
-        let rawText = "{}";
-        const resAny = response as any;
-        if (resAny.text && typeof resAny.text === 'string') {
-          rawText = resAny.text;
-        } else if (resAny.text && typeof resAny.text === 'function') {
-          rawText = resAny.text();
-        } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
-          rawText = resAny.response.text();
-        } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          rawText = resAny.response.candidates[0].content.parts[0].text;
+        let success = false;
+        let parsed = null;
+
+        for (const modelName of validModels) {
+          try {
+            console.log(`Attempting intelligence generation with model: ${modelName}`);
+            const response = await ai.models.generateContent({
+              model: modelName,
+              config: { responseMimeType: "application/json" },
+              contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+
+            const rawText = response.text || "{}";
+            const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            parsed = JSON.parse(jsonStr);
+            success = true;
+            break;
+          } catch (err: any) {
+            const status = err?.status || err?.code;
+            if (status === 429) {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              continue;
+            } else if (status === 404) {
+              continue;
+            }
+            throw err;
+          }
         }
 
-        const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
-
-        // Sanitize strings to avoid [object Object] or binary patterns
-        if (parsed.fullText) parsed.fullText = String(parsed.fullText);
-        if (parsed.overview) parsed.overview = String(parsed.overview);
-        if (Array.isArray(parsed.meetingMinutes)) {
-          parsed.meetingMinutes = parsed.meetingMinutes.map((m: any) => String(m));
-        }
-        if (Array.isArray(parsed.painPoints)) {
-          parsed.painPoints = parsed.painPoints.map((m: any) => String(m));
-        }
-        if (Array.isArray(parsed.requirements)) {
-          parsed.requirements = parsed.requirements.map((m: any) => String(m));
-        }
-        if (Array.isArray(parsed.nextActions)) {
-          parsed.nextActions = parsed.nextActions.map((m: any) => String(m));
-        }
-        if (Array.isArray(parsed.improvements)) {
-          parsed.improvements = parsed.improvements.map((m: any) => String(m));
-        }
+        if (!success || !parsed) throw new Error("All Gemini models exhausted or unavailable.");
 
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
-          parsed.tasks = parsed.tasks.map((t: any) => ({ 
-            ...t, 
-            title: String(t.title || 'Action Item'),
-            assignee: String(t.assignee || 'Self'),
-            dueDate: String(t.dueDate || 'TBD'),
-            completed: !!t.completed 
-          }));
+          parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
         }
 
         console.log("AI Results Produced:", parsed);
@@ -178,32 +157,20 @@ export default function LeadInsights({ user }: { user: any }) {
         await updateDoc(doc(db, 'recordings', selectedRec.id), {
           aiInsights: parsed
         });
-      } catch (err: any) {
-        const errMessage = err?.message || JSON.stringify(err || 'Error');
-        console.error("Failed to generate AI insights:", errMessage);
-
-        // Detect free-tier quota exhaustion and fallback to local generation
-        if (errMessage.toLowerCase().includes('quota') || errMessage.toLowerCase().includes('resource_exhausted') || errMessage.toLowerCase().includes('too many requests')) {
-          const fallback = generateFallbackInsights(selectedRec.transcript || '');
-          await updateDoc(doc(db, 'recordings', selectedRec.id), {
-            aiInsights: {
-              ...fallback,
-              overview: fallback.overview || 'AI quota limit reached. Partial insights generated locally.',
-              fromFallback: true,
-            }
-          });
-        }
+      } catch (err) {
+        console.error("Failed to generate AI insights:", err);
       } finally {
         setGeneratingAI(false);
       }
     };
 
     generateInsights();
-  }, [selectedRec?.id]);
+  }, [selectedRec, generatingAI]);
 
   const handleRegenerate = async () => {
     if (!selectedRec) return;
     setGeneratingAI(false); // Reset lock
+    attemptedRecs.current.delete(selectedRec.id); // Allow the retry
     await updateDoc(doc(db, 'recordings', selectedRec.id), {
       aiInsights: deleteField()
     });
@@ -216,10 +183,9 @@ export default function LeadInsights({ user }: { user: any }) {
       const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
       if (!apiKey) return;
 
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(selectedRec.audioUrl)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error("Failed to explicitly fetch audio via proxy");
-      const blob = await response.blob();
+      const storageRef = ref(storage, selectedRec.audioUrl);
+      const buffer = await getBytes(storageRef);
+      const blob = new Blob([buffer], { type: 'audio/webm' });
 
       const fileUri = await uploadFileToGemini(blob, apiKey);
       const ai = new GoogleGenAI({ apiKey });
@@ -237,24 +203,12 @@ export default function LeadInsights({ user }: { user: any }) {
         }]
       });
 
-      // Robust parsing for unified SDK
-      let rawContent = "{}";
-      const resAny = genResult as any;
-      if (resAny.text && typeof resAny.text === 'string') {
-        rawContent = resAny.text;
-      } else if (resAny.text && typeof resAny.text === 'function') {
-        rawContent = resAny.text();
-      } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
-        rawContent = resAny.response.text();
-      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        rawContent = resAny.response.candidates[0].content.parts[0].text;
-      }
-
+      const rawContent = genResult.text || "{}";
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 
       await updateDoc(doc(db, 'recordings', selectedRec.id), {
-        transcript: String(parsed.fullText || selectedRec.transcript || ''),
+        transcript: parsed.fullText || selectedRec.transcript,
         transcriptData: parsed.segments || []
       });
     } catch (err) {
@@ -412,7 +366,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Executive Summary
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("AI SUMMARY", margin, y);
+    doc.text("AI EXECUTIVE SUMMARY", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -423,7 +377,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Minutes of Meeting
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("CALL NOTES", margin, y);
+    doc.text("MINUTES OF MEETING", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -446,7 +400,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Actionable Items
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("NEXT STEPS", margin, y);
+    doc.text("STRATEGIC ACTION ITEMS", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -454,7 +408,6 @@ export default function LeadInsights({ user }: { user: any }) {
     const tasks = Array.isArray(insights.tasks) ? insights.tasks : [];
     if (tasks.length === 0) {
       doc.text("- No open tasks detected.", margin, y);
-      y += 10;
     } else {
       tasks.forEach((t: any) => {
         if (y > 270) { doc.addPage(); y = 20; }
@@ -466,40 +419,6 @@ export default function LeadInsights({ user }: { user: any }) {
       });
     }
 
-    y += 10;
-
-    // Detailed Intelligence Pillars
-    const sections = [
-      { title: "ISSUES", data: insights.painPoints },
-      { title: "GOALS", data: insights.requirements },
-      { title: "STEPS", data: insights.nextActions },
-      { title: "TIPS", data: insights.improvements },
-    ];
-
-    sections.forEach(section => {
-      if (y > 250) { doc.addPage(); y = 20; }
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(section.title, margin, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-
-      const points = Array.isArray(section.data) ? section.data : [];
-      if (points.length === 0) {
-        doc.text("- No data points identified.", margin, y);
-        y += 8;
-      } else {
-        points.forEach((p: string) => {
-          if (y > 270) { doc.addPage(); y = 20; }
-          const pLines = doc.splitTextToSize(`• ${p}`, 165);
-          doc.text(pLines, margin, y);
-          y += (pLines.length * 6) + 2;
-        });
-      }
-      y += 6;
-    });
-
     y += 15;
 
     // Full Meeting Script
@@ -509,14 +428,13 @@ export default function LeadInsights({ user }: { user: any }) {
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      doc.text("TRANSCRIPT", margin, y);
+      doc.text("FULL MEETING SCRIPT", margin, y);
       y += 10;
       doc.setFontSize(9);
-      doc.setFont("helvetica", "normal"); // Avoid italic encoding bugs
+      doc.setFont("helvetica", "italic");
       doc.setTextColor(100, 116, 139); // slate-500
 
-      const cleanTranscript = String(selectedRec.transcript || "").replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); // Remove control chars
-      const scriptLines = doc.splitTextToSize(`"${cleanTranscript}"`, 170);
+      const scriptLines = doc.splitTextToSize(`"${selectedRec.transcript}"`, 170);
       scriptLines.forEach((line: string) => {
         if (y > 280) { doc.addPage(); y = 20; }
         doc.text(line, margin, y);
@@ -527,49 +445,49 @@ export default function LeadInsights({ user }: { user: any }) {
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184); // slate-400
-    doc.text("AI Report - Generated by Handysolver", 105, 290, { align: "center" });
+    doc.text("Confidential Intelligence Payload - Generated by Handysolver AudioCRM", 105, 290, { align: "center" });
 
-    doc.save(`Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Handysolver_Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
   };
 
   return (
     <div className="flex-1 bg-slate-50 text-slate-900 min-h-full p-4 sm:p-6 lg:p-10 font-sans">
       <div className="max-w-[1400px] mx-auto">
         <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors mb-6 group">
-          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Clients
+          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Intelligence Ledger
         </Link>
 
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="text-[10px] font-extrabold text-blue-500 tracking-widest uppercase mb-3 flex items-center gap-2">
-              <Zap size={14} className="animate-pulse" /> AI Active
+              <Zap size={14} className="animate-pulse" /> Automation Protocol Active
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-none">
-              {lead.company || lead.name} <span className="text-slate-400 font-light">Profile</span>
+              {lead.company || lead.name} <span className="text-slate-400 font-light">Dossier</span>
             </h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Status</div>
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Lead Disposition</div>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
-                {lead.status === 'Won' ? 'Won' : lead.status === 'Lost' ? 'Lost' : 'Talking'}
+                {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Dead' : 'Active Engagement'}
               </span>
             </div>
             <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Mood</div>
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Call Sentiment</div>
               <select
                 value={insights.sentiment}
                 onChange={handleSentimentChange}
                 className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] appearance-none cursor-pointer outline-none transition-colors ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100/50' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'}`}
                 disabled={!selectedRec}
               >
-                <option value="Positive">Good</option>
-                <option value="Neutral">Okay</option>
-                <option value="Negative">Bad</option>
-                <option value="Analyzing...">Analyzing...</option>
+                <option value="Positive">Positive Vectors</option>
+                <option value="Neutral">Neutral Vectors</option>
+                <option value="Negative">Negative Vectors</option>
+                <option value="Analyzing...">Pending Analysis</option>
               </select>
             </div>
           </motion.div>
@@ -579,7 +497,7 @@ export default function LeadInsights({ user }: { user: any }) {
         <div className="bg-white rounded-3xl p-2 mb-8 flex flex-nowrap items-center gap-2 overflow-x-auto shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 scollbar-hide">
           <div className="pl-4 pr-6 shrink-0 flex items-center gap-2 border-r border-slate-100">
             <Calendar size={16} className="text-slate-400" />
-            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">History</span>
+            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Archive</span>
           </div>
           {recordings.length > 0 ? (
             <>
@@ -596,37 +514,39 @@ export default function LeadInsights({ user }: { user: any }) {
                   </button>
                 );
               })}
-              {selectedRec && (
-                <div className="ml-auto flex items-center gap-3 mr-4">
-                  {/* <button
-                    onClick={handleSyncTranscript}
-                    disabled={syncingTranscript}
-                    className="shrink-0 px-6 py-3 rounded-2xl bg-white text-indigo-500 hover:text-indigo-600 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-100 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                  >
-                    {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                    {syncingTranscript ? 'Transcribing...' : 'Regenerate Transcript'}
-                  </button> */}
-                  <button
-                    onClick={handleExportPDF}
-                    className="shrink-0 px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
-                  >
-                    <Download size={14} /> Download Report
-                  </button>
-                  <button
-                    onClick={handleRegenerate}
-                    disabled={generatingAI}
-                    className="shrink-0 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                  >
-                    {generatingAI ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                    {generatingAI ? 'Processing...' : 'Regenerate Intelligence'}
-                  </button>
-                </div>
-              )}
             </>
           ) : (
             <span className="text-sm font-bold text-amber-500 py-3 px-4 italic">No intelligence operations logged yet.</span>
           )}
         </div>
+
+        {/* Dedicated Action Bar - Always Visible */}
+        {selectedRec && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-end gap-3 mb-8">
+            {/* <button 
+              onClick={handleSyncTranscript}
+              disabled={syncingTranscript}
+              className="px-6 py-3 rounded-2xl bg-white text-indigo-500 hover:text-indigo-600 font-black text-xs uppercase tracking-widest shadow-sm border border-slate-200 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+              {syncingTranscript ? 'Transcribing...' : 'Regenerate Transcript'}
+            </button> */}
+            <button
+              onClick={handleExportPDF}
+              className="px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-xs uppercase tracking-widest shadow-sm border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
+            >
+              <Download size={14} /> Download Report
+            </button>
+            <button
+              onClick={handleRegenerate}
+              disabled={generatingAI}
+              className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-md hover:shadow-xl hover:shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              {generatingAI ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+              {generatingAI ? 'Processing...' : 'Regenerate Intelligence'}
+            </button>
+          </motion.div>
+        )}
 
         <AnimatePresence>
           {generatingAI && (
@@ -709,11 +629,18 @@ export default function LeadInsights({ user }: { user: any }) {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-indigo-500/30 backdrop-blur-sm"><Sparkles className="text-indigo-300" size={18} /></div>
                 AI Executive Summary
               </h3>
-              {editingOverview === null && (
-                <button onClick={() => setEditingOverview(insights.overview)} className="p-2 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-sm">
-                  <Edit3 size={16} />
-                </button>
-              )}
+              <div className="flex gap-2">
+                {editingOverview === null && (
+                  <button onClick={handleRegenerate} disabled={generatingAI} title="Regenerate All AI Insights" className="p-2 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-sm disabled:opacity-50">
+                    <RotateCcw size={16} className={generatingAI ? "animate-spin" : ""} />
+                  </button>
+                )}
+                {editingOverview === null && (
+                  <button onClick={() => setEditingOverview(insights.overview)} title="Edit Summary" className="p-2 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-sm">
+                    <Edit3 size={16} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {editingOverview !== null ? (
@@ -780,8 +707,8 @@ export default function LeadInsights({ user }: { user: any }) {
                   <motion.div key={m.id}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
                     className={`p-5 rounded-2xl border transition-all ${isPast
-                      ? 'bg-slate-50 border-slate-100 opacity-60'
-                      : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'
+                        ? 'bg-slate-50 border-slate-100 opacity-60'
+                        : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'
                       }`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -944,7 +871,7 @@ export default function LeadInsights({ user }: { user: any }) {
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><AlignLeft size={18} /></div> Source Transcript
               </h3>
               <div className="flex gap-2">
-                {/* {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
+                {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
                   <button
                     onClick={handleSyncTranscript}
                     disabled={syncingTranscript}
@@ -953,7 +880,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                     {syncingTranscript ? 'Syncing...' : 'Sync Subtitles'}
                   </button>
-                )} */}
+                )}
                 {selectedRec && (
                   <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white text-slate-400 hover:text-purple-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
                     Open Full <ArrowUpRight size={14} />

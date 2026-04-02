@@ -18,8 +18,6 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>
 );
-<<<<<<< HEAD
-=======
 
 // Force Unregister all Service Workers to fix CORS and Stale Cache
 if ('serviceWorker' in navigator) {
@@ -35,4 +33,3 @@ if ('serviceWorker' in navigator) {
 }
 
 console.log("HANDYSOLVER_CORE_VERSION: CORS_BYPASS_V4");
->>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
