@@ -246,7 +246,6 @@ const RecordingView = () => {
       const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
       if (!apiKey) throw new Error("API Key missing.");
 
-<<<<<<< HEAD
       let audioBlob: Blob | null = null;
       // 1) Try Firebase Storage SDK read (preferred, avoids CORS issues)
       try {
@@ -342,39 +341,6 @@ const RecordingView = () => {
         rawContent = resAny.response.candidates[0].content.parts[0].text;
       }
 
-=======
-      console.log("HANDYSOLVER_CORE_VERSION: CORS_V4_FIX_ACTIVE");
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error("Failed to explicitly fetch audio via proxy");
-      
-      const audioBlob = await response.blob();
-      console.log("Audio Blob acquired via proxy:", audioBlob.size);
-
-      const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-      const ai = new GoogleGenAI({ apiKey });
-      const genResult = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{
-          role: 'user', parts: [
-            { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON string." },
-            { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
-          ]
-        }]
-      });
-
-      // Robust parsing for unified SDK
-      let rawContent = "{}";
-      const resAny = genResult as any;
-      if (resAny.response?.text && typeof resAny.response.text === 'function') {
-        rawContent = resAny.response.text();
-      } else if (resAny.text && typeof resAny.text === 'function') {
-        rawContent = resAny.text();
-      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        rawContent = resAny.response.candidates[0].content.parts[0].text;
-      }
-
->>>>>>> f8a6b4f2f21bee76a306a67c2dc37ec0d05996ba
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 
