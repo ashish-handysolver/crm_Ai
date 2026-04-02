@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
-import { ref, getBytes } from 'firebase/storage';
+import { ref } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
@@ -23,6 +23,23 @@ export default function LeadInsights({ user }: { user: any }) {
   const [editingItem, setEditingItem] = useState<{ field: string, index: number, value: string } | null>(null);
   const [editingOverview, setEditingOverview] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
+
+  const generateFallbackInsights = (transcript: string) => {
+    const cleanTranscript = (transcript || '').replace(/\s+/g, ' ').trim();
+    const sentences = cleanTranscript.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const meetingMinutes = sentences.slice(0, 6).map(s => s.trim()).filter(Boolean);
+
+    return {
+      painPoints: [],
+      requirements: [],
+      nextActions: [],
+      improvements: [],
+      meetingMinutes: meetingMinutes.length ? meetingMinutes : ['Transcript exists but AI provider is unavailable due to quota limits.'],
+      overview: meetingMinutes.slice(0, 3).join(' ') || 'Unable to generate a detailed overview due to API quota limits.',
+      sentiment: 'Neutral',
+      tasks: [],
+    };
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -64,7 +81,7 @@ export default function LeadInsights({ user }: { user: any }) {
     });
 
     return () => { unsub(); munsubMeetings(); };
-  }, [id, lead, selectedRecId]);
+  }, [id]);
 
   useEffect(() => {
     if (lead !== null) setLoading(false);
@@ -83,24 +100,25 @@ export default function LeadInsights({ user }: { user: any }) {
 
         const ai = new GoogleGenAI({ apiKey });
         const prompt = `
-          Analyze this sales call transcript and extract actionable intelligence. 
+          Analyze this call and give simple insights. 
           Respond ONLY in strict JSON format. 
+          IMPORTANT: ALL content MUST be in English.
 
-          Focus specifically on creating high-quality "meetingMinutes" which should be a comprehensive, bulleted summary of the discussion. 
-          Ensure every key topic, decision, and question from the meeting script is captured as a separate point in "meetingMinutes".
+          Focus on creating "meetingMinutes" which should be a simple list of what was talked about.
           
           Transcript: "${selectedRec.transcript}"
           
           Required JSON Structure:
           {
-            "painPoints": ["point 1", "point 2", "point 3"],
-            "requirements": ["req 1", "req 2", "req 3"],
-            "nextActions": ["action 1", "action 2"],
-            "meetingMinutes": ["Key discussion point from call...", "Decision made regarding...", "Client asked about...", "Action agreed on..."],
-            "overview": "A concise 3-sentence executive summary of the prospect's situation and goals.",
+            "painPoints": ["Identify any issues or problems mentioned"],
+            "requirements": ["List the main goals or needs of the client"],
+            "nextActions": ["What are the next steps to take?"],
+            "improvements": ["Give some tips to help close the deal"],
+            "meetingMinutes": ["Key point 1...", "Key point 2...", "Task agreed on..."],
+            "overview": "A very simple 3-sentence summary of the situation.",
             "sentiment": "Positive",
             "tasks": [
-              { "title": "...", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
+              { "title": "What to do next", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
             ]
           }
         `;
@@ -110,12 +128,49 @@ export default function LeadInsights({ user }: { user: any }) {
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        const rawText = response.text || "{}";
+        // Robust parsing for unified SDK
+        let rawText = "{}";
+        const resAny = response as any;
+        if (resAny.text && typeof resAny.text === 'string') {
+          rawText = resAny.text;
+        } else if (resAny.text && typeof resAny.text === 'function') {
+          rawText = resAny.text();
+        } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+          rawText = resAny.response.text();
+        } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          rawText = resAny.response.candidates[0].content.parts[0].text;
+        }
+
         const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(jsonStr);
 
+        // Sanitize strings to avoid [object Object] or binary patterns
+        if (parsed.fullText) parsed.fullText = String(parsed.fullText);
+        if (parsed.overview) parsed.overview = String(parsed.overview);
+        if (Array.isArray(parsed.meetingMinutes)) {
+          parsed.meetingMinutes = parsed.meetingMinutes.map((m: any) => String(m));
+        }
+        if (Array.isArray(parsed.painPoints)) {
+          parsed.painPoints = parsed.painPoints.map((m: any) => String(m));
+        }
+        if (Array.isArray(parsed.requirements)) {
+          parsed.requirements = parsed.requirements.map((m: any) => String(m));
+        }
+        if (Array.isArray(parsed.nextActions)) {
+          parsed.nextActions = parsed.nextActions.map((m: any) => String(m));
+        }
+        if (Array.isArray(parsed.improvements)) {
+          parsed.improvements = parsed.improvements.map((m: any) => String(m));
+        }
+
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
-          parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
+          parsed.tasks = parsed.tasks.map((t: any) => ({ 
+            ...t, 
+            title: String(t.title || 'Action Item'),
+            assignee: String(t.assignee || 'Self'),
+            dueDate: String(t.dueDate || 'TBD'),
+            completed: !!t.completed 
+          }));
         }
 
         console.log("AI Results Produced:", parsed);
@@ -123,15 +178,28 @@ export default function LeadInsights({ user }: { user: any }) {
         await updateDoc(doc(db, 'recordings', selectedRec.id), {
           aiInsights: parsed
         });
-      } catch (err) {
-        console.error("Failed to generate AI insights:", err);
+      } catch (err: any) {
+        const errMessage = err?.message || JSON.stringify(err || 'Error');
+        console.error("Failed to generate AI insights:", errMessage);
+
+        // Detect free-tier quota exhaustion and fallback to local generation
+        if (errMessage.toLowerCase().includes('quota') || errMessage.toLowerCase().includes('resource_exhausted') || errMessage.toLowerCase().includes('too many requests')) {
+          const fallback = generateFallbackInsights(selectedRec.transcript || '');
+          await updateDoc(doc(db, 'recordings', selectedRec.id), {
+            aiInsights: {
+              ...fallback,
+              overview: fallback.overview || 'AI quota limit reached. Partial insights generated locally.',
+              fromFallback: true,
+            }
+          });
+        }
       } finally {
         setGeneratingAI(false);
       }
     };
 
     generateInsights();
-  }, [selectedRec, generatingAI]);
+  }, [selectedRec?.id]);
 
   const handleRegenerate = async () => {
     if (!selectedRec) return;
@@ -148,9 +216,10 @@ export default function LeadInsights({ user }: { user: any }) {
       const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
       if (!apiKey) return;
 
-      const storageRef = ref(storage, selectedRec.audioUrl);
-      const buffer = await getBytes(storageRef);
-      const blob = new Blob([buffer], { type: 'audio/webm' });
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(selectedRec.audioUrl)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error("Failed to explicitly fetch audio via proxy");
+      const blob = await response.blob();
 
       const fileUri = await uploadFileToGemini(blob, apiKey);
       const ai = new GoogleGenAI({ apiKey });
@@ -160,18 +229,32 @@ export default function LeadInsights({ user }: { user: any }) {
         config: {
           responseMimeType: "application/json",
         },
-        contents: [{ role: 'user', parts: [
-          { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
-          { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
-        ]}]
+        contents: [{
+          role: 'user', parts: [
+            { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
+            { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
+          ]
+        }]
       });
 
-      const rawContent = genResult.text || "{}";
+      // Robust parsing for unified SDK
+      let rawContent = "{}";
+      const resAny = genResult as any;
+      if (resAny.text && typeof resAny.text === 'string') {
+        rawContent = resAny.text;
+      } else if (resAny.text && typeof resAny.text === 'function') {
+        rawContent = resAny.text();
+      } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+        rawContent = resAny.response.text();
+      } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        rawContent = resAny.response.candidates[0].content.parts[0].text;
+      }
+
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 
       await updateDoc(doc(db, 'recordings', selectedRec.id), {
-        transcript: parsed.fullText || selectedRec.transcript,
+        transcript: String(parsed.fullText || selectedRec.transcript || ''),
         transcriptData: parsed.segments || []
       });
     } catch (err) {
@@ -292,21 +375,21 @@ export default function LeadInsights({ user }: { user: any }) {
     // Header & Branding
     doc.setFillColor(15, 23, 42); // slate-900
     doc.rect(0, 0, 210, 40, 'F');
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
     doc.text("HANDYSOLVER", margin, 20);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text("EXECUTIVE INTELLIGENCE REPORT", margin, 32);
-    
+
     const dateStr = new Date().toLocaleDateString();
     doc.text(`DATE: ${dateStr}`, 150, 32);
 
     y = 55;
-    
+
     // Client Info
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(14);
@@ -320,7 +403,7 @@ export default function LeadInsights({ user }: { user: any }) {
     doc.text(`Contact: ${lead.name}`, margin, y);
     y += 6;
     doc.text(`Disposition: ${lead.status || 'Active Agent'}`, margin, y);
-    
+
     y += 15;
     doc.setDrawColor(226, 232, 240); // slate-200
     doc.line(margin, y, 190, y);
@@ -329,7 +412,7 @@ export default function LeadInsights({ user }: { user: any }) {
     // Executive Summary
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("AI EXECUTIVE SUMMARY", margin, y);
+    doc.text("AI SUMMARY", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -340,11 +423,11 @@ export default function LeadInsights({ user }: { user: any }) {
     // Minutes of Meeting
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("MINUTES OF MEETING", margin, y);
+    doc.text("CALL NOTES", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    
+
     const momPoints = Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : [];
     if (momPoints.length === 0) {
       doc.text("- No minutes recorded.", margin, y);
@@ -363,14 +446,15 @@ export default function LeadInsights({ user }: { user: any }) {
     // Actionable Items
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("STRATEGIC ACTION ITEMS", margin, y);
+    doc.text("NEXT STEPS", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    
+
     const tasks = Array.isArray(insights.tasks) ? insights.tasks : [];
     if (tasks.length === 0) {
-       doc.text("- No open tasks detected.", margin, y);
+      doc.text("- No open tasks detected.", margin, y);
+      y += 10;
     } else {
       tasks.forEach((t: any) => {
         if (y > 270) { doc.addPage(); y = 20; }
@@ -382,6 +466,40 @@ export default function LeadInsights({ user }: { user: any }) {
       });
     }
 
+    y += 10;
+
+    // Detailed Intelligence Pillars
+    const sections = [
+      { title: "ISSUES", data: insights.painPoints },
+      { title: "GOALS", data: insights.requirements },
+      { title: "STEPS", data: insights.nextActions },
+      { title: "TIPS", data: insights.improvements },
+    ];
+
+    sections.forEach(section => {
+      if (y > 250) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(section.title, margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+
+      const points = Array.isArray(section.data) ? section.data : [];
+      if (points.length === 0) {
+        doc.text("- No data points identified.", margin, y);
+        y += 8;
+      } else {
+        points.forEach((p: string) => {
+          if (y > 270) { doc.addPage(); y = 20; }
+          const pLines = doc.splitTextToSize(`• ${p}`, 165);
+          doc.text(pLines, margin, y);
+          y += (pLines.length * 6) + 2;
+        });
+      }
+      y += 6;
+    });
+
     y += 15;
 
     // Full Meeting Script
@@ -391,13 +509,14 @@ export default function LeadInsights({ user }: { user: any }) {
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      doc.text("FULL MEETING SCRIPT", margin, y);
+      doc.text("TRANSCRIPT", margin, y);
       y += 10;
       doc.setFontSize(9);
-      doc.setFont("helvetica", "italic");
+      doc.setFont("helvetica", "normal"); // Avoid italic encoding bugs
       doc.setTextColor(100, 116, 139); // slate-500
-      
-      const scriptLines = doc.splitTextToSize(`"${selectedRec.transcript}"`, 170);
+
+      const cleanTranscript = String(selectedRec.transcript || "").replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); // Remove control chars
+      const scriptLines = doc.splitTextToSize(`"${cleanTranscript}"`, 170);
       scriptLines.forEach((line: string) => {
         if (y > 280) { doc.addPage(); y = 20; }
         doc.text(line, margin, y);
@@ -408,49 +527,49 @@ export default function LeadInsights({ user }: { user: any }) {
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184); // slate-400
-    doc.text("Confidential Intelligence Payload - Generated by Handysolver AudioCRM", 105, 290, { align: "center" });
+    doc.text("AI Report - Generated by Handysolver", 105, 290, { align: "center" });
 
-    doc.save(`Handysolver_Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Report_${lead.name.replace(/\s+/g, '_')}.pdf`);
   };
 
   return (
     <div className="flex-1 bg-slate-50 text-slate-900 min-h-full p-4 sm:p-6 lg:p-10 font-sans">
       <div className="max-w-[1400px] mx-auto">
         <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors mb-6 group">
-          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Intelligence Ledger
+          <div className="p-1.5 bg-white border border-slate-200 rounded-lg group-hover:border-indigo-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Clients
         </Link>
 
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="text-[10px] font-extrabold text-blue-500 tracking-widest uppercase mb-3 flex items-center gap-2">
-              <Zap size={14} className="animate-pulse" /> Automation Protocol Active
+              <Zap size={14} className="animate-pulse" /> AI Active
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-none">
-               {lead.company || lead.name} <span className="text-slate-400 font-light">Dossier</span>
+              {lead.company || lead.name} <span className="text-slate-400 font-light">Profile</span>
             </h1>
           </motion.div>
-          
+
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Lead Disposition</div>
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Status</div>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
-                {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Dead' : 'Active Engagement'}
+                {lead.status === 'Won' ? 'Won' : lead.status === 'Lost' ? 'Lost' : 'Talking'}
               </span>
             </div>
             <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Call Sentiment</div>
+              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Mood</div>
               <select
                 value={insights.sentiment}
                 onChange={handleSentimentChange}
                 className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] appearance-none cursor-pointer outline-none transition-colors ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100/50' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'}`}
                 disabled={!selectedRec}
               >
-                <option value="Positive">Positive Vectors</option>
-                <option value="Neutral">Neutral Vectors</option>
-                <option value="Negative">Negative Vectors</option>
-                <option value="Analyzing...">Pending Analysis</option>
+                <option value="Positive">Good</option>
+                <option value="Neutral">Okay</option>
+                <option value="Negative">Bad</option>
+                <option value="Analyzing...">Analyzing...</option>
               </select>
             </div>
           </motion.div>
@@ -459,8 +578,8 @@ export default function LeadInsights({ user }: { user: any }) {
         {/* Intelligence Timeline */}
         <div className="bg-white rounded-3xl p-2 mb-8 flex flex-nowrap items-center gap-2 overflow-x-auto shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 scollbar-hide">
           <div className="pl-4 pr-6 shrink-0 flex items-center gap-2 border-r border-slate-100">
-             <Calendar size={16} className="text-slate-400" />
-             <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Archive</span>
+            <Calendar size={16} className="text-slate-400" />
+            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">History</span>
           </div>
           {recordings.length > 0 ? (
             <>
@@ -479,21 +598,21 @@ export default function LeadInsights({ user }: { user: any }) {
               })}
               {selectedRec && (
                 <div className="ml-auto flex items-center gap-3 mr-4">
-                  <button 
+                  {/* <button
                     onClick={handleSyncTranscript}
                     disabled={syncingTranscript}
                     className="shrink-0 px-6 py-3 rounded-2xl bg-white text-indigo-500 hover:text-indigo-600 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-100 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
                   >
                     {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                     {syncingTranscript ? 'Transcribing...' : 'Regenerate Transcript'}
-                  </button>
-                  <button 
+                  </button> */}
+                  <button
                     onClick={handleExportPDF}
                     className="shrink-0 px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-xs uppercase tracking-widest shadow-lg border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
                   >
                     <Download size={14} /> Download Report
                   </button>
-                  <button 
+                  <button
                     onClick={handleRegenerate}
                     disabled={generatingAI}
                     className="shrink-0 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
@@ -513,7 +632,7 @@ export default function LeadInsights({ user }: { user: any }) {
           {generatingAI && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8">
               <div className="p-5 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl flex items-center justify-center gap-3 text-indigo-600 font-extrabold text-sm shadow-inner">
-                 <Wand2 size={18} className="animate-spin" /> Cross-referencing logic parameters via DeepMind Framework...
+                <Wand2 size={18} className="animate-spin" /> Cross-referencing logic parameters via DeepMind Framework...
               </div>
             </motion.div>
           )}
@@ -532,7 +651,7 @@ export default function LeadInsights({ user }: { user: any }) {
             return (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={col.id} className={`bg-white rounded-[2rem] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col group relative overflow-hidden transition-all duration-300 ${col.hover}`}>
                 <div className={`absolute top-0 right-0 w-32 h-32 ${col.bg} rounded-bl-full -z-0 opacity-50`}></div>
-                
+
                 <div className="flex justify-between items-start mb-6 relative z-10">
                   <h3 className="font-extrabold text-slate-800 flex items-center gap-2.5 text-base">
                     <div className={`p-2 rounded-xl ${col.bg} ${col.color}`}><Icon size={16} /></div> {col.title}
@@ -580,14 +699,14 @@ export default function LeadInsights({ user }: { user: any }) {
 
         {/* Split View */}
         <div className="flex flex-col xl:flex-row gap-6 mb-8">
-          
+
           {/* Executive Overview */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="xl:w-2/3 bg-[#0A0D14] rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-white relative overflow-hidden group/overview border border-slate-800">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-            
+
             <div className="flex justify-between items-start mb-6 relative z-10">
               <h3 className="font-extrabold text-white flex items-center gap-3 text-lg tracking-tight">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-indigo-500/30 backdrop-blur-sm"><Sparkles className="text-indigo-300" size={18} /></div> 
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-indigo-500/30 backdrop-blur-sm"><Sparkles className="text-indigo-300" size={18} /></div>
                 AI Executive Summary
               </h3>
               {editingOverview === null && (
@@ -618,18 +737,18 @@ export default function LeadInsights({ user }: { user: any }) {
           {/* Pipeline Stage Visualizer */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="xl:w-1/3 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden group">
             <div className={`absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-bl-[100px] -z-0 transition-colors group-hover:bg-indigo-50`}></div>
-            
+
             <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-8 relative z-10">Sales State Machine</div>
-            
+
             <div className="w-full bg-slate-100 h-3 rounded-full mb-6 relative overflow-hidden shadow-inner z-10">
-              <motion.div 
-                initial={{ width: 0 }} 
-                animate={{ width: `${getPhaseProgress(lead.phase)}%` }} 
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${getPhaseProgress(lead.phase)}%` }}
                 transition={{ duration: 1.5, type: 'spring' }}
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-slate-800 to-slate-900 rounded-full" 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-slate-800 to-slate-900 rounded-full"
               />
             </div>
-            
+
             <div className="flex items-end justify-between relative z-10">
               <h2 className="text-4xl font-black tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">{lead.phase?.toLowerCase() || 'Processing'}</h2>
               <span className="text-xs font-extrabold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">{getPhaseProgress(lead.phase)}% Closed</span>
@@ -660,16 +779,14 @@ export default function LeadInsights({ user }: { user: any }) {
                 return (
                   <motion.div key={m.id}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-                    className={`p-5 rounded-2xl border transition-all ${
-                      isPast
-                        ? 'bg-slate-50 border-slate-100 opacity-60'
-                        : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'
-                    }`}
+                    className={`p-5 rounded-2xl border transition-all ${isPast
+                      ? 'bg-slate-50 border-slate-100 opacity-60'
+                      : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-violet-200'
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        isPast ? 'bg-slate-100' : 'bg-violet-50'
-                      }`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPast ? 'bg-slate-100' : 'bg-violet-50'
+                        }`}>
                         <CalendarDays size={16} className={isPast ? 'text-slate-400' : 'text-violet-500'} />
                       </div>
                       {isPast && (
@@ -700,7 +817,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
         {/* Bottom Split (Tasks + MOM + Transcript) */}
         <div className="flex flex-col xl:flex-row gap-6 mb-12">
-          
+
           {/* Actionable Steps */}
           <div className="xl:w-1/3 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col">
             <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4">
@@ -777,14 +894,14 @@ export default function LeadInsights({ user }: { user: any }) {
               <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
                 <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500"><AlignLeft size={18} /></div> Minutes of Meeting
               </h3>
-              <button 
+              <button
                 onClick={() => handleArrayAdd('meetingMinutes')}
                 className="p-2 bg-white text-slate-400 hover:text-indigo-600 shadow-sm rounded-xl transition-all border border-slate-200 hover:border-indigo-200"
               >
                 <Plus size={18} />
               </button>
             </div>
-            
+
             <div className="space-y-4 flex-1">
               {(Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : []).map((point: string, idx: number) => {
                 const isEditingThis = editingItem?.field === 'meetingMinutes' && editingItem?.index === idx;
@@ -799,8 +916,8 @@ export default function LeadInsights({ user }: { user: any }) {
                           onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
                         />
                         <div className="flex justify-end gap-2">
-                           <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[10px] font-black text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
-                           <button onClick={handleArraySave} className="px-3 py-1.5 text-[10px] font-black bg-slate-900 text-white hover:bg-indigo-600 rounded-lg shadow-sm flex items-center gap-1.5"><Check size={12}/> Save</button>
+                          <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[10px] font-black text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
+                          <button onClick={handleArraySave} className="px-3 py-1.5 text-[10px] font-black bg-slate-900 text-white hover:bg-indigo-600 rounded-lg shadow-sm flex items-center gap-1.5"><Check size={12} /> Save</button>
                         </div>
                       </div>
                     ) : (
@@ -808,8 +925,8 @@ export default function LeadInsights({ user }: { user: any }) {
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0"></div>
                         <span className="block pr-14 text-sm font-semibold text-slate-600 leading-relaxed">{point}</span>
                         <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
-                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12}/></button>
-                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-500 bg-slate-50 hover:bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12}/></button>
+                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12} /></button>
+                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-500 bg-slate-50 hover:bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
                         </div>
                       </div>
                     )}
@@ -827,8 +944,8 @@ export default function LeadInsights({ user }: { user: any }) {
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><AlignLeft size={18} /></div> Source Transcript
               </h3>
               <div className="flex gap-2">
-                {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
-                  <button 
+                {/* {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
+                  <button
                     onClick={handleSyncTranscript}
                     disabled={syncingTranscript}
                     className="p-2 bg-white text-indigo-500 hover:text-indigo-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest disabled:opacity-50"
@@ -836,27 +953,27 @@ export default function LeadInsights({ user }: { user: any }) {
                     {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                     {syncingTranscript ? 'Syncing...' : 'Sync Subtitles'}
                   </button>
-                )}
+                )} */}
                 {selectedRec && (
-                   <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white text-slate-400 hover:text-purple-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
-                      Open Full <ArrowUpRight size={14} />
-                   </Link>
+                  <Link to={`/r/${selectedRec.id}`} className="p-2 bg-white text-slate-400 hover:text-purple-600 border border-slate-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
+                    Open Full <ArrowUpRight size={14} />
+                  </Link>
                 )}
               </div>
             </div>
             <div className="flex-1 bg-slate-50/80 p-6 rounded-2xl border border-slate-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover:bg-slate-50 transition-colors scollbar-hide">
               {selectedRec?.transcript ? (
-                <TranscriptPlayer 
+                <TranscriptPlayer
                   audioUrl={selectedRec.audioUrl}
                   transcriptData={selectedRec.transcriptData}
                   fallbackText={selectedRec.transcript}
                 />
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 font-medium italic overflow-hidden">
-                   <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                      <Zap size={24} className="text-slate-300" />
-                   </div>
-                   No dialogue payload detected.
+                  <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                    <Zap size={24} className="text-slate-300" />
+                  </div>
+                  No dialogue payload detected.
                 </div>
               )}
             </div>
@@ -864,25 +981,25 @@ export default function LeadInsights({ user }: { user: any }) {
         </div>
         <div className="bg-slate-900 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-          
+
           <div className="flex items-center gap-4 relative z-10">
-             <div className="w-16 h-16 bg-white border-2 border-white/20 rounded-[1.25rem] flex items-center justify-center overflow-hidden">
-               {lead.avatar ? <img src={lead.avatar} className="object-cover w-full h-full" /> : <div className="text-2xl font-black text-slate-300">?</div>}
-             </div>
-             <div>
-               <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-1">Entity Registered</div>
-               <div className="font-extrabold text-white text-xl">{lead.company || lead.name}</div>
-               <div className="text-sm font-semibold text-slate-400 mt-1 flex gap-3">
-                  <span>{lead.email || 'No email attached'}</span>
-                  <span className="text-slate-600">•</span>
-                  <span>{lead.phone || 'No direct dial'}</span>
-               </div>
-             </div>
+            <div className="w-16 h-16 bg-white border-2 border-white/20 rounded-[1.25rem] flex items-center justify-center overflow-hidden">
+              {lead.avatar ? <img src={lead.avatar} className="object-cover w-full h-full" /> : <div className="text-2xl font-black text-slate-300">?</div>}
+            </div>
+            <div>
+              <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-1">Entity Registered</div>
+              <div className="font-extrabold text-white text-xl">{lead.company || lead.name}</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1 flex gap-3">
+                <span>{lead.email || 'No email attached'}</span>
+                <span className="text-slate-600">•</span>
+                <span>{lead.phone || 'No direct dial'}</span>
+              </div>
+            </div>
           </div>
 
           <div className="relative z-10 md:w-auto w-full">
             <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-sm font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
-               <Edit3 size={16} /> Modify Profile
+              <Edit3 size={16} /> Modify Profile
             </Link>
           </div>
         </div>

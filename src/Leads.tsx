@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -129,7 +129,7 @@ export default function Leads({ user }: { user: any }) {
       audioUrl = await getDownloadURL(storageRef);
 
       // 2. Transcription logic via Gemini File API
-      let transcriptText = "No transcript generated.";
+      let transcriptText = "No info generated.";
       let transcriptData = null;
       try {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
@@ -152,17 +152,28 @@ export default function Leads({ user }: { user: any }) {
             ]
           });
           
-          const rawText = response.text || "{}";
-          // Still use extraction logic just in case, though mimeType helps
+          // Robust parsing for unified SDK
+          let rawText = "{}";
+          const resAny = response as any;
+          if (resAny.text && typeof resAny.text === 'string') {
+            rawText = resAny.text;
+          } else if (resAny.text && typeof resAny.text === 'function') {
+            rawText = resAny.text();
+          } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
+            rawText = resAny.response.text();
+          } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            rawText = resAny.response.candidates[0].content.parts[0].text;
+          }
+
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
           try {
             const parsed = JSON.parse(jsonStr);
-            transcriptText = parsed.fullText || "No transcript generated.";
+            transcriptText = String(parsed.fullText || "No transcript generated.");
             transcriptData = parsed.segments || [];
           } catch (e) {
             console.error("JSON Parse Error on Transcript:", e);
-            transcriptText = rawText; // Fallback
+            transcriptText = String(rawText || "No transcript generated."); // Fallback
           }
         }
       } catch (e: any) {
@@ -179,7 +190,7 @@ export default function Leads({ user }: { user: any }) {
         companyId, 
         leadId
       });
-      setSuccess("Call recorded securely!"); 
+      setSuccess("Call recorded safely!"); 
       setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
        console.error(err);
@@ -227,28 +238,61 @@ export default function Leads({ user }: { user: any }) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Browser doesn't support recording");
 
       const streams: MediaStream[] = [];
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const isChromium = !!(window as any).chrome;
+      
+      let micStream: MediaStream;
+      let sysStream: MediaStream | null = null;
+
+      try {
+        if (navigator.mediaDevices.getDisplayMedia) {
+          sysStream = await navigator.mediaDevices.getDisplayMedia(
+            isChromium 
+              ? { 
+                  video: true, 
+                  audio: { echoCancellation: false, systemAudio: 'include' } as any,
+                  systemAudio: 'include',
+                  selfBrowserSurface: 'include',
+                  monitorTypeSurfaces: 'include'
+                } as any
+              : { video: true, audio: true }
+          );
+        }
+      } catch (e) {
+        console.warn("System audio omitted or cancelled", e);
+      }
+
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
       streams.push(micStream);
       let finalStream = micStream;
 
-      if (navigator.mediaDevices.getDisplayMedia) {
-        try {
-          const sysStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1, height: 1 }, audio: true });
-          if (sysStream.getAudioTracks().length > 0) {
-            streams.push(sysStream);
-            const ctx = new AudioContext(); audioContextRef.current = ctx;
-            const dest = ctx.createMediaStreamDestination();
-            ctx.createMediaStreamSource(micStream).connect(dest);
-            ctx.createMediaStreamSource(sysStream).connect(dest);
-            finalStream = dest.stream;
-          } else {
-            sysStream.getTracks().forEach(t => t.stop());
-          }
-        } catch (e) { console.warn("System audio omitted", e); }
+      if (sysStream && sysStream.getAudioTracks().length > 0) {
+        streams.push(sysStream);
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        const ctx = new AudioContextClass(); audioContextRef.current = ctx;
+        if (ctx.state === 'suspended') await ctx.resume();
+        const dest = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(micStream).connect(dest);
+        ctx.createMediaStreamSource(sysStream).connect(dest);
+        finalStream = dest.stream;
+      } else if (sysStream) {
+        alert("System Audio Note: You shared a screen/tab but didn't check the 'Also share audio' box. Only your microphone will be recorded.");
+        sysStream.getTracks().forEach(t => t.stop());
       }
 
       streamsRef.current = streams;
-      const mediaRecorder = new MediaRecorder(finalStream);
+
+      // Dynanamic mimeType for cross-browser support (Safari prefers mp4, Chrome prefers webm)
+      const options: any = { audioBitsPerSecond: 64000 };
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          options.mimeType = type;
+          break;
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(finalStream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -426,7 +470,8 @@ export default function Leads({ user }: { user: any }) {
                             </button>
                           )}
                           <Link to={`/analytics/${lead.id}`} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                            DETAILS <ArrowUpRight size={12} />
+                            <Sparkles size={12} />
+                            GET INSIGHTS
                           </Link>
                         </div>
                       </div>
@@ -451,7 +496,7 @@ export default function Leads({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/50 text-indigo-600 text-[10px] font-bold uppercase tracking-widest mb-3 border border-indigo-200/50">
               <TrendingUp size={14} className="animate-pulse" /> Clients
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Client List</h1>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Your Clients</h1>
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3">
             <div className="flex gap-3">
@@ -488,14 +533,16 @@ export default function Leads({ user }: { user: any }) {
         {/* Toolbar */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="relative w-full max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search clients, company..."
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
-            />
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                <Search size={22} strokeWidth={2.5} />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search by name, company, or info..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white border-2 border-slate-100 rounded-3xl py-5 pl-14 pr-6 text-base font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-8 focus:ring-indigo-500/5 transition-all shadow-sm"
+              />
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
@@ -737,6 +784,16 @@ export default function Leads({ user }: { user: any }) {
                                      <Link to={`/analytics/${lead.id}`} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-100 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">
                                        <BarChart3 size={14} /> Full Details
                                      </Link>
+                                    
+                                    {(role === 'admin' || role === 'super_admin') && (
+                                      <button 
+                                        onClick={() => handleDeleteLead(lead.id)}
+                                        className="flex items-center gap-2 text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-100 hover:border-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
+                                      >
+                                        <Trash2 size={14} /> Delete Lead
+                                      </button>
+                                    )}
+
                                     {shareUrls[lead.id] ? (
                                       <div className="flex items-center gap-2 w-64 bg-white rounded-xl shadow-inner border border-slate-200 p-1">
                                         <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none" />
