@@ -75,6 +75,9 @@ const NotificationBell = () => {
   const { companyId } = useAuth();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission === 'granted' : true
+  );
 
   useEffect(() => {
     if (!companyId) return;
@@ -89,19 +92,36 @@ const NotificationBell = () => {
     return unsub;
   }, [companyId]);
 
+  const handleRequestPush = () => {
+    if (typeof Notification !== 'undefined') {
+      Notification.requestPermission().then(permission => {
+        setPushEnabled(permission === 'granted');
+      });
+    }
+  };
+
+  const hasNotifications = meetings.length > 0 || !pushEnabled;
+
   return (
     <div className="relative">
       <button onClick={() => setShowDropdown(!showDropdown)} className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">
         <Bell size={20} />
-        {meetings.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>}
+        {hasNotifications && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>}
       </button>
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50">
-          <div className="p-4 border-b border-slate-50 bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Upcoming Meetings</h3></div>
+          <div className="p-4 border-b border-slate-50 bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Notifications</h3></div>
           <div className="max-h-[60vh] overflow-y-auto">
-            {meetings.length === 0 ? <div className="p-6 text-center text-sm font-medium text-slate-400">No upcoming meetings</div> : meetings.map(m => (
+            {!pushEnabled && (
+              <div className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer" onClick={handleRequestPush}>
+                <div className="font-bold text-slate-800 text-sm mb-1">Enable Push Notifications</div>
+                <div className="text-xs text-slate-500 font-medium">Get alerted for upcoming meetings</div>
+                <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-2">Action Required</div>
+              </div>
+            )}
+            {meetings.length > 0 ? meetings.map(m => (
               <div key={m.id} className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors"><div className="font-bold text-slate-800 text-sm mb-1">{m.title}</div><div className="text-xs text-slate-500 font-medium">{m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>{m.leadName && <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-2">{m.leadName}</div>}</div>
-            ))}
+            )) : <div className="p-6 text-center text-sm font-medium text-slate-400">No new notifications</div>}
           </div>
         </div>
       )}

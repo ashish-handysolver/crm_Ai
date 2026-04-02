@@ -17,7 +17,7 @@ export interface CustomFieldDef {
 }
 
 const DEFAULT_SOURCES = ['LINKEDIN', 'REFERRAL', 'DIRECT', 'WEBSITE'];
-const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
+const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
 const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
 
 export default function CustomFields({ user }: { user: any }) {

@@ -16,10 +16,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import ImportModal from './ImportModal';
 
 const DUMMY_LEADS = [
-  { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
-  { id: '2', name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', score: 62, lastPulse: 'Yesterday', phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e', phone: '+49 30 1234 5678' },
-  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', score: 92, lastPulse: '4 hours ago', phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
-  { id: '4', name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', score: 15, lastPulse: 'Oct 12, 2023', phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g', phone: '+1 212-555-0199' },
+  { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
+  { id: '2', name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', health: 'WARM', score: 62, lastPulse: 'Yesterday', phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e', phone: '+49 30 1234 5678' },
+  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', health: 'HOT', score: 92, lastPulse: '4 hours ago', phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
+  { id: '4', name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', health: 'COLD', score: 15, lastPulse: 'Oct 12, 2023', phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g', phone: '+1 212-555-0199' },
 ];
 
 const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
@@ -43,6 +43,7 @@ export default function Leads({ user }: { user: any }) {
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showSafetyAlert, setShowSafetyAlert] = useState(false);
@@ -365,6 +366,24 @@ export default function Leads({ user }: { user: any }) {
     }
   };
 
+  const handleShare = async (leadId: string, url: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join AudioCRM Meeting',
+          text: 'Please join my AudioCRM meeting:',
+          url: url,
+        });
+        return; // Successfully shared via native app
+      } catch (error: any) {
+        if (error.name === 'AbortError') return; // User closed the share sheet
+      }
+    }
+    navigator.clipboard.writeText(url);
+    setSuccess("Copied to clipboard!");
+    setTimeout(() => setSuccess(""), 2000);
+  };
+
   const handleDeleteLead = async (leadId: string) => {
     if (!window.confirm("Are you sure you want to delete this lead? This will also remove all associated recordings and meetings.")) return;
 
@@ -400,11 +419,13 @@ export default function Leads({ user }: { user: any }) {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'QUALIFIED': return 'bg-emerald-100/80 text-emerald-700 border-emerald-200';
+      case 'WON': return 'bg-emerald-100/80 text-emerald-700 border-emerald-200';
+      case 'LOST': return 'bg-rose-100/80 text-rose-700 border-rose-200';
+      case 'QUALIFIED': return 'bg-indigo-100/80 text-indigo-700 border-indigo-200';
       case 'NURTURING': return 'bg-orange-100/80 text-orange-700 border-orange-200';
       case 'DISCOVERY': return 'bg-blue-100/80 text-blue-700 border-blue-200';
       case 'INACTIVE': return 'bg-slate-100/80 text-slate-700 border-slate-200';
-      default: return 'bg-indigo-100/80 text-indigo-700 border-indigo-200';
+      default: return 'bg-slate-100/80 text-slate-700 border-slate-200';
     }
   };
 
@@ -418,7 +439,45 @@ export default function Leads({ user }: { user: any }) {
 
   const availableLeadTypes = Array.from(new Set([...DEFAULT_LEAD_TYPES, ...customLeadTypes, ...leads.map(l => l.leadType).filter(Boolean)]));
 
-  const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'INACTIVE'];
+  const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
+
+  const isAllSelected = filteredLeads.length > 0 && selectedLeads.length === filteredLeads.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedLeads([]);
+    } else {
+      setSelectedLeads(filteredLeads.map(l => l.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedLeads(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedLeads.length) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedLeads.length} leads? This will also remove all associated recordings and meetings.`)) return;
+
+    try {
+      setLoadingLeads(true);
+      for (const leadId of selectedLeads) {
+        const recSnap = await getDocs(query(collection(db, 'recordings'), where('leadId', '==', leadId)));
+        for (const d of recSnap.docs) await deleteDoc(doc(db, 'recordings', d.id));
+        const mtgSnap = await getDocs(query(collection(db, 'meetings'), where('leadId', '==', leadId)));
+        for (const d of mtgSnap.docs) await deleteDoc(doc(db, 'meetings', d.id));
+        await deleteDoc(doc(db, 'leads', leadId));
+      }
+      setSuccess(`Successfully deleted ${selectedLeads.length} leads.`);
+      setSelectedLeads([]);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete selected leads.");
+    } finally {
+      setLoadingLeads(false);
+    }
+  };
 
   const KanbanView = () => (
     <div className="flex gap-6 overflow-x-auto pb-8 min-h-[600px] snap-x">
@@ -453,6 +512,13 @@ export default function Leads({ user }: { user: any }) {
                     <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-full -z-0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div className="relative z-10">
                       <div className="flex items-center gap-3 mb-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.includes(lead.id)}
+                          onChange={() => toggleSelect(lead.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer shrink-0"
+                        />
                         {lead.avatar ? (
                           <img src={lead.avatar} className="w-10 h-10 rounded-xl object-cover border border-white shadow-sm" alt={lead.name} />
                         ) : (
@@ -561,6 +627,18 @@ export default function Leads({ user }: { user: any }) {
             />
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <AnimatePresence>
+              {selectedLeads.length > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }}
+                  onClick={handleBulkDelete}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-black hover:bg-rose-100 transition-all shadow-sm border border-rose-200 uppercase tracking-widest mr-1 whitespace-nowrap overflow-hidden"
+                >
+                  <Trash2 size={14} /> Delete ({selectedLeads.length})
+                </motion.button>
+              )}
+            </AnimatePresence>
+
             <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
               <button
                 onClick={() => setViewMode('list')}
@@ -610,6 +688,13 @@ export default function Leads({ user }: { user: any }) {
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-indigo-500"></div>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.includes(lead.id)}
+                        onChange={() => toggleSelect(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer shrink-0"
+                      />
                       <div className="relative">
                         {lead.avatar ? (
                           <img src={lead.avatar} className="w-12 h-12 rounded-[1rem] object-cover ring-2 ring-slate-50" alt={lead.name} />
@@ -669,6 +754,15 @@ export default function Leads({ user }: { user: any }) {
                               <Mic size={16} /> Record
                             </button>
                           )}
+                          {shareUrls[lead.id] ? (
+                            <button onClick={() => handleShare(lead.id, shareUrls[lead.id])} className="p-3 text-emerald-600 bg-emerald-50 rounded-xl transition-all" title="Share Link">
+                              <Share2 size={18} />
+                            </button>
+                          ) : (
+                            <button onClick={() => createMeeting(lead.id, lead.name)} disabled={isCreatingMeeting} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all disabled:opacity-50" title="Create Guest Link">
+                              {isCreatingMeeting ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+                            </button>
+                          )}
                           <Link to={`/clients/${lead.id}/edit`} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                             <Edit2 size={18} />
                           </Link>
@@ -701,6 +795,15 @@ export default function Leads({ user }: { user: any }) {
                 <table className="w-full text-left border-collapse min-w-[900px]">
                   <thead>
                     <tr className="border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                      <th className="py-6 px-6 relative w-12 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                        />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div>
+                      </th>
                       <th className="py-6 px-8 relative">Name <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
                       <th className="py-6 px-6 relative">Company <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
                       <th className="py-6 px-6 relative w-32">Lead Type <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-200"></div></th>
@@ -711,7 +814,7 @@ export default function Leads({ user }: { user: any }) {
                   <tbody className="text-sm">
                     {loadingLeads ? (
                       <tr>
-                        <td colSpan={5} className="py-24 text-center">
+                        <td colSpan={6} className="py-24 text-center">
                           <Loader2 size={32} className="animate-spin text-indigo-500 mx-auto" />
                         </td>
                       </tr>
@@ -722,6 +825,15 @@ export default function Leads({ user }: { user: any }) {
                       return (
                         <React.Fragment key={lead.id}>
                           <tr className={`border-b border-slate-50 hover:bg-slate-50/80 transition-all duration-300 group ${isExp ? 'bg-indigo-50/30 shadow-inner' : ''}`}>
+                            <td className="py-5 px-6 text-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedLeads.includes(lead.id)}
+                                onChange={() => toggleSelect(lead.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                              />
+                            </td>
                             <td className="py-5 px-8 whitespace-nowrap">
                               <div className="flex items-center gap-4">
                                 <div className="relative shrink-0">
@@ -804,7 +916,7 @@ export default function Leads({ user }: { user: any }) {
                           <AnimatePresence>
                             {isExp && (
                               <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-gradient-to-b from-indigo-50/30 to-white/50 border-b border-indigo-50">
-                                <td colSpan={5} className="p-0">
+                                <td colSpan={6} className="p-0">
                                   <div className="p-8 px-12">
                                     {customFieldDefs.length > 0 && (
                                       <div className="mb-8 pb-8 border-b border-slate-100 border-dashed">
@@ -830,8 +942,8 @@ export default function Leads({ user }: { user: any }) {
                                         {shareUrls[lead.id] ? (
                                           <div className="flex items-center gap-2 w-64 bg-white rounded-xl shadow-inner border border-slate-200 p-1">
                                             <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none" />
-                                            <button onClick={() => { navigator.clipboard.writeText(shareUrls[lead.id]); setSuccess("Copied!"); setTimeout(() => setSuccess(""), 2000); }} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors font-bold shadow-sm">
-                                              <CheckCircle2 size={16} />
+                                            <button onClick={() => handleShare(lead.id, shareUrls[lead.id])} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
+                                              <Share2 size={16} />
                                             </button>
                                           </div>
                                         ) : (

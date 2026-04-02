@@ -21,6 +21,7 @@ const SYSTEM_FIELDS = [
   { id: 'location', label: 'Location', required: false },
   { id: 'source', label: 'Source (e.g. LINKEDIN)', required: false },
   { id: 'leadType', label: 'Lead Type (e.g. B2B)', required: false },
+  { id: 'health', label: 'Health (HOT/WARM/COLD)', required: false },
   { id: 'score', label: 'Score (0-100)', required: false },
   { id: 'phase', label: 'Phase (e.g. DISCOVERY)', required: false }
 ];
@@ -106,6 +107,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       if (f.id === 'score') return '85';
       if (f.id === 'phase') return 'DISCOVERY';
       if (f.id === 'leadType') return 'B2B';
+      if (f.id === 'health') return 'WARM';
       return f.label;
     }).join(',');
     const csvContent = `${headers}\n${sampleRow}`;
@@ -157,6 +159,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
           score: 50, // default
           phase: 'DISCOVERY', // default
           leadType: 'B2B', // default
+          health: 'WARM', // default
         };
 
         // Apply mappings

@@ -110,7 +110,8 @@ export default function LeadInsights({ user }: { user: any }) {
             "sentiment": "Positive",
             "tasks": [
               { "title": "...", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
-            ]
+            ],
+            "recommendedPhase": "Evaluate the conversation and strictly return ONE of these exact strings: DISCOVERY, NURTURING, QUALIFIED, WON, LOST, INACTIVE"
           }
         `;
 
@@ -161,6 +162,17 @@ export default function LeadInsights({ user }: { user: any }) {
         await updateDoc(doc(db, 'recordings', selectedRec.id), {
           aiInsights: parsed
         });
+
+        // Auto-sync the Sales State Machine
+        if (parsed.recommendedPhase) {
+          const newPhase = parsed.recommendedPhase.toUpperCase();
+          if (lead.phase !== newPhase) {
+            await updateDoc(doc(db, 'leads', lead.id), {
+              phase: newPhase,
+              updatedAt: Timestamp.now()
+            });
+          }
+        }
       } catch (err) {
         console.error("Failed to generate AI insights:", err);
       } finally {
@@ -282,10 +294,11 @@ export default function LeadInsights({ user }: { user: any }) {
 
   const getPhaseProgress = (phase: string) => {
     switch (phase?.toUpperCase()) {
-      case 'INACTIVE': return 10;
+      case 'INACTIVE':
+      case 'LOST': return 10;
       case 'DISCOVERY': return 25;
-      case 'QUALIFIED': return 50;
-      case 'NURTURING': return 75;
+      case 'NURTURING': return 50;
+      case 'QUALIFIED': return 75;
       case 'WON':
       case 'CLOSED': return 100;
       default: return 60;
@@ -569,7 +582,7 @@ export default function LeadInsights({ user }: { user: any }) {
               onClick={handleExportPDF}
               className="px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-xs uppercase tracking-widest shadow-sm border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
             >
-              <Download size={14} /> Download Report
+              <Download size={14} /> Download MOM
             </button>
             <button
               onClick={handleRegenerate}
@@ -937,10 +950,10 @@ export default function LeadInsights({ user }: { user: any }) {
 
           <div className="flex items-center gap-4 relative z-10">
             <div className="w-16 h-16 bg-white border-2 border-white/20 rounded-[1.25rem] flex items-center justify-center overflow-hidden">
-              {lead.avatar ? <img src={lead.avatar} className="object-cover w-full h-full" /> : <div className="text-2xl font-black text-slate-300">?</div>}
+              <img src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name || 'User'}&background=random`} className="object-cover w-full h-full" alt={lead.name || 'Lead'} />
             </div>
             <div>
-              <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-1">Entity Registered</div>
+              <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-1">Lead Details</div>
               <div className="font-extrabold text-white text-xl">{lead.company || lead.name}</div>
               <div className="text-sm font-semibold text-slate-400 mt-1 flex gap-3">
                 <span>{lead.email || 'No email attached'}</span>

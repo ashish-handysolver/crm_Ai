@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap, CalendarDays } from 'lucide-react';
 import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
@@ -30,9 +30,11 @@ export default function LeadForm({ user }: { user: any }) {
     phone: '',
     source: 'DIRECT',
     leadType: 'B2B',
+    health: 'WARM',
     score: 50,
     phase: 'DISCOVERY',
-    avatar: ''
+    avatar: '',
+    createdAtStr: new Date().toISOString().split('T')[0]
   });
 
   useEffect(() => {
@@ -42,7 +44,13 @@ export default function LeadForm({ user }: { user: any }) {
           const docRef = doc(db, 'leads', id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setFormData({ avatar: '', ...docSnap.data() } as any);
+            const data = docSnap.data();
+            let createdStr = new Date().toISOString().split('T')[0];
+            if (data.createdAt?.toDate) {
+              const d = data.createdAt.toDate();
+              createdStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            }
+            setFormData({ avatar: '', ...data, createdAtStr: createdStr } as any);
           } else {
             // Mock data population if it's the dummy IDs, so edit works visually
             if (id === '1') setFormData({ name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' });
@@ -87,12 +95,22 @@ export default function LeadForm({ user }: { user: any }) {
       if (!companyId) throw new Error("Authentication context invalid.");
 
       const leadId = isEditing ? id : uuidv4();
+
+      let createdTimestamp = Timestamp.now();
+      if (formData.createdAtStr) {
+        const [y, m, d] = formData.createdAtStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        createdTimestamp = Timestamp.fromDate(dateObj);
+      }
+
       const payload = {
         ...formData,
         id: leadId,
         updatedAt: Timestamp.now(),
-        ...(isEditing ? {} : { createdAt: Timestamp.now(), companyId: companyId })
+        createdAt: createdTimestamp,
+        companyId: companyId
       };
+      delete payload.createdAtStr;
 
       await setDoc(doc(db, 'leads', leadId as string), payload);
       navigate('/clients');
@@ -278,6 +296,14 @@ export default function LeadForm({ user }: { user: any }) {
                       {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
+                  <div>
+                    <label className={labelClasses}>Health Stage</label>
+                    <select name="health" value={formData.health || 'WARM'} onChange={handleChange} className={inputClasses}>
+                      <option value="HOT">HOT</option>
+                      <option value="WARM">WARM</option>
+                      <option value="COLD">COLD</option>
+                    </select>
+                  </div>
                 </div>
               </section>
 
@@ -294,6 +320,8 @@ export default function LeadForm({ user }: { user: any }) {
                       <option value="DISCOVERY">Discovery Protocol</option>
                       <option value="NURTURING">Nurturing Cycle</option>
                       <option value="QUALIFIED">Qualified Status</option>
+                      <option value="WON">Closed - Won</option>
+                      <option value="LOST">Closed - Lost</option>
                       <option value="INACTIVE">Inactive / Archived</option>
                       {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
@@ -309,6 +337,13 @@ export default function LeadForm({ user }: { user: any }) {
                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Low Intent</span>
                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Peak Conversion</span>
                       </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Creation Date</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-300 group-focus-within:text-indigo-500 transition-colors"><CalendarDays size={18} /></div>
+                      <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-12`} />
                     </div>
                   </div>
                 </div>

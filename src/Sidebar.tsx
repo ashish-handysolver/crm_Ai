@@ -102,13 +102,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               {isDemoMode ? <Eye size={18} /> : <EyeOff size={18} />}
               {isDemoMode ? 'Demo Mode: ON' : 'Switch to Demo'}
             </button>
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-sm font-bold transition-all group"
-            >
-              <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
-              Sign Out
-            </button>
+
           </div>
           <p className="text-[11px] font-medium text-slate-500 flex items-center justify-center gap-1.5">
             Made with <span className="text-[14px]">🧡</span> by Handysolver &copy; {new Date().getFullYear()}

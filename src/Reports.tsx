@@ -92,34 +92,34 @@ export default function Reports({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-100/50 text-orange-600 text-[10px] font-bold uppercase tracking-widest mb-3 border border-orange-200/50">
               <AudioWaveform size={14} /> Intelligence
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Call Reports</h1>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">Call Recordings</h1>
           </motion.div>
         </header>
 
         {/* Filters */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} delay={0.1} className="bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="relative w-full max-w-lg group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search transcripts or client name..."
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400 text-slate-700"
-              />
-            </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all">
-                <Filter size={16} /> Filter
-              </button>
-            </div>
+          <div className="relative w-full max-w-lg group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search transcripts or client name..."
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400 text-slate-700"
+            />
+          </div>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all">
+              <Filter size={16} /> Filter
+            </button>
+          </div>
         </motion.div>
 
         {/* Grouping / List */}
         <div className="space-y-6">
           <AnimatePresence mode="popLayout">
             {enrichedRecordings.length === 0 ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                 className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 shadow-sm max-w-2xl mx-auto w-full"
               >
@@ -131,13 +131,13 @@ export default function Reports({ user }: { user: any }) {
               </motion.div>
             ) : (
               enrichedRecordings.map((rec, index) => (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
-                  key={rec.id} 
+                  key={rec.id}
                   className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden flex flex-col lg:flex-row group hover:border-indigo-100 transition-colors relative"
                 >
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  
+
                   {/* Left info column */}
                   <div className="p-6 md:p-8 lg:w-[35%] bg-gradient-to-br from-slate-50 to-white border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col justify-between relative z-10">
                     <div>
@@ -158,7 +158,7 @@ export default function Reports({ user }: { user: any }) {
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="flex flex-wrap items-center gap-2 mb-8">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 py-1.5 px-3 rounded-lg shadow-sm">
                           <Calendar size={14} className="text-slate-400" />
@@ -173,9 +173,9 @@ export default function Reports({ user }: { user: any }) {
 
                     <div className="mt-auto">
                       <Link to={`/r/${rec.id}`} className="w-full bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 transition-all shadow-lg shadow-slate-900/10 active:scale-[0.98] group/btn overflow-hidden relative">
-                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out"></div>
-                         <Play size={14} className="fill-current relative z-10 group-hover/btn:scale-110 transition-transform" /> 
-                         <span className="relative z-10">Play Audio / Open</span>
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out"></div>
+                        <Play size={14} className="fill-current relative z-10 group-hover/btn:scale-110 transition-transform" />
+                        <span className="relative z-10">Play Audio / Open</span>
                       </Link>
                     </div>
                   </div>
