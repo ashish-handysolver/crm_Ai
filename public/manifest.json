@@ -1,13 +1,13 @@
 {
-  "name": "CRM AI | MyHandyDash",
-  "short_name": "CRM AI",
+  "name": "handycrm.ai | Next-Gen AI CRM",
+  "short_name": "handycrm.ai",
   "description": "Premium CRM with AI-powered meeting intelligence.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0A0D14",
-  "theme_color": "#0A0D14",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
   "icons": [
     {
       "src": "/logo.png",

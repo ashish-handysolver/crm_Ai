@@ -11,17 +11,17 @@ import { useAuth } from './contexts/AuthContext';
 import {
   User, Mail, Lock, Camera, Loader2, CheckCircle2,
   AlertCircle, ShieldCheck, Zap, Sparkles, LogOut,
-  ChevronRight, ArrowLeft
+  ChevronRight, ArrowLeft, ExternalLink, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
 const GRADIENTS = [
-  'from-orange-500 to-orange-600',
+  'from-indigo-500 to-purple-600',
   'from-emerald-500 to-teal-600',
   'from-rose-500 to-pink-600',
-  'from-amber-500 to-orange-600',
-  'from-purple-500 to-violet-600'
+  'from-blue-500 to-indigo-600',
+  'from-slate-700 to-slate-900'
 ];
 
 export default function Profile() {
@@ -77,7 +77,7 @@ export default function Profile() {
         await updatePassword(user, formData.newPassword);
       }
 
-      setSuccess('Profile Identity Synchronized Successfully.');
+      setSuccess('Profile identity synchronized successfully.');
       setFormData(f => ({ ...f, newPassword: '', confirmPassword: '' }));
     } catch (err: any) {
       setError(err.message);
@@ -100,9 +100,9 @@ export default function Profile() {
       await updateProfile(user, { photoURL: url });
       await updateDoc(doc(db, 'users', user.uid), { photoURL: url });
 
-      setSuccess('Biometric Visual Updated.');
+      setSuccess('Identity visual updated successfully.');
     } catch (err: any) {
-      setError('Upload Denial: ' + err.message);
+      setError('Upload denial: ' + err.message);
     } finally {
       setUploading(false);
     }
@@ -114,225 +114,275 @@ export default function Profile() {
 
   const randomGradient = GRADIENTS[user?.uid.charCodeAt(0) % GRADIENTS.length];
 
-  const inputClasses = "w-full px-5 py-4 rounded-2xl border border-orange-200 bg-orange-50 focus:bg-orange-50 outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-400 transition-all font-semibold text-sm text-slate-700 shadow-sm disabled:opacity-50";
+  const inputClasses = "w-full px-6 py-4 rounded-2xl border border-slate-200 bg-white focus:bg-white outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-semibold text-sm text-slate-700 shadow-sm disabled:opacity-50";
   const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1";
 
   return (
-    <div className="flex-1 bg-[#FDFDFF] p-4 sm:p-8 lg:p-12 min-h-screen font-sans">
-      <div className="max-w-5xl mx-auto">
+    <div className="flex-1 bg-slate-50/50 p-4 sm:p-8 lg:p-12 min-h-screen font-sans overflow-x-hidden">
+      <div className="max-w-7xl mx-auto space-y-12">
 
-        {/* Header */}
-        <header className="mb-12">
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-400 hover:text-orange-600 transition-all mb-4 group px-2 py-1 rounded-lg hover:bg-orange-50/50">
-              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Back to Dashboard</span>
-            </button>
-            <div className="flex items-end justify-between">
-              <div>
-                <h3 className="text-4xl sm:text-6xl font-black tracking-tight text-black leading-none">My Profile</h3>
-              </div>
-              <div className="hidden md:flex flex-col items-end gap-2 text-right">
-                <div className="px-4 py-2 bg-black rounded-2xl text-[10px] font-black text-orange-400 uppercase tracking-widest shadow-xl shadow-black/10" style={{ "color": "#fffafa" }}>Admin Access</div>
-                <div className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">Last Update: {new Date().toLocaleDateString()}</div>
-              </div>
+        {/* Header & Navigation */}
+        <div className="flex flex-col gap-8">
+          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit">
+            <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 group-hover:shadow-lg group-hover:shadow-indigo-500/5 transition-all">
+              <ArrowLeft size={14} />
             </div>
-          </motion.div>
-        </header>
+            Back to Dashboard
+          </button>
+
+          <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                <ShieldCheck size={14} /> Identity Matrix
+              </div>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-none">
+                Member Profile
+              </h1>
+              <p className="text-slate-500 font-medium max-w-2xl text-lg italic">
+                Manage your enterprise identity and access credentials.
+              </p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex gap-4 shrink-0">
+               <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[160px]">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Access Level</div>
+                  <span className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                    {userRole || 'Entity'}
+                  </span>
+               </div>
+            </motion.div>
+          </header>
+        </div>
 
         <AnimatePresence>
           {(error || success) && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-10 p-5 rounded-[2rem] flex items-center gap-4 text-sm font-bold shadow-lg border ${error ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${error ? 'bg-rose-500 text-white shadow-rose-500/20' : 'bg-emerald-500 text-white shadow-emerald-500/20'}`}>
-                {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className={`p-6 rounded-[2.5rem] flex items-center gap-6 text-sm font-bold shadow-2xl border ${error ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${error ? 'bg-rose-500 text-white shadow-rose-500/20' : 'bg-emerald-500 text-white shadow-emerald-500/20'}`}>
+                {error ? <AlertCircle size={24} /> : <CheckCircle2 size={24} />}
               </div>
-              {error || success}
+              <span className="text-base tracking-tight">{error || success}</span>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pb-20">
 
-          {/* Sidebar Info */}
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
-            <div className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.04)] overflow-hidden">
-              <div className={`h-24 bg-gradient-to-br ${randomGradient} opacity-90`}></div>
-              <div className="px-8 pb-8 -mt-12 text-center">
-                <div className="relative inline-block mb-6">
-                  <div className="w-24 h-24 rounded-3xl relative group/avatar shadow-2xl overflow-hidden ring-4 ring-white transition-all hover:scale-105 mx-auto">
-                    {user?.photoURL ? (
-                      <img src={user.photoURL} className="w-full h-full object-cover" alt="Profile" />
-                    ) : (
-                      <div className={`w-full h-full bg-orange-100 flex items-center justify-center text-slate-400 text-3xl font-black`}>
-                        {getInitials(formData.displayName || 'U')}
-                      </div>
-                    )}
-                    <label className="absolute inset-0 bg-black/60 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all backdrop-blur-sm">
-                      {uploading ? <Loader2 className="animate-spin text-white" /> : <Camera className="text-white" size={20} />}
+          {/* Sidebar Identity Card */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-4 space-y-8 lg:sticky lg:top-8">
+            
+            <div className="glass-card !rounded-[3rem] border-slate-200 shadow-2xl shadow-slate-200/40 overflow-hidden relative group">
+              <div className={`h-32 bg-gradient-to-br ${randomGradient} opacity-90 transition-transform duration-700 group-hover:scale-110`}></div>
+              
+              <div className="px-10 pb-10 -mt-16 text-center relative z-10">
+                <div className="relative inline-block mb-8">
+                  <div className="w-32 h-32 rounded-[2.5rem] relative group/avatar shadow-3xl overflow-hidden p-1.5 bg-white transition-all hover:scale-105 mx-auto">
+                    <div className="w-full h-full rounded-[2rem] overflow-hidden bg-slate-100">
+                      {user?.photoURL ? (
+                        <img src={user.photoURL} className="w-full h-full object-cover" alt="Profile" />
+                      ) : (
+                        <div className={`w-full h-full bg-indigo-50 flex items-center justify-center text-indigo-400 text-4xl font-black`}>
+                          {getInitials(formData.displayName || 'U')}
+                        </div>
+                      )}
+                    </div>
+                    <label className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all backdrop-blur-md rounded-[2rem]">
+                      {uploading ? <Loader2 className="animate-spin text-white" /> : <Camera className="text-white mb-2" size={24} />}
+                      <span className="text-[9px] font-black text-white uppercase tracking-widest">{uploading ? 'Processing' : 'Update Visual'}</span>
                       <input type="file" onChange={handleImageUpload} className="hidden" accept="image/*" disabled={uploading} />
                     </label>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-xl bg-emerald-500 border-4 border-orange-50 shadow-lg"></div>
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-2xl bg-emerald-500 border-4 border-white shadow-lg flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+                  </div>
                 </div>
 
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">{formData.displayName || 'System Asset'}</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 mb-6">{user?.email}</p>
+                <div className="space-y-1 mb-8">
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">{formData.displayName || 'Anonymous Asset'}</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                    <Mail size={12} className="text-indigo-400" /> {user?.email}
+                  </p>
+                </div>
 
-                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-50 rounded-2xl border border-orange-100/50 mb-8">
-                  <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">{userRole || 'Entity'}</span>
-                  <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[100px]">{companyName}</span>
+                <div className="flex items-center justify-center gap-3 px-5 py-3 bg-slate-50 rounded-2xl border border-slate-100 mb-10 shadow-sm">
+                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{userRole || 'Stakeholder'}</span>
+                  <div className="w-1 h-1 rounded-full bg-slate-300" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[120px]">{companyName || 'handycrm.ai'}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100">
-                    <div className="text-lg font-black text-slate-800">74</div>
-                    <div className="text-[9px] font-bold text-slate-400 uppercase">Leads</div>
+                  <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-indigo-100 transition-all group/stat">
+                    <div className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">74</div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Lead Vectors</div>
                   </div>
-                  <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100">
-                    <div className="text-lg font-black text-slate-800">12</div>
-                    <div className="text-[9px] font-bold text-slate-400 uppercase">Updates</div>
+                  <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-indigo-100 transition-all group/stat">
+                    <div className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">12</div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">AI Insights</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-black rounded-[2.5rem] p-8 text-white shadow-2xl shadow-orange-900/20 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2 group-hover:bg-orange-500/20 transition-all duration-700"></div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center shadow-inner"><ShieldCheck size={20} /></div>
-                <h3 className="text-[10px] font-black text-orange-400 tracking-[0.2em] uppercase">Security Matrix</h3>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-orange-50/5 rounded-2xl border border-orange-50/5">
-                  <span className="text-[10px] font-bold text-white/40 uppercase">Auth Level</span>
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">L4 Secure</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-orange-50/5 rounded-2xl border border-orange-50/5">
-                  <span className="text-[10px] font-bold text-white/40 uppercase">Encryption</span>
-                  <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">AES-256</span>
+            {/* Security Summary */}
+            <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center border border-white/10 backdrop-blur-md shadow-xl"><ShieldCheck size={24} /></div>
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-white tracking-[0.1em] uppercase">Security Matrix</h3>
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol Version 4.0.2</div>
                 </div>
               </div>
-              <div className="mt-6 flex gap-2">
-                <div className="w-full h-1 bg-orange-50/5 rounded-full overflow-hidden">
-                  <div className="h-full w-3/4 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorization</span>
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    L5 SECURE
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Storage Type</span>
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">AES-256 Cloud</span>
                 </div>
               </div>
-              <div className="mt-2 text-[9px] font-bold text-white/20 uppercase tracking-widest text-right">Integrity: 98%</div>
+
+              <div className="mt-10 pt-8 border-t border-white/5 flex flex-col gap-4">
+                <div className="flex justify-between items-end">
+                   <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Integrity Pulse</div>
+                   <div className="text-[18px] font-black text-white">99.9%</div>
+                </div>
+                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '99.9%' }}
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    className="h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.6)]" 
+                  />
+                </div>
+              </div>
             </div>
           </motion.div>
 
-          {/* Form Cell */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-8">
-            <form onSubmit={handleUpdateProfile} className="bg-orange-50 rounded-[3rem] p-8 sm:p-12 border border-orange-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.04)] relative">
-              <div className="space-y-10">
+          {/* Configuration Cell */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-8">
+            <form onSubmit={handleUpdateProfile} className="glass-card !rounded-[3.5rem] p-8 sm:p-14 border-slate-200 shadow-2xl shadow-slate-200/40 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+              
+              <div className="relative z-10 space-y-14">
 
-                <section>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 rounded-2xl bg-orange-50 text-black flex items-center justify-center shadow-sm border border-orange-100">
-                      <User size={22} />
+                <section className="space-y-10">
+                  <div className="flex items-center gap-6">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-inner">
+                      <User size={28} />
                     </div>
-                    <div>
-                      <h3 className="text-xl font-black text-slate-800 tracking-tight">Personal Info</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Basic identification details</p>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-[0.05em]">Personal Metadata</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Identity Identification</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className={labelClasses}>Full Name</label>
-                      <div className="relative group">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={16} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-3">
+                      <label className={labelClasses}>Full Identification Name</label>
+                      <div className="relative group/input">
+                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
                           type="text"
                           value={formData.displayName}
                           onChange={e => setFormData(f => ({ ...f, displayName: e.target.value }))}
-                          className={`${inputClasses} pl-12`}
-                          placeholder="Enter your name"
+                          className={`${inputClasses} pl-16`}
+                          placeholder="Your official designation"
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className={labelClasses}>Email Address</label>
-                      <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={16} />
+                    <div className="space-y-3">
+                      <label className={labelClasses}>Registered Email Vector</label>
+                      <div className="relative group/input">
+                        <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
                           type="email"
                           value={formData.email}
                           onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
-                          className={`${inputClasses} pl-12`}
-                          placeholder="your@email.com"
+                          className={`${inputClasses} pl-16`}
+                          placeholder="primary@handycrm.ai"
                         />
                       </div>
                     </div>
                   </div>
                 </section>
 
-                <div className="h-[1px] bg-orange-100 opacity-50"></div>
+                <div className="h-px bg-slate-100"></div>
 
-                <section>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 rounded-2xl bg-orange-50 text-black flex items-center justify-center shadow-sm border border-orange-100">
-                      <Lock size={22} />
+                <section className="space-y-10">
+                  <div className="flex items-center gap-6">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center border border-slate-800 shadow-2xl">
+                      <Lock size={28} />
                     </div>
-                    <div>
-                      <h3 className="text-xl font-black text-slate-800 tracking-tight">Security & Password</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Access control and tokens</p>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-[0.05em]">Security Protocols</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Credential Access Control</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className={labelClasses}>New Password</label>
-                      <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={16} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-3">
+                      <label className={labelClasses}>New Access Token</label>
+                      <div className="relative group/input">
+                        <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
                           type="password"
                           value={formData.newPassword}
                           onChange={e => setFormData(f => ({ ...f, newPassword: e.target.value }))}
-                          className={`${inputClasses} pl-12`}
+                          className={`${inputClasses} pl-16`}
                           placeholder="••••••••••••"
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className={labelClasses}>Confirm Password</label>
-                      <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={16} />
+                    <div className="space-y-3">
+                      <label className={labelClasses}>Confirm Token Vector</label>
+                      <div className="relative group/input">
+                        <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
                           type="password"
                           value={formData.confirmPassword}
                           onChange={e => setFormData(f => ({ ...f, confirmPassword: e.target.value }))}
-                          className={`${inputClasses} pl-12`}
+                          className={`${inputClasses} pl-16`}
                           placeholder="••••••••••••"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="mt-6 flex items-start gap-3 p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                    <Sparkles size={14} className="text-orange-500 mt-0.5 shrink-0" />
-                    <p className="text-[10px] text-slate-500 font-bold leading-relaxed italic">
-                      Leave encryption fields null if you do not wish to modify your current access credentials.
+                  
+                  <div className="flex items-start gap-4 p-6 bg-indigo-50/30 rounded-[2rem] border border-indigo-100/50 group/tip transition-all hover:bg-white">
+                    <div className="p-2 bg-white rounded-xl text-indigo-500 shadow-sm border border-indigo-50 group-hover:scale-110 transition-transform">
+                      <Sparkles size={16} />
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-bold leading-relaxed italic pr-4">
+                      Security Advisor: Leave the password fields null if you intend to maintain existing biometric and cryptographic access tokens.
                     </p>
                   </div>
                 </section>
 
-                <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-8">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full md:w-auto flex items-center justify-center gap-3 bg-black text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-2xl shadow-black/10 active:scale-95 disabled:opacity-50"
+                    className="w-full md:w-auto flex items-center justify-center gap-4 bg-indigo-600 text-white px-12 py-6 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50 group"
                   >
-                    {loading ? <Loader2 className="animate-spin text-orange-400" size={18} /> : <CheckCircle2 size={18} className="text-orange-400" />}
-                    Save Changes
+                    {loading ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
+                    {loading ? 'Synchronizing Intelligence...' : 'Commit Configuration'}
                   </button>
+                  
                   <button
                     type="button"
                     onClick={() => signOut(auth).then(() => navigate('/login'))}
-                    className="w-full md:w-auto px-10 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-all flex items-center justify-center gap-3 active:scale-95 border border-transparent hover:border-rose-100/50 hover:bg-rose-50 rounded-2xl"
+                    className="w-full md:w-auto px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-rose-600 transition-all flex items-center justify-center gap-3 active:scale-95 border border-transparent hover:border-rose-100 hover:bg-rose-50 rounded-[1.5rem]"
                   >
-                    <LogOut size={16} />
-                    Sign Out
+                    <LogOut size={18} />
+                    Terminate Session
                   </button>
                 </div>
               </div>
