@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Plus, Users, Settings, LogOut, LayoutDashboard, FileText,
-  BarChart3, ChevronRight, Menu, X, Sparkles, Mic, Monitor, Activity, Eye, EyeOff, History, CalendarDays, UploadCloud
+  BarChart3, ChevronRight, Menu, X, Sparkles, Mic, Monitor, Activity, Eye, EyeOff, History, CalendarDays, UploadCloud, Download
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
@@ -94,7 +94,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Bottom fading edge */}
         <div className="p-6 border-t border-orange-50/5 relative z-10 text-center">
+
           <div className="space-y-2 mb-4">
+                      <NavItem onClick={onClose} to="/download-app" icon={<Download />} label="Download App" colorClass="text-teal-400" hoverBgClass="" />
+
             <button
               onClick={() => setDemoMode(!isDemoMode)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isDemoMode ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'text-slate-400 hover:bg-orange-50/5 hover:text-white'}`}

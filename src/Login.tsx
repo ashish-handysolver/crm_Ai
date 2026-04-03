@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, AudioLines, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
@@ -13,8 +13,9 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const [error, setError] = useState(location.state?.error || '');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,7 @@ export default function Login() {
           return;
         }
       }
-      
+
       navigate('/');
     } catch (err: any) {
       console.error("Login Error:", err);

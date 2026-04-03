@@ -50,6 +50,7 @@ import SuperAdmin from './SuperAdmin';
 import SuperLogin from './SuperLogin';
 import Settings from './Settings';
 import TranscriptPlayer from './TranscriptPlayer';
+import DownloadApp from './DownloadApp';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider } from './DemoContext';
@@ -675,6 +676,7 @@ const AppContent = () => {
             <Route path="/settings" element={<Settings user={user} />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/download-app" element={<DownloadApp />} />
           </Routes>
         </main>
       </div>

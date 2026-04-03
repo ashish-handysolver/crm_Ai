@@ -35,33 +35,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubscribeUser = () => {};
+    let unsubscribeUser = () => { };
 
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         unsubscribeUser = onSnapshot(doc(db, 'users', currentUser.uid), async (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setCompanyId(userData.companyId);
-            
+
             // Check if user is specified as super admin in .env or has the role in DB
             if (currentUser.email === (import.meta as any).env.VITE_SUPER_ADMIN_EMAIL || userData.role === 'super_admin') {
               setRole('super_admin');
             } else {
               setRole(userData.role || 'user');
             }
-            
+
             setOnboardingComplete(userData.onboardingComplete === true);
             setActive(userData.active !== false); // Default to true if field missing
-            
+
             if (userData.companyId) {
               getDoc(doc(db, 'companies', userData.companyId)).then((companyDoc) => {
                 if (companyDoc.exists()) {
                   setCompanyName(companyDoc.data().name);
                 }
-              }).catch(err => console.error("Error fetching company name:", err));
+              }).catch(err => {
+                if (err?.code !== 'permission-denied') {
+                  console.error("Error fetching company name:", err);
+                }
+              });
             }
           } else {
             setCompanyId(null);
@@ -70,7 +74,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
           setLoading(false);
         }, (error) => {
-          console.error("Error listening to user data:", error);
+          if (error?.code === 'permission-denied') {
+            setActive(false); // Flags App.tsx to immediately force sign-out
+          } else {
+            console.error("Error listening to user data:", error);
+          }
           setCompanyId(null);
           setCompanyName(null);
           setRole(null);
@@ -84,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setLoading(false);
       }
     });
-    
+
     return () => {
       unsubscribeAuth();
       unsubscribeUser();
