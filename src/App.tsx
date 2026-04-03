@@ -53,6 +53,7 @@ import TranscriptPlayer from './TranscriptPlayer';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider } from './DemoContext';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 
 // --- Error Handling ---
@@ -688,6 +689,7 @@ export default function App() {
       <AuthProvider>
         <DemoProvider>
           <AppContent />
+          <SpeedInsights />
         </DemoProvider>
       </AuthProvider>
     </Router>
