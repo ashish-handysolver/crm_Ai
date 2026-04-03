@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, AudioLines, Flame } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, AudioLines, Flame, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
   signInWithEmailAndPassword,
@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { useDemo } from './DemoContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,8 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState(location.state?.error || '');
+
+  const { setDemoMode } = useDemo();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,16 +29,26 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if user is active in Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        if (userData.active === false) {
+      try {
+        // Check if user is active in Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.active === false) {
+            await signOut(auth);
+            setError("Contact admin: your account is deactivated.");
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (dbErr: any) {
+        if (dbErr?.code === 'permission-denied') {
           await signOut(auth);
-          setError("Contact admin: your account is deactivated.");
+          setError("Contact admin: your account is deactivated or restricted.");
           setLoading(false);
           return;
         }
+        console.warn("Could not fetch user profile:", dbErr);
       }
 
       navigate('/');
@@ -54,25 +67,25 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen bg-orange-50 font-sans selection:bg-orange-500 selection:text-white" style={{ width: '100%' }}>
+    <div className="flex min-h-[100dvh] bg-slate-50/50 font-sans selection:bg-indigo-500 selection:text-white overflow-hidden" style={{ width: '100%' }}>
       {/* Left Area - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-orange-50 border-r border-orange-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-white border-r border-slate-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
 
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-orange-100/40 blur-3xl"></div>
-          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-blue-100/40 blur-3xl"></div>
+          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-indigo-50/50 blur-3xl"></div>
+          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-slate-50/50 blur-3xl"></div>
         </div>
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
 
-          <div className="flex items-center gap-3 mb-6 group/logo cursor-default">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/20 shadow-lg border border-orange-50/20 p-2 transition-transform duration-500 group-hover/logo:rotate-[10deg]">
-              <AudioLines className="text-white" size={24} />
+          <div className="flex items-center gap-3 mb-12 group/logo cursor-default">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/5 border border-slate-100 p-2.5 transition-all duration-500 group-hover/logo:rotate-12 group-hover/logo:scale-110 overflow-hidden">
+              <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 leading-none mb-1">Handysolver</span>
-              <span className="text-[9px] font-black text-orange-500 uppercase tracking-[0.2em] leading-none">Intelligence Hub</span>
+              <span className="text-2xl font-black tracking-tighter text-slate-900 leading-none mb-1 lowercase">handycrm.ai</span>
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">Next-Gen Intelligence</span>
             </div>
           </div>
 
@@ -87,7 +100,7 @@ export default function Login() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                   <Mail size={20} />
                 </div>
                 <input
@@ -96,7 +109,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="john@company.com"
-                  className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                 />
               </div>
             </div>
@@ -104,7 +117,7 @@ export default function Login() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                   <Lock size={20} />
                 </div>
                 <input
@@ -113,7 +126,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 placeholder:font-medium shadow-sm"
                 />
               </div>
             </div>
@@ -129,73 +142,86 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#0F172A] text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-xl shadow-black/10 group"
+                className="w-full btn-primary !py-5 shadow-2xl shadow-indigo-200"
               >
-                <div className="absolute inset-0 bg-orange-50/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : null}
-                <span className="relative z-10 text-base">{loading ? 'Authenticating...' : 'Sign In'}</span>
-                {!loading && <ArrowRight className="relative z-10 opacity-70 group-hover:translate-x-1 transition-transform" size={18} />}
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <Lock size={18} />}
+                <span className="text-base">{loading ? 'Authenticating...' : 'Secure Access'}</span>
+                {!loading && <ArrowRight className="opacity-70 group-hover:translate-x-1 transition-transform" size={18} />}
               </button>
             </div>
           </form>
 
-          <p className="mt-8 text-center text-sm font-medium text-slate-500">
-            Is your company new to AudioCRM?{' '}
-            <Link to="/register-company" className="text-orange-600 font-bold hover:text-orange-500 transition-colors ml-1">
-              Create an Organization
+          <p className="mt-12 text-center text-sm font-black text-slate-400 uppercase tracking-widest">
+            Don't have a secure workspace yet?{' '}
+            <Link to="/register-company" className="text-indigo-600 hover:text-indigo-500 transition-colors ml-1 decoration-skip-ink decoration-2 underline">
+              Create Organization
             </Link>
           </p>
 
         </motion.div>
-        <p className="text-[11px] font-medium text-slate-500 flex items-center justify-center gap-1.5">
-          Made with <span className="text-[14px]">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
+        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest flex items-center justify-center gap-2 mb-8 lowercase">
+          Build &copy; {new Date().getFullYear()} handycrm.ai - enterprise grade security
         </p>
       </div>
 
-      {/* Right Area - Visual Display */}
-      <div className="hidden lg:flex flex-1 relative bg-[#0A0D14] overflow-hidden items-center justify-center">
-        {/* Abstract Glowing Background Elements */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute bottom-1/4 left-1/4 w-[40rem] h-[40rem] bg-orange-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-1000"></div>
-          <div className="absolute top-1/4 right-1/4 w-[30rem] h-[30rem] bg-blue-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse delay-700"></div>
+      {/* Right Area - Hero & Demo Showcase */}
+      <div className="hidden lg:flex flex-1 relative bg-slate-950 overflow-hidden items-center justify-center">
+        {/* Animated Background Gradients */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[150px] animate-pulse pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse delay-1000 pointer-events-none"></div>
 
-          {/* Noise overlay */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
-        </div>
-
-        {/* Hero Content */}
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative z-10 w-full max-w-2xl px-12">
-
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50/5 border border-orange-50/10 backdrop-blur-md mb-8">
-            <Flame className="text-orange-400 w-4 h-4" />
-            <span className="text-orange-200 text-sm font-semibold tracking-wide uppercase">Multi-Tenant Intelligence</span>
+        {/* Hero Content Layer */}
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative z-10 w-full max-w-4xl px-20 space-y-16">
+          
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-indigo-400 text-xs font-black uppercase tracking-widest backdrop-blur-md">
+              <Sparkles size={16} /> Now with 2.0 AI Engines
+            </div>
+            <h2 className="text-6xl xl:text-7xl font-black text-white leading-tight tracking-tighter">
+              Unlock the <span className="text-indigo-400">Power</span> of Your Data.
+            </h2>
+            <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-2xl italic">
+              Experience the next generation of sales intelligence. Summarize meetings, track lead progress, and boost productivity with AI.
+            </p>
           </div>
 
-          <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tightest">
-            Streamline.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-400 to-cyan-400">
-              Manage. Connect.
-            </span>
-          </h2>
+          {/* Interactive Mockup Container */}
+          <div className="glass-card !p-2 !rounded-[2.5rem] border-white/5 shadow-3xl shadow-indigo-500/10 relative group perspective-1000">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <div className="relative overflow-hidden rounded-[2.2rem] aspect-[16/10] bg-slate-900 border border-white/10">
+              {/* Actual Image Mockup */}
+              <img 
+                src="/dashboard-preview.png" 
+                alt="handycrm.ai dashboard"
+                className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-700 hover:scale-105"
+              />
+              {/* Mockup Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+              
+              {/* Play Demo Button Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                   onClick={() => {
+                     setDemoMode(true);
+                     navigate('/');
+                   }}
+                   className="px-10 py-5 bg-white text-indigo-600 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-3"
+                >
+                  <Flame size={20} /> Launch Demo Experience
+                </button>
+              </div>
+            </div>
+          </div>
 
-          <p className="text-lg lg:text-xl text-slate-400 font-medium leading-relaxed mb-10 max-w-xl">
-            Access your secure workspace instantly. Manage your organization's leads, calendar, and AI-powered meeting analytics with the Handysolver edge.
-          </p>
-
-          {/* Floating Analytics Graph Mockup element */}
-          <div className="bg-[#1E293B]/20 border border-orange-50/10 backdrop-blur-3xl rounded-2xl p-8 shadow-2xl relative overflow-hidden flex items-end gap-3 h-56 group/graph">
-            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 to-orange-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>
-            {[35, 65, 40, 85, 60, 80, 100].map((height, i) => (
-              <motion.div
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${height}%` }}
-                transition={{ duration: 1.2, delay: 0.5 + i * 0.1, type: "spring" }}
-                className="flex-1 bg-gradient-to-t from-orange-500/80 to-orange-400/80 rounded-t-md relative group/bar hover:from-orange-500 hover:to-orange-300 transition-all border-t border-orange-50/20"
-              >
-                <div className="absolute inset-0 bg-blue-400/10 blur-sm opacity-0 group-hover/bar:opacity-100 transition-opacity"></div>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-2 gap-12 pt-8 border-t border-white/5">
+             <div className="space-y-2">
+                <div className="text-2xl font-black text-white">99.8%</div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Transcription Accuracy</div>
+             </div>
+             <div className="space-y-2">
+                <div className="text-2xl font-black text-white">85%</div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efficiency Increase</div>
+             </div>
           </div>
 
         </motion.div>

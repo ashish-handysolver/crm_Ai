@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap, CalendarDays, ShieldAlert } from 'lucide-react';
 import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
@@ -157,38 +157,43 @@ export default function LeadForm({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
+      <div className="flex-1 bg-white flex items-center justify-center min-h-[100dvh]">
         <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
       </div>
     );
   }
 
-  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-orange-200 bg-orange-50 focus:bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-400 transition-all font-semibold text-slate-700 shadow-sm placeholder:text-slate-400 placeholder:font-medium";
+  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-slate-200 bg-white focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-slate-700 shadow-sm placeholder:text-slate-400 placeholder:font-medium";
   const labelClasses = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5 block px-1";
 
   return (
-    <div className="flex-1 bg-[#F9FBFF] text-black p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
-      <div className="max-w-4xl mx-auto">
+    <>
+      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12 space-y-8">
 
-        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-orange-600 transition-all mb-10 group">
-          <div className="p-2 bg-orange-50 border border-orange-200 rounded-xl group-hover:border-orange-200 shadow-sm transition-colors">
+        {/* Back Link */}
+        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-all group">
+          <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-100 group-hover:bg-indigo-50/50 shadow-sm transition-all">
             <ChevronLeft size={16} />
           </div>
-          Back to Intelligence Ledger
+          Return to Leads
         </Link>
 
-        <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-          <div className="text-[10px] font-extrabold text-orange-500 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
-            <Sparkles size={14} className="animate-pulse" /> Asset Modification Protocol
+        {/* Header */}
+        <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">
+            <Sparkles size={14} className="animate-pulse" /> Client Profile
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-black leading-tight">
-            {isEditing ? 'Modify Lead' : 'New Lead'}
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+            {isEditing ? 'Edit Existing Lead' : 'Add New Lead'}
           </h1>
-
+          <p className="text-slate-500 font-medium max-w-2xl">
+            {isEditing ? 'Modify the information for this lead to maintain an accurate business pipeline.' : 'Enter the details for your new lead to begin tracking their progress through the sales funnel.'}
+          </p>
         </motion.header>
 
         {error && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8 p-5 bg-rose-50 text-rose-600 rounded-2xi flex items-center gap-4 text-sm font-bold border border-rose-100 shadow-xl shadow-rose-500/5">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 bg-rose-50 text-rose-600 rounded-2xl flex items-center gap-4 text-sm font-bold border border-rose-100 shadow-xl shadow-rose-500/5">
             <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
               <AlertCircle size={20} />
             </div>
@@ -196,98 +201,116 @@ export default function LeadForm({ user }: { user: any }) {
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-orange-50 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-orange-100 overflow-hidden relative group">
-          {/* Decorative Background Blob */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-orange-100/50"></div>
-
-          <form onSubmit={handleSubmit} className="p-8 sm:p-12 relative z-10">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !rounded-[2.5rem] overflow-hidden relative">
+          <form onSubmit={handleSubmit} className="p-8 sm:p-12 space-y-12">
 
             {/* Avatar Section */}
-            <div className="flex flex-col items-center mb-12">
-              <div className="relative group cursor-pointer mb-4">
+            <div className="flex flex-col items-center pb-12 border-b border-slate-100">
+              <div className="relative group cursor-pointer mb-5">
                 <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                <div className="w-28 h-28 rounded-[2rem] border-2 border-dashed border-orange-200 flex items-center justify-center bg-orange-50 overflow-hidden group-hover:border-orange-400 transition-all duration-300 relative">
+                <div className="w-32 h-32 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-indigo-400 group-hover:bg-indigo-50/50 transition-all duration-300 relative">
                   {formData.avatar ? (
                     <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="flex flex-col items-center gap-1 text-slate-300">
-                      <User size={36} />
-                      <span className="text-[10px] font-black uppercase tracking-tighter">Image</span>
+                    <div className="flex flex-col items-center gap-2 text-slate-300 group-hover:text-indigo-300 transition-colors">
+                      <User size={40} />
+                      <span className="text-[10px] font-black uppercase tracking-tighter">Add Photo</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-orange-600/0 group-hover:bg-orange-600/10 transition-colors flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors flex items-center justify-center pointer-events-none">
                     <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
                   </div>
                 </div>
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity Photo</span>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Identity</h3>
             </div>
 
-            <div className="space-y-12">
+            <div className="space-y-14">
 
-              {/* Primary Identity Section */}
-              <section>
-                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
-                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center"><User size={16} /></div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">User Details</h3>
+              {/* Personal Information */}
+              <section className="space-y-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
+                    <User size={18} />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Core Information</h3>
                 </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="relative">
+                  <div className="space-y-2">
                     <label className={labelClasses}>Full Name</label>
-                    <div className="relative">
-                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
-                      <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. Alexander Sterling" />
+                    <div className="relative group">
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. John Smith" />
                     </div>
                   </div>
-                  <div>
-                    <label className={labelClasses}>Email</label>
-                    <div className="relative">
-                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
-                      <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="a.sterling@vanguard.io" />
+                  <div className="space-y-2">
+                    <label className={labelClasses}>Email Address</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="john.s@example.com" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className={labelClasses}>Phone Number</label>
+                    <div className="relative group">
+                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 890" />
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* Organizational Vector Section */}
-              <section>
-                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><Building2 size={16} /></div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Organization Details</h3>
+              {/* Company Information */}
+              <section className="space-y-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
+                    <Building2 size={18} />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Company Details</h3>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className={labelClasses}>Organization Name</label>
-                    <div className="relative">
-                      <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
-                      <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Vanguard Systems" />
+                  <div className="space-y-2">
+                    <label className={labelClasses}>Company Name</label>
+                    <div className="relative group">
+                      <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Acme Inc." />
                     </div>
                   </div>
-                  <div>
-                    <label className={labelClasses}>Organization Location</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
-                      <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="London, UK" />
+                  <div className="space-y-2">
+                    <label className={labelClasses}>Office Location</label>
+                    <div className="relative group">
+                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="San Francisco, CA" />
                     </div>
                   </div>
-                  <div>
-                    <label className={labelClasses}>Mobile Number</label>
-                    <div className="relative">
-                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-500 transition-colors" size={18} />
-                      <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 8900" />
-                    </div>
+                </div>
+              </section>
+
+              {/* Classification */}
+              <section className="space-y-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
+                    <Zap size={18} />
                   </div>
-                  <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Pipeline & Classification</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
                     <label className={labelClasses}>Lead Source</label>
-                    <select name="source" value={formData.source} onChange={handleChange} className={inputClasses}>
-                      <option value="LINKEDIN">LinkedIn Network</option>
-                      <option value="REFERRAL">Internal Referral</option>
-                      <option value="DIRECT">Direct Traffic</option>
-                      <option value="WEBSITE">Main Terminal (Website)</option>
-                      {customSources.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <div className="relative group">
+                      <input name="source" value={formData.source} onChange={handleChange} list="sources" className={inputClasses} placeholder="Select or type..." />
+                      <datalist id="sources">
+                        <option value="LINKEDIN">LinkedIn</option>
+                        <option value="REFERRAL">Referral</option>
+                        <option value="DIRECT">Direct</option>
+                        {customSources.map(s => <option key={s} value={s}>{s}</option>)}
+                      </datalist>
+                    </div>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <label className={labelClasses}>Lead Type</label>
                     <select name="leadType" value={formData.leadType || 'B2B'} onChange={handleChange} className={inputClasses}>
                       <option value="B2B">B2B</option>
@@ -296,69 +319,50 @@ export default function LeadForm({ user }: { user: any }) {
                       {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className={labelClasses}>Health Stage</label>
-                    <select name="health" value={formData.health || 'WARM'} onChange={handleChange} className={inputClasses}>
-                      <option value="HOT">HOT</option>
-                      <option value="WARM">WARM</option>
-                      <option value="COLD">COLD</option>
-                    </select>
-                  </div>
-                </div>
-              </section>
-
-              {/* Disposition & Scoring Section */}
-              <section>
-                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center"><Zap className="fill-emerald-500" size={16} /></div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Lead Status</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className={labelClasses}>Lead Phase</label>
+                  <div className="space-y-2">
+                    <label className={labelClasses}>Pipeline Phase</label>
                     <select name="phase" value={formData.phase} onChange={handleChange} className={inputClasses}>
-                      <option value="DISCOVERY">Discovery Protocol</option>
-                      <option value="NURTURING">Nurturing Cycle</option>
-                      <option value="QUALIFIED">Qualified Status</option>
+                      <option value="DISCOVERY">Discovery</option>
+                      <option value="NURTURING">Nurturing</option>
+                      <option value="QUALIFIED">Qualified</option>
                       <option value="WON">Closed - Won</option>
                       <option value="LOST">Closed - Lost</option>
-                      <option value="INACTIVE">Inactive / Archived</option>
+                      <option value="INACTIVE">Archived</option>
                       {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>
-                  <div className="flex flex-col justify-center">
+                  <div className="space-y-2">
                     <label className={`${labelClasses} flex justify-between`}>
-                      Intrest Level
-                      <span className="text-orange-600 font-black">{formData.score}% Match</span>
+                      AI Confidence Score
+                      <span className="text-indigo-600 font-black">{formData.score}% Match</span>
                     </label>
-                    <div className="px-2 pt-2">
-                      <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-orange-100 rounded-full appearance-none cursor-pointer accent-orange-600 hover:accent-orange-500 transition-all shadow-inner" />
-                      <div className="flex justify-between mt-3 px-1">
-                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Low Intent</span>
-                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Peak Conversion</span>
-                      </div>
+                    <div className="pt-2">
+                      <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-indigo-50 rounded-full appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500 transition-all shadow-inner" />
                     </div>
                   </div>
-                  <div>
-                    <label className={labelClasses}>Creation Date</label>
+                  <div className="space-y-2">
+                    <label className={labelClasses}>Capture Date</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-300 group-focus-within:text-orange-500 transition-colors"><CalendarDays size={18} /></div>
-                      <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-12`} />
+                      <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                      <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-14`} />
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* Dynamic Logic Matrices (Custom Fields) */}
+              {/* Custom Fields */}
               {customFieldDefs.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-50">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center"><Globe size={16} /></div>
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">Supporting Links</h3>
+                 <section className="space-y-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
+                      <Globe size={18} />
+                    </div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Extended Fields</h3>
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {customFieldDefs.map(field => (
-                      <div key={field.id}>
+                      <div key={field.id} className="space-y-2">
                         <label className={labelClasses}>{field.name}</label>
                         {field.type === 'DROPDOWN' ? (
                           <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses}>
@@ -367,10 +371,8 @@ export default function LeadForm({ user }: { user: any }) {
                           </select>
                         ) : field.type === 'DATE' ? (
                           <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
-                        ) : field.type === 'DATETIME' ? (
-                          <input type="datetime-local" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
                         ) : (
-                          <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name} payload`} />
+                          <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name}...`} />
                         )}
                       </div>
                     ))}
@@ -379,31 +381,33 @@ export default function LeadForm({ user }: { user: any }) {
               )}
             </div>
 
-            {/* Form Footer Action Bar */}
-            <div className="mt-16 pt-10 border-t border-orange-100 flex flex-col sm:flex-row justify-end gap-4">
-              <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-orange-50 transition-all flex items-center justify-center gap-2">
-                <ChevronLeft size={18} /> Cancel
+            {/* Footer */}
+            <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4">
+              <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                Cancel
               </Link>
-              <button type="submit" disabled={saving} className="flex items-center justify-center gap-3 bg-black text-white px-10 py-4 rounded-2xl font-black hover:bg-orange-600 transition-all shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50">
+              <button type="submit" disabled={saving} className="btn-primary min-w-[180px] shadow-xl shadow-indigo-200">
                 {saving ? (
                   <Loader2 size={20} className="animate-spin" />
                 ) : (
-                  <Save size={20} className={isEditing ? 'text-orange-300' : 'text-emerald-300'} />
+                  <Save size={20} />
                 )}
-                {isEditing ? 'Update' : 'Save'}
+                <span>{isEditing ? 'Update Lead' : 'Create Lead'}</span>
               </button>
             </div>
           </form>
         </motion.div>
 
-        {/* Informational Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-            System Security: All data is encrypted via AES-256 Protocol & Scoped to Company ID: {companyId?.slice(0, 8)}...
+        {/* Security Info */}
+        <div className="text-center">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+            <ShieldAlert size={12} /> Securely encrypted via enterprise protocol
           </p>
         </div>
 
+        </div>
       </div>
-    </div>
+    </>
   );
 }
+

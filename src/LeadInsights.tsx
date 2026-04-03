@@ -5,7 +5,11 @@ import { ref, getBytes } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft, Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight, CalendarDays, Clock, RotateCcw, Download, X } from 'lucide-react';
+import {
+  Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft,
+  Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight,
+  CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2
+} from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
@@ -23,6 +27,7 @@ export default function LeadInsights({ user }: { user: any }) {
   const [editingItem, setEditingItem] = useState<{ field: string, index: number, value: string } | null>(null);
   const [editingOverview, setEditingOverview] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
+  const [expandedSection, setExpandedSection] = useState<'tasks' | 'minutes' | null>(null);
   const attemptedRecs = useRef<Set<string>>(new Set());
 
   const [showMeetingModal, setShowMeetingModal] = useState(false);
@@ -267,15 +272,15 @@ export default function LeadInsights({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
+      <div className="flex-1 bg-slate-50/50 flex items-center justify-center min-h-[100dvh]">
+        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh] text-slate-500 font-medium text-lg">
+      <div className="flex-1 bg-slate-50/50 flex items-center justify-center min-h-[100dvh] text-slate-400 font-black uppercase tracking-widest text-sm">
         Lead Record Missing
       </div>
     );
@@ -498,167 +503,177 @@ export default function LeadInsights({ user }: { user: any }) {
   };
 
   return (
-    <div className="flex-1 bg-orange-50 text-black min-h-full p-4 sm:p-6 lg:p-10 font-sans">
-      <div className="max-w-[1400px] mx-auto">
-        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors mb-6 group">
-          <div className="p-1.5 bg-orange-50 border border-orange-200 rounded-lg group-hover:border-orange-200 shadow-sm transition-colors"><ChevronLeft size={16} /></div> Back to Intelligence Ledger
-        </Link>
+    <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+      <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-10">
 
-        {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-[10px] font-extrabold text-blue-500 tracking-widest uppercase mb-3 flex items-center gap-2">
-              <Zap size={14} className="animate-pulse" /> Automation Protocol Active
+        {/* Navigation & Header */}
+        <div className="flex flex-col gap-8">
+          <Link to="/clients" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit">
+            <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 group-hover:shadow-lg group-hover:shadow-indigo-500/5 transition-all">
+              <ChevronLeft size={14} />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-black leading-none">
-              {lead.company || lead.name} <span className="text-slate-400 font-light">Dossier</span>
-            </h1>
-          </motion.div>
+            Back to Pipeline
+          </Link>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            <div className="bg-orange-50 px-5 py-3 rounded-2xl border border-orange-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Lead Disposition</div>
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-orange-600 border-blue-100'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
-                {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Dead' : 'Active Engagement'}
-              </span>
-            </div>
-            <div className="bg-orange-50 px-5 py-3 rounded-2xl border border-orange-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col items-end flex-1 sm:flex-none">
-              <div className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase mb-1.5">Call Sentiment</div>
-              <select
-                value={insights.sentiment}
-                onChange={handleSentimentChange}
-                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-[0_0_10px_rgba(0,0,0,0.05)] appearance-none cursor-pointer outline-none transition-colors ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100/50' : 'bg-orange-50 text-slate-600 border-orange-200 hover:bg-orange-100/80'}`}
-                disabled={!selectedRec}
-              >
-                <option value="Positive">Positive Vectors</option>
-                <option value="Neutral">Neutral Vectors</option>
-                <option value="Negative">Negative Vectors</option>
-                <option value="Analyzing...">Pending Analysis</option>
-              </select>
-            </div>
-          </motion.div>
-        </header>
+          <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                <Zap size={14} className="animate-pulse" /> Active Intelligence
+              </div>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-tight">
+                {lead.company || lead.name}
+              </h1>
+              <p className="text-slate-500 font-medium max-w-2xl text-lg italic">
+                View meeting details and AI generated insights.
+              </p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap gap-4 shrink-0">
+              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[160px]">
+                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Lead Phase</div>
+                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-rose-500' : 'bg-indigo-500 animate-pulse'}`} />
+                  {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Disqualified' : 'In Progress'}
+                </span>
+              </div>
+
+              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[160px]">
+                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Call Sentiment</div>
+                <div className="relative w-full">
+                  <select
+                    value={insights.sentiment}
+                    onChange={handleSentimentChange}
+                    className={`w-full px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm appearance-none cursor-pointer outline-none transition-all pr-8 ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                    disabled={!selectedRec}
+                  >
+                    <option value="Positive">Positive</option>
+                    <option value="Neutral">Neutral</option>
+                    <option value="Negative">Negative</option>
+                    <option value="Analyzing...">Analyzing...</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <Edit3 size={10} />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </header>
+        </div>
 
         {/* Intelligence Timeline */}
-        <div className="bg-orange-50 rounded-3xl p-2 mb-8 flex flex-nowrap items-center gap-2 overflow-x-auto shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-orange-100 scollbar-hide">
-          <div className="pl-4 pr-6 shrink-0 flex items-center gap-2 border-r border-orange-100">
-            <Calendar size={16} className="text-slate-400" />
-            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Archive</span>
+        <div className="glass-card !p-2 !rounded-3xl border-slate-200 flex flex-nowrap items-center gap-3 overflow-x-auto shadow-xl shadow-slate-200/20 scrollbar-hide">
+          <div className="pl-6 pr-8 shrink-0 flex items-center gap-3 border-r border-slate-100 py-3">
+            <Calendar size={18} className="text-slate-400" />
+            <span className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">Recordings</span>
           </div>
-          {recordings.length > 0 ? (
-            <>
-              {recordings.map((rec) => {
-                const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown Date';
+          <div className="flex gap-3 py-2">
+            {recordings.length > 0 ? (
+              recordings.map((rec) => {
+                const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'Legacy Core';
                 const isSelected = selectedRecId === rec.id;
                 return (
                   <button
                     key={rec.id}
                     onClick={() => setSelectedRecId(rec.id)}
-                    className={`shrink-0 px-5 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border ${isSelected ? 'bg-black text-white border-orange-900' : 'bg-orange-50 text-slate-600 hover:bg-orange-50 hover:border-orange-300 border-orange-100 hover:shadow-md'}`}
+                    className={`shrink-0 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-400/20' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'}`}
                   >
                     {dateStr}
                   </button>
                 );
-              })}
-            </>
-          ) : (
-            <span className="text-sm font-bold text-amber-500 py-3 px-4 italic">No intelligence operations logged yet.</span>
-          )}
+              })
+            ) : (
+              <span className="text-xs font-bold text-slate-400 py-3 px-6 italic uppercase tracking-widest">No recordings data-stream available.</span>
+            )}
+          </div>
         </div>
 
-        {/* Dedicated Action Bar - Always Visible */}
+        {/* Action Controls */}
         {selectedRec && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-end gap-3 mb-8">
-            {/* <button 
-              onClick={handleSyncTranscript}
-              disabled={syncingTranscript}
-              className="px-6 py-3 rounded-2xl bg-orange-50 text-orange-500 hover:text-orange-600 font-black text-xs uppercase tracking-widest shadow-sm border border-orange-200 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-            >
-              {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-              {syncingTranscript ? 'Transcribing...' : 'Regenerate Transcript'}
-            </button> */}
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-end gap-4">
             <button
               onClick={handleExportPDF}
-              className="px-6 py-3 rounded-2xl bg-orange-50 text-slate-600 hover:text-black font-black text-xs uppercase tracking-widest shadow-sm border border-orange-200 transition-all flex items-center gap-2 active:scale-95"
+              className="px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-200/50 border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
             >
-              <Download size={14} /> Download MOM
+              <Download size={14} /> Export Summary
             </button>
             <button
               onClick={handleRegenerate}
               disabled={generatingAI}
-              className="px-6 py-3 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest shadow-md hover:shadow-xl hover:shadow-orange-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+              className="px-6 py-3 rounded-2xl btn-primary text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-200 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
             >
               {generatingAI ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-              {generatingAI ? 'Processing...' : 'Regenerate Intelligence'}
+              {generatingAI ? 'Synchronizing...' : 'Regenerate Intelligence'}
             </button>
           </motion.div>
         )}
 
         <AnimatePresence>
           {generatingAI && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-8">
-              <div className="p-5 bg-gradient-to-r from-orange-50 to-orange-50 border border-orange-100 rounded-2xl flex items-center justify-center gap-3 text-orange-600 font-extrabold text-sm shadow-inner">
-                <Wand2 size={18} className="animate-spin" /> Cross-referencing logic parameters via DeepMind Framework...
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+              <div className="p-6 bg-indigo-50/50 border border-indigo-100 rounded-3xl flex items-center justify-center gap-4 text-indigo-600 font-black text-xs shadow-inner uppercase tracking-widest">
+                <Sparkles size={18} className="animate-pulse" /> AI is analyzing the conversation...
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* 4 AI Intelligence Pillars */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Intelligence Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { id: 'painPoints', title: 'Friction Points', icon: AlertTriangle, color: 'text-rose-500', bg: 'bg-rose-50', hover: 'hover:border-rose-200 group-hover:shadow-rose-500/10' },
-            { id: 'requirements', title: 'Core Objectives', icon: Archive, color: 'text-amber-500', bg: 'bg-amber-50', hover: 'hover:border-amber-200 group-hover:shadow-amber-500/10' },
-            { id: 'nextActions', title: 'Strategic Vectors', icon: Zap, color: 'text-blue-500', bg: 'bg-blue-50', hover: 'hover:border-blue-200 group-hover:shadow-blue-500/10' },
-            { id: 'improvements', title: 'Conversion Boosters', icon: Wand2, color: 'text-emerald-500', bg: 'bg-emerald-50', hover: 'hover:border-emerald-200 group-hover:shadow-emerald-500/10' }
+            { id: 'painPoints', title: 'Friction Points', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+            { id: 'requirements', title: 'Core Objectives', icon: Archive, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+            { id: 'nextActions', title: 'Strategic Vectors', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+            { id: 'improvements', title: 'Critical Enhancers', icon: Wand2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' }
           ].map((col, idx) => {
             const Icon = col.icon;
             const dataArr = insights[col.id] || [];
             return (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={col.id} className={`bg-orange-50 rounded-[2rem] border border-orange-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col group relative overflow-hidden transition-all duration-300 ${col.hover}`}>
-                <div className={`absolute top-0 right-0 w-32 h-32 ${col.bg} rounded-bl-full -z-0 opacity-50`}></div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={col.id} className="glass-card !rounded-[2.5rem] border-slate-200 overflow-hidden group/card hover:border-indigo-300 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/5">
+                <div className="p-8 space-y-8">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
+                      <div className={`p-2 rounded-xl ${col.bg} ${col.color} border ${col.border}`}><Icon size={16} /></div> {col.title}
+                    </h3>
+                    <button
+                      onClick={() => handleArrayAdd(col.id)}
+                      className="p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 border border-slate-100 rounded-xl transition-all active:scale-95 shadow-sm"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
 
-                <div className="flex justify-between items-start mb-6 relative z-10">
-                  <h3 className="font-extrabold text-slate-800 flex items-center gap-2.5 text-base">
-                    <div className={`p-2 rounded-xl ${col.bg} ${col.color}`}><Icon size={16} /></div> {col.title}
-                  </h3>
-                  <button
-                    onClick={() => handleArrayAdd(col.id)}
-                    className="p-1.5 text-slate-400 hover:text-orange-600 bg-orange-50 shadow-sm rounded-lg transition-colors border border-orange-100 hover:border-orange-200"
-                  >
-                    <Plus size={16} />
-                  </button>
+                  <ul className="space-y-4">
+                    {dataArr.map((item: string, i: number) => {
+                      const isEditingThis = editingItem?.field === col.id && editingItem?.index === i;
+                      return isEditingThis ? (
+                        <div key={i} className="space-y-3">
+                          <textarea
+                            autoFocus
+                            className="w-full text-xs font-bold bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/5 resize-none min-h-[100px] text-slate-700 shadow-inner"
+                            value={editingItem.value}
+                            onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingItem(null)} className="px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all tracking-widest">Cancel</button>
+                            <button onClick={handleArraySave} className="px-5 py-2 text-[10px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest flex items-center gap-2"><Check size={12} /> Commit</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <li key={i} className="group/item relative pl-4 leading-relaxed bg-slate-50/50 hover:bg-white p-4 rounded-[1.5rem] border border-transparent hover:border-slate-200 transition-all shadow-sm flex items-start gap-3">
+                          <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')}`}></div>
+                          <span className="text-xs font-semibold text-slate-600 pr-10">{item}</span>
+                          <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                            <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12} /></button>
+                            <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                    {dataArr.length === 0 && (
+                      <li className="text-[10px] font-black text-slate-300 uppercase italic tracking-widest text-center py-4">No data points captured.</li>
+                    )}
+                  </ul>
                 </div>
-
-                <ul className="space-y-4 text-sm text-slate-600 font-medium list-none relative z-10">
-                  {dataArr.map((item: string, i: number) => {
-                    const isEditingThis = editingItem?.field === col.id && editingItem?.index === i;
-                    return isEditingThis ? (
-                      <div key={i} className="flex flex-col gap-3">
-                        <textarea
-                          autoFocus
-                          className="w-full text-sm font-semibold bg-orange-50 border-2 border-orange-200 rounded-xl p-3 outline-none focus:ring-4 focus:ring-orange-500/20 resize-y min-h-[100px] text-slate-700 shadow-inner"
-                          value={editingItem.value}
-                          onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditingItem(null)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-orange-100 hover:text-slate-800 rounded-xl transition-all">Cancel</button>
-                          <button onClick={handleArraySave} className="px-4 py-2 text-xs font-bold bg-black text-white hover:bg-orange-600 transition-all flex items-center gap-1.5 rounded-xl shadow-lg active:scale-95"><Check size={14} /> Matrix Save</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <li key={i} className="group/item relative pl-4 leading-relaxed bg-orange-50/50 hover:bg-orange-50 p-3 rounded-xl border border-transparent hover:border-orange-200 transition-all shadow-sm">
-                        <div className={`absolute left-0 top-4 w-1.5 h-1.5 rounded-full ${col.bg.replace('bg-', 'bg-').replace('50', '400')}`}></div>
-                        <span className="block pr-12">{item}</span>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                          <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-orange-600 bg-orange-50 hover:bg-orange-50 border border-orange-100 rounded-lg shadow-sm transition-all"><Edit3 size={14} /></button>
-                          <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-rose-500 bg-orange-50 hover:bg-rose-50 border border-orange-100 rounded-lg shadow-sm transition-all"><Trash2 size={14} /></button>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
               </motion.div>
             );
           })}
@@ -667,267 +682,309 @@ export default function LeadInsights({ user }: { user: any }) {
         {/* Split View */}
         <div className="flex flex-col xl:flex-row gap-6 mb-8">
 
-          {/* Executive Overview */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="xl:w-2/3 bg-[#0A0D14] rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-white relative overflow-hidden group/overview border border-orange-800">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-orange-500/20 to-purple-500/20 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+          {/* High-Level Overview & Progress */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div className="flex justify-between items-start mb-6 relative z-10">
-              <h3 className="font-extrabold text-white flex items-center gap-3 text-lg tracking-tight">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/30 to-purple-500/30 flex items-center justify-center border border-orange-500/30 backdrop-blur-sm"><Sparkles className="text-orange-300" size={18} /></div>
-                AI Executive Summary
-              </h3>
-              <div className="flex gap-2">
-                {editingOverview === null && (
-                  <button onClick={handleRegenerate} disabled={generatingAI} title="Regenerate All AI Insights" className="p-2 text-orange-300 hover:text-white hover:bg-orange-50/10 bg-orange-50/5 border border-orange-50/10 rounded-xl transition-all shadow-sm disabled:opacity-50">
-                    <RotateCcw size={16} className={generatingAI ? "animate-spin" : ""} />
-                  </button>
-                )}
-                {editingOverview === null && (
-                  <button onClick={() => setEditingOverview(insights.overview)} title="Edit Summary" className="p-2 text-orange-300 hover:text-white hover:bg-orange-50/10 bg-orange-50/5 border border-orange-50/10 rounded-xl transition-all shadow-sm">
-                    <Edit3 size={16} />
-                  </button>
+            {/* Executive Summary Card */}
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl text-white relative overflow-hidden group/summary border border-slate-800">
+              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
+
+              <div className="relative z-10 space-y-10">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-black text-white flex items-center gap-4 text-lg uppercase tracking-[0.2em]">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 backdrop-blur-md shadow-xl"><Sparkles className="text-indigo-300" size={24} /></div>
+                    AI Summary
+                  </h3>
+                  <div className="flex gap-2">
+                    {editingOverview === null ? (
+                      <>
+                        <button onClick={handleRegenerate} disabled={generatingAI} title="Recalibrate Analysis" className="p-2.5 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-xl disabled:opacity-50">
+                          <RotateCcw size={18} className={generatingAI ? "animate-spin" : ""} />
+                        </button>
+                        <button onClick={() => setEditingOverview(insights.overview)} title="Override Content" className="p-2.5 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-xl">
+                          <Edit3 size={18} />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+
+                {editingOverview !== null ? (
+                  <div className="space-y-6">
+                    <textarea
+                      autoFocus
+                      className="w-full text-[13px] leading-loose font-medium bg-white/5 border border-white/10 rounded-[2rem] p-8 text-white/90 outline-none focus:ring-4 focus:ring-indigo-500/20 min-h-[220px] shadow-inner font-sans tracking-wide"
+                      value={editingOverview}
+                      onChange={e => setEditingOverview(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-3">
+                      <button onClick={() => setEditingOverview(null)} className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all tracking-widest">Abort</button>
+                      <button onClick={handleOverviewSave} className="px-8 py-3 text-[10px] font-black uppercase bg-indigo-500 hover:bg-indigo-400 text-white flex items-center gap-2 rounded-xl shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all tracking-widest"><Check size={14} /> Commit Changes</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-lg md:text-xl leading-relaxed font-medium text-slate-300 pr-10 italic font-serif">
+                    "{insights.overview}"
+                  </p>
                 )}
               </div>
-            </div>
+            </motion.div>
 
-            {editingOverview !== null ? (
-              <div className="flex flex-col gap-4 relative z-10">
-                <textarea
-                  autoFocus
-                  className="w-full text-base leading-relaxed font-medium bg-orange-50/5 border border-orange-500/50 rounded-2xl p-6 text-white outline-none focus:ring-4 focus:ring-orange-500/30 min-h-[160px] shadow-inner"
-                  value={editingOverview}
-                  onChange={e => setEditingOverview(e.target.value)}
-                />
-                <div className="flex justify-end gap-3">
-                  <button onClick={() => setEditingOverview(null)} className="px-5 py-2.5 text-sm font-bold text-slate-300 hover:text-white hover:bg-orange-50/10 rounded-xl transition-colors">Abort Override</button>
-                  <button onClick={handleOverviewSave} className="px-6 py-2.5 text-sm font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-500 hover:to-orange-500 text-white flex items-center gap-2 rounded-xl shadow-lg shadow-orange-500/25 active:scale-95 transition-all"><Check size={16} /> Inject Override</button>
+            {/* Pipeline Stage Visualizer */}
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass-card !rounded-[2.5rem] border-slate-200 p-12 shadow-2xl shadow-slate-200/20 flex flex-col justify-center relative overflow-hidden group/stage">
+              <div className="absolute -top-10 -right-10 w-48 h-48 bg-indigo-50 rounded-full blur-[80px] -z-0 group-hover:bg-indigo-100 transition-colors duration-700"></div>
+
+              <div className="relative z-10 space-y-10">
+                <div className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase">Pipeline Stage</div>
+
+                <div className="space-y-6">
+                  <div className="w-full bg-slate-100 h-4 rounded-full relative overflow-hidden shadow-inner flex items-center p-1">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${getPhaseProgress(lead.phase)}%` }}
+                      transition={{ duration: 1.5, type: 'spring', bounce: 0.4 }}
+                      className="h-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-400 rounded-full shadow-lg shadow-indigo-600/20"
+                    />
+                  </div>
+
+                  <div className="flex items-end justify-between">
+                    <h2 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 uppercase">
+                      {lead.phase?.toLowerCase() || 'Deployment'}
+                    </h2>
+                    <div className="flex flex-col items-end">
+                      <span className="text-2xl font-black text-indigo-600">{getPhaseProgress(lead.phase)}%</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pipeline Score</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <p className="text-lg leading-relaxed font-medium text-slate-300 pr-8 relative z-10">{insights.overview}</p>
-            )}
-          </motion.div>
+            </motion.div>
 
-          {/* Pipeline Stage Visualizer */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="xl:w-1/3 bg-orange-50 rounded-[2.5rem] border border-orange-100 p-10 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 w-48 h-48 bg-orange-50 rounded-bl-[100px] -z-0 transition-colors group-hover:bg-orange-50`}></div>
-
-            <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-8 relative z-10">Sales State Machine</div>
-
-            <div className="w-full bg-orange-100 h-3 rounded-full mb-6 relative overflow-hidden shadow-inner z-10">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${getPhaseProgress(lead.phase)}%` }}
-                transition={{ duration: 1.5, type: 'spring' }}
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-slate-800 to-slate-900 rounded-full"
-              />
-            </div>
-
-            <div className="flex items-end justify-between relative z-10">
-              <h2 className="text-4xl font-black tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">{lead.phase?.toLowerCase() || 'Processing'}</h2>
-              <span className="text-xs font-extrabold text-slate-400 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">{getPhaseProgress(lead.phase)}% Closed</span>
-            </div>
-          </motion.div>
+          </div>
 
         </div>
 
-        {/* ── Scheduled Meetings ── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="p-2 rounded-xl bg-violet-50 text-violet-500">
-              <CalendarDays size={18} />
+        {/* Scheduled Sessions */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">
+                <CalendarDays size={20} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase tracking-[0.05em]">Meetings History</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{meetings.length} LOGGED MEETINGS</p>
+              </div>
             </div>
-            <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Scheduled Meetings</h3>
-            <span className="ml-auto text-[10px] font-black text-slate-400 uppercase tracking-widest bg-orange-100 px-3 py-1.5 rounded-full">
-              {meetings.length} session{meetings.length !== 1 ? 's' : ''}
-            </span>
-            <button onClick={() => setShowMeetingModal(true)} className="px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition-colors shadow-sm ml-2">
-              + Add Meeting
+            <button
+              onClick={() => setShowMeetingModal(true)}
+              className="px-8 py-3 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-slate-200/20 active:scale-95"
+            >
+              + Create Session
             </button>
           </div>
 
           {meetings.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {meetings.map((m, idx) => {
                 const d = m.scheduledAt?.toDate?.();
                 const isPast = d && d < new Date();
                 return (
                   <motion.div key={m.id}
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-                    className={`p-5 rounded-2xl border transition-all ${isPast ? 'bg-orange-50 border-orange-100 opacity-60' : 'bg-orange-50 border-orange-100 shadow-sm hover:shadow-md hover:border-violet-200'}`}
+                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
+                    className={`glass-card !p-6 border-slate-200 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/5 group/meet ${isPast ? 'opacity-60 bg-slate-50/50' : 'hover:border-indigo-200'}`}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPast ? 'bg-orange-100' : 'bg-violet-50'}`}>
-                        <CalendarDays size={16} className={isPast ? 'text-slate-400' : 'text-violet-500'} />
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${isPast ? 'bg-white border-slate-200 text-slate-300' : 'bg-indigo-50 border-indigo-100 text-indigo-600 shadow-sm'}`}>
+                        {isPast ? <RotateCcw size={18} /> : <CalendarDays size={18} />}
                       </div>
-                      {isPast && <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-orange-100 px-2 py-1 rounded-full">Past</span>}
-                      {!isPast && <span className="text-[9px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-100 px-2 py-1 rounded-full animate-pulse">Upcoming</span>}
+                      <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${isPast ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm'}`}>
+                        {isPast ? 'Concluded' : 'Pending'}
+                      </span>
                     </div>
-                    <div className="font-extrabold text-slate-800 text-sm mb-2 leading-snug">{m.title}</div>
-                    {d && (
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        <Clock size={11} /> {d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} &nbsp;·&nbsp; {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                      </div>
-                    )}
-                    {m.notes && <p className="mt-2 text-[11px] text-slate-400 font-medium line-clamp-2 leading-relaxed">{m.notes}</p>}
+                    <div className="space-y-3">
+                      <div className="font-extrabold text-slate-900 group-hover/meet:text-indigo-600 transition-colors text-sm line-clamp-1">{m.title}</div>
+                      {d && (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <Calendar size={12} className="text-indigo-500/50" /> {d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                          <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <Clock size={12} className="text-indigo-500/50" /> {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-center p-8 bg-orange-50 rounded-2xl border border-orange-100 text-sm font-medium text-slate-400">
-              No meetings scheduled yet.
+            <div className="glass-card !py-20 text-center border-slate-200 border-2 border-dashed shadow-inner flex flex-col items-center gap-4">
+              <div className="p-4 bg-slate-50 rounded-full text-slate-200">
+                <CalendarDays size={40} />
+              </div>
+              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic">No active session schedules detected.</p>
             </div>
           )}
         </motion.div>
 
-        {/* Bottom Split (Tasks + MOM + Transcript) */}
-        <div className="flex flex-col xl:flex-row gap-6 mb-12">
+        {/* Strategic Intelligence Deep-Dive */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Actionable Steps */}
-          <div className="xl:w-1/3 bg-orange-50 rounded-[2.5rem] border border-orange-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col">
-            <div className="flex justify-between items-center mb-8 border-b border-orange-50 pb-4">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-500"><CheckSquare size={18} /></div> Actionable Path
+          {/* Actionable Path */}
+          <div className="glass-card !rounded-[2.5rem] border-slate-200 p-8 shadow-xl shadow-slate-200/20 flex flex-col group/card relative">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6">
+              <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm"><CheckSquare size={18} /></div> Actionable Path
               </h3>
-              <button onClick={handleTaskAdd} className="p-2 bg-orange-50 text-slate-400 hover:text-orange-600 shadow-sm rounded-xl transition-all border border-orange-200 hover:border-orange-200">
-                <Plus size={18} />
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => setExpandedSection('tasks')} className="p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 border border-slate-100 rounded-xl transition-all shadow-sm">
+                  <Maximize2 size={16} />
+                </button>
+                <button onClick={handleTaskAdd} className="p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 border border-slate-100 rounded-xl transition-all active:scale-95 shadow-sm">
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4 flex-1">
-              {insights.tasks.length === 0 && <div className="text-center p-8 bg-orange-50/50 rounded-2xl border-2 border-dashed border-orange-200"><p className="text-slate-500 text-sm font-bold">No path algorithms established.</p></div>}
+            <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-2 scrollbar-hide">
+              {insights.tasks.length === 0 && (
+                <div className="text-center p-12 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-4">
+                  <div className="p-3 bg-white rounded-full text-slate-200"><CheckSquare size={24} /></div>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">No strategic tasks defined.</p>
+                </div>
+              )}
 
               {insights.tasks.map((task: any, idx: number) => {
                 const isEditingTask = editingItem?.field === 'tasks' && editingItem?.index === idx;
-
                 return (
-                  <div key={idx} className={`p-4 rounded-xl border transition-all flex items-start gap-4 group/task ${task.completed ? 'bg-orange-50 border-orange-100 opacity-60' : 'bg-orange-50 border-orange-100 hover:border-orange-100 shadow-sm hover:shadow-md'}`}>
-
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className={`p-4 rounded-2xl border transition-all flex items-start gap-4 group/task ${task.completed ? 'bg-slate-50/50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5'}`}>
                     <button
                       onClick={() => handleTaskToggle(idx)}
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border-2 transition-colors ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-orange-50 border-orange-300'}`}
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border-2 transition-all ${task.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 hover:border-indigo-300'}`}
                     >
                       {task.completed && <Check size={12} strokeWidth={4} />}
                     </button>
 
                     <div className="flex-1 min-w-0">
                       {isEditingTask ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <input type="text" value={JSON.parse(editingItem.value || "{}").title} onChange={e => {
                             const parsed = JSON.parse(editingItem.value || "{}");
                             parsed.title = e.target.value;
                             setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                          }} className="w-full text-sm font-bold bg-orange-50 border border-orange-200 p-2 rounded-lg outline-none" />
+                          }} className="w-full text-xs font-bold bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/5" />
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => setEditingItem(null)} className="px-2 py-1 text-[10px] font-bold text-slate-500">Abort</button>
+                            <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all tracking-widest">Abort</button>
                             <button onClick={async () => {
                               const parsed = JSON.parse(editingItem.value);
                               const newArr = [...insights.tasks];
                               newArr[idx] = parsed;
                               await saveInsights({ ...insights, tasks: newArr });
                               setEditingItem(null);
-                            }} className="px-2 py-1 text-[10px] font-bold bg-black text-white rounded-lg shadow-md">Commit</button>
+                            }} className="px-5 py-1.5 text-[9px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest">Commit</button>
                           </div>
                         </div>
                       ) : (
-                        <div>
-                          <h4 className={`font-extrabold text-sm mb-1 truncate ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{task.title}</h4>
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{task.assignee} • {task.dueDate}</span>
+                        <div className="space-y-1 py-1">
+                          <h4 className={`font-bold text-sm leading-relaxed ${task.completed ? 'text-slate-400 line-through' : 'text-slate-900 font-extrabold'}`}>{task.title}</h4>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{task.assignee} &bull; {task.dueDate}</span>
                         </div>
                       )}
                     </div>
 
                     {!isEditingTask && (
-                      <div className="hidden group-hover/task:flex items-center gap-1 opacity-0 group-hover/task:opacity-100">
-                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1 text-slate-400 hover:text-orange-600 transition-all">
-                          <Edit3 size={14} />
-                        </button>
-                        <button onClick={() => handleTaskDelete(idx)} className="p-1 text-slate-400 hover:text-red-500 transition-all">
-                          <Trash2 size={14} />
-                        </button>
+                      <div className="hidden group-hover/task:flex items-center gap-1 opacity-0 group-hover/task:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-all"><Edit3 size={14} /></button>
+                        <button onClick={() => handleTaskDelete(idx)} className="p-1.5 text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
                       </div>
                     )}
-                  </div>
-                )
+                  </motion.div>
+                );
               })}
             </div>
           </div>
 
           {/* Minutes of Meeting */}
-          <div className="xl:w-1/3 bg-orange-50 rounded-[2.5rem] border border-orange-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col relative overflow-hidden group">
-            <div className="flex justify-between items-center mb-8 border-b border-orange-50 pb-4 relative z-10">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
-                <div className="p-2 rounded-xl bg-orange-50 text-orange-500"><AlignLeft size={18} /></div> Minutes of Meeting
+          <div className="glass-card !rounded-[2.5rem] border-slate-200 p-8 shadow-xl shadow-slate-200/20 flex flex-col group/card relative">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6">
+              <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm"><AlignLeft size={18} /></div> Session Minutes
               </h3>
-              <button
-                onClick={() => handleArrayAdd('meetingMinutes')}
-                className="p-2 bg-orange-50 text-slate-400 hover:text-orange-600 shadow-sm rounded-xl transition-all border border-orange-200 hover:border-orange-200"
-              >
-                <Plus size={18} />
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => setExpandedSection('minutes')} className="p-2 text-slate-400 hover:text-emerald-600 bg-slate-50 border border-slate-100 rounded-xl transition-all shadow-sm">
+                  <Maximize2 size={16} />
+                </button>
+                <button
+                  onClick={() => handleArrayAdd('meetingMinutes')}
+                  className="p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 border border-slate-100 rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4 flex-1">
+            <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-2 scrollbar-hide">
               {(Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : []).map((point: string, idx: number) => {
                 const isEditingThis = editingItem?.field === 'meetingMinutes' && editingItem?.index === idx;
                 return (
-                  <div key={idx} className="group/item relative bg-orange-50 p-4 rounded-xl border border-orange-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all">
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className="group/item relative bg-slate-50/50 hover:bg-white p-6 rounded-2xl border border-transparent hover:border-slate-200 transition-all shadow-sm hover:shadow-lg hover:shadow-slate-500/5">
                     {isEditingThis ? (
-                      <div className="flex flex-col gap-3">
+                      <div className="space-y-3">
                         <textarea
                           autoFocus
-                          className="w-full text-sm font-semibold bg-orange-50 border border-orange-200 rounded-xl p-3 outline-none focus:ring-4 focus:ring-orange-500/10 resize-y min-h-[80px]"
+                          className="w-full text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/5 resize-none min-h-[100px] text-slate-700 shadow-inner"
                           value={editingItem.value}
                           onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
                         />
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[10px] font-black text-slate-500 hover:bg-orange-100 rounded-lg">Cancel</button>
-                          <button onClick={handleArraySave} className="px-3 py-1.5 text-[10px] font-black bg-black text-white hover:bg-orange-600 rounded-lg shadow-sm flex items-center gap-1.5"><Check size={12} /> Save</button>
+                          <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all tracking-widest">Abort</button>
+                          <button onClick={handleArraySave} className="px-5 py-1.5 text-[9px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest">Commit</button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex gap-4">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 shrink-0"></div>
-                        <span className="block pr-14 text-sm font-semibold text-slate-600 leading-relaxed">{point}</span>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
-                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-orange-600 bg-orange-50 hover:bg-orange-50 border border-orange-100 rounded-lg shadow-sm transition-all"><Edit3 size={12} /></button>
-                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-500 bg-orange-50 hover:bg-orange-50 border border-orange-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                        <span className="text-[13px] font-bold text-slate-900 leading-relaxed pr-10">{point}</span>
+                        <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12} /></button>
+                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
                         </div>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
           </div>
 
           {/* Transcript Core */}
-          <div className="xl:w-1/3 bg-orange-50 rounded-[2.5rem] border border-orange-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col relative overflow-hidden group">
-            <div className="absolute top-10 right-10 text-9xl text-slate-50 font-serif leading-none italic pointer-events-none select-none z-0 rotate-12 -mr-8 -mt-8">"</div>
-            <div className="flex justify-between items-center mb-8 border-b border-orange-50 pb-4 relative z-10">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-xl">
-                <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><AlignLeft size={18} /></div> Source Transcript
+          <div className="glass-card !rounded-[2.5rem] border-slate-200 p-8 shadow-xl shadow-slate-200/20 flex flex-col relative overflow-hidden group/transcript">
+            <div className="absolute top-10 right-10 text-9xl text-slate-100 font-serif leading-none italic pointer-events-none select-none z-0 rotate-12 -mr-8 -mt-8 opacity-50">"</div>
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6 relative z-10">
+              <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 shadow-sm"><AlignLeft size={18} /></div> Audio Intelligence
               </h3>
               <div className="flex gap-2">
-                {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
+                {/* {selectedRec && selectedRec.audioUrl && !selectedRec.transcriptData && (
                   <button
                     onClick={handleSyncTranscript}
                     disabled={syncingTranscript}
-                    className="p-2 bg-orange-50 text-orange-500 hover:text-orange-600 border border-orange-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest disabled:opacity-50"
+                    className="p-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[8px] font-black px-4 uppercase tracking-[0.2em] disabled:opacity-50 active:scale-95"
                   >
-                    {syncingTranscript ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                    {syncingTranscript ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
                     {syncingTranscript ? 'Syncing...' : 'Sync Subtitles'}
                   </button>
-                )}
-                {selectedRec && (
-                  <Link to={`/r/${selectedRec.id}`} className="p-2 bg-orange-50 text-slate-400 hover:text-purple-600 border border-orange-200 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[10px] font-black px-4 uppercase tracking-widest">
-                    Open Full <ArrowUpRight size={14} />
+                )} */}
+                {/* {selectedRec && (
+                  <Link to={`/r/${selectedRec.id}`} className="p-2.5 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white border border-slate-100 shadow-sm rounded-xl transition-all flex items-center gap-2 text-[8px] font-black px-4 uppercase tracking-[0.2em] active:scale-95">
+                    Full <ArrowUpRight size={14} />
                   </Link>
-                )}
+                )} */}
               </div>
             </div>
-            <div className="flex-1 bg-orange-50/80 p-6 rounded-2xl border border-orange-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover:bg-orange-50 transition-colors scollbar-hide">
+            <div className="flex-1 bg-slate-50/80 p-8 rounded-[2rem] border border-slate-100 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover/transcript:bg-white transition-all duration-500 scrollbar-hide">
               {selectedRec?.transcript ? (
                 <TranscriptPlayer
                   audioUrl={selectedRec.audioUrl}
@@ -935,82 +992,155 @@ export default function LeadInsights({ user }: { user: any }) {
                   fallbackText={selectedRec.transcript}
                 />
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 font-medium italic overflow-hidden">
-                  <div className="w-16 h-16 bg-orange-50 border border-orange-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                    <Zap size={24} className="text-slate-300" />
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] italic text-center py-20 gap-6">
+                  <div className="w-20 h-20 bg-white border border-slate-100 rounded-[2rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
+                    <Zap size={32} className="text-slate-200 animate-pulse" />
                   </div>
-                  No dialogue payload detected.
+                  No active payload detected.
                 </div>
               )}
             </div>
           </div>
         </div>
-        <div className="bg-black rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
 
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-16 h-16 bg-orange-50 border-2 border-orange-50/20 rounded-[1.25rem] flex items-center justify-center overflow-hidden">
-              <img src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name || 'User'}&background=random`} className="object-cover w-full h-full" alt={lead.name || 'Lead'} />
+        {/* Lead Identity Footer Card */}
+        <div className="bg-slate-900 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl border border-slate-800">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
+
+          <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 text-center md:text-left">
+            <div className="w-24 h-24 bg-white/10 p-1.5 border-4 border-white/5 rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-2xl backdrop-blur-md">
+              <img src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name || 'User'}&background=random`} className="object-cover w-full h-full rounded-[2rem]" alt={lead.name || 'Lead'} />
             </div>
-            <div>
-              <div className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase mb-1">Lead Details</div>
-              <div className="font-extrabold text-white text-xl">{lead.company || lead.name}</div>
-              <div className="text-sm font-semibold text-slate-400 mt-1 flex gap-3">
-                <span>{lead.email || 'No email attached'}</span>
-                <span className="text-slate-600">•</span>
-                <span>{lead.phone || 'No direct dial'}</span>
+            <div className="space-y-2">
+              <div className="text-[10px] font-black text-indigo-400 tracking-[0.4em] uppercase">Core Entity Identity</div>
+              <div className="font-black text-white text-3xl md:text-4xl tracking-tight leading-none">{lead.company || lead.name}</div>
+              <div className="text-sm font-semibold text-slate-400 mt-2 flex flex-wrap justify-center md:justify-start gap-4 uppercase tracking-widest text-[9px]">
+                <span className="flex items-center gap-2 shadow-sm bg-white/5 px-3 py-1 rounded-full border border-white/5">{lead.email || 'NO_EMAIL_VECTOR'}</span>
+                <span className="flex items-center gap-2 shadow-sm bg-white/5 px-3 py-1 rounded-full border border-white/5">{lead.phone || 'NO_PHONETIC_LINK'}</span>
               </div>
             </div>
           </div>
 
           <div className="relative z-10 md:w-auto w-full">
-            <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-8 py-3.5 bg-orange-50 text-black hover:bg-orange-100 rounded-xl text-sm font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
-              <Edit3 size={16} /> Modify Profile
+            <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-10 py-5 bg-white text-slate-900 hover:bg-indigo-50 hover:text-indigo-600 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl hover:shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-3">
+              <Edit3 size={18} /> Modify Profile
             </Link>
           </div>
         </div>
 
+        {/* Global Expanded Modal for Details */}
+        <AnimatePresence>
+          {expandedSection && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-12 overflow-hidden">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setExpandedSection(null)} className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl" />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }}
+                className="bg-white rounded-[3rem] shadow-[0_32px_120px_rgba(0,0,0,0.5)] w-full max-w-5xl h-full max-h-[85vh] border border-slate-800/10 relative z-10 flex flex-col overflow-hidden"
+              >
+                <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+                  <div className="space-y-1">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+                      {expandedSection === 'tasks' ? 'Full Actionable Path' : 'Detailed Session Minutes'}
+                    </h2>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Enhanced Intelligence View</p>
+                  </div>
+                  <button onClick={() => setExpandedSection(null)} className="p-4 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 border border-slate-100 rounded-2xl transition-all shadow-sm active:scale-95">
+                    <Minimize2 size={24} />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-10 md:p-16 space-y-8 scrollbar-hide">
+                  {expandedSection === 'tasks' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {insights.tasks.map((task: any, idx: number) => (
+                        <div key={idx} className={`p-8 rounded-[2rem] border-2 transition-all flex items-start gap-6 ${task.completed ? 'bg-slate-50/50 border-slate-100 opacity-60' : 'bg-white border-slate-100 shadow-xl shadow-slate-200/20'}`}>
+                          <button onClick={() => handleTaskToggle(idx)} className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 border-2 transition-all ${task.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200'}`}>
+                            {task.completed && <Check size={16} strokeWidth={4} />}
+                          </button>
+                          <div className="space-y-3">
+                            <h4 className={`text-xl font-black tracking-tight ${task.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{task.title}</h4>
+                            <div className="flex gap-4">
+                              <span className="text-xs font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-lg uppercase tracking-widest">{task.assignee}</span>
+                              <span className="text-xs font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg uppercase tracking-widest flex items-center gap-2"><Clock size={12} /> {task.dueDate}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-8 max-w-4xl mx-auto">
+                      {(Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : []).map((point: string, idx: number) => (
+                        <div key={idx} className="flex gap-8 group">
+                          <div className="relative">
+                            <div className="w-4 h-4 rounded-full bg-emerald-500 mt-2 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.5)] z-10 relative"></div>
+                            {idx !== insights.meetingMinutes.length - 1 && (
+                              <div className="absolute top-6 left-2 w-[2px] h-[calc(100%+2rem)] bg-slate-100 -translate-x-1/2"></div>
+                            )}
+                          </div>
+                          <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 group-hover:bg-white transition-all flex-1 shadow-sm group-hover:shadow-xl group-hover:shadow-emerald-500/5">
+                            <p className="text-lg md:text-xl font-bold text-slate-700 leading-relaxed italic pr-4">"{point}"</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-8 bg-slate-900 flex justify-between items-center text-white">
+                  <p className="text-xs font-black uppercase tracking-widest opacity-60">HandyCRM.AI Intelligent Protocol v4.2</p>
+                  <div className="flex gap-2">
+                    <Sparkles size={16} className="text-indigo-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">End of Stream</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Create Meeting Modal */}
       <AnimatePresence>
         {showMeetingModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMeetingModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMeetingModal(false)} className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" />
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-orange-50 rounded-[2.5rem] shadow-2xl w-full max-w-xl border border-orange-50/20 relative z-10 overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }}
+              className="bg-white rounded-[3rem] shadow-[0_32px_120px_rgba(0,0,0,0.4)] w-full max-w-xl border border-slate-100 relative z-10 overflow-hidden"
             >
-              <div className="p-8 border-b border-orange-50 flex justify-between items-center">
-                <h2 className="text-2xl font-black text-slate-800">Schedule Meeting</h2>
-                <button onClick={() => setShowMeetingModal(false)} className="p-2 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors text-slate-400">
+              <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Define Session</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Generation Parameters</p>
+                </div>
+                <button onClick={() => setShowMeetingModal(false)} className="p-3 bg-white hover:bg-rose-50 hover:text-rose-500 border border-slate-100 rounded-2xl transition-all shadow-sm active:scale-95">
                   <X size={20} />
                 </button>
               </div>
-              <div className="p-8 space-y-6">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Meeting Title</label>
-                  <input type="text" value={meetingForm.title} onChange={e => setMeetingForm(f => ({ ...f, title: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 font-semibold text-sm" />
+              <div className="p-10 space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">Session Designation</label>
+                  <input placeholder="e.g. Strategic Alignment Summit" type="text" value={meetingForm.title} onChange={e => setMeetingForm(f => ({ ...f, title: e.target.value }))} className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/5 font-bold text-sm transition-all" />
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Date</label>
-                    <input type="date" value={meetingForm.date} onChange={e => setMeetingForm(f => ({ ...f, date: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 font-semibold text-sm" />
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">Calendar Vector</label>
+                    <input type="date" value={meetingForm.date} onChange={e => setMeetingForm(f => ({ ...f, date: e.target.value }))} className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/5 font-bold text-sm transition-all appearance-none" />
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Time</label>
-                    <input type="time" value={meetingForm.time} onChange={e => setMeetingForm(f => ({ ...f, time: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 font-semibold text-sm" />
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">Temporal Anchor</label>
+                    <input type="time" value={meetingForm.time} onChange={e => setMeetingForm(f => ({ ...f, time: e.target.value }))} className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/5 font-bold text-sm transition-all appearance-none" />
                   </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Notes</label>
-                  <textarea value={meetingForm.notes} onChange={e => setMeetingForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 font-semibold text-sm resize-none" rows={3} />
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">Strategic Constraints</label>
+                  <textarea placeholder="Outline key objectives for this deployment..." value={meetingForm.notes} onChange={e => setMeetingForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/5 font-bold text-sm transition-all resize-none min-h-[120px]" />
                 </div>
               </div>
-              <div className="p-8 bg-orange-50 flex gap-4">
-                <button onClick={() => setShowMeetingModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-orange-100 transition-all text-sm uppercase tracking-widest">Cancel</button>
-                <button onClick={handleSaveMeeting} disabled={savingMeeting} className="flex-1 py-4 rounded-2xl font-black bg-black text-white hover:bg-orange-600 transition-all text-sm flex items-center justify-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 uppercase tracking-widest">
-                  {savingMeeting ? <Loader2 size={18} className="animate-spin" /> : null} Save Meeting
+              <div className="p-10 bg-slate-50/80 flex gap-6 border-t border-slate-100">
+                <button onClick={() => setShowMeetingModal(false)} className="flex-1 py-5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Cancel</button>
+                <button onClick={handleSaveMeeting} disabled={savingMeeting} className="flex-1 py-5 rounded-[1.5rem] font-black bg-indigo-600 text-white hover:bg-slate-900 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50">
+                  {savingMeeting ? <Loader2 size={16} className="animate-spin" /> : null} Initiate Session
                 </button>
               </div>
             </motion.div>

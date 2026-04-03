@@ -146,106 +146,104 @@ export default function CustomFields({ user }: { user: any }) {
   const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block";
 
   return (
-    <div className="flex-1 bg-[#F9FBFF] text-black p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
-      <div className="max-w-5xl mx-auto">
+    <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+      <div className="max-w-6xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
 
-        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-[10px] font-black text-orange-500 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
-              <Sparkles size={14} className="fill-orange-500 animate-pulse" /> Logic Vector Configuration
+        {/* Global Action Header */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+              <Sparkles size={14} className="animate-pulse" /> Data Schema Architect
             </div>
-            <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-black">System Parameters</h3>
-            <p className="text-slate-500 mt-4 text-lg font-medium max-w-xl leading-relaxed">
-              Update Data Storage & Grouping
-            </p>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">Logic Modules</h1>
+            <p className="text-slate-500 font-medium max-w-2xl">Define custom data vectors and categorize lifecycle stages to optimize your intelligence pipeline.</p>
           </motion.div>
 
-          <motion.button
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-            onClick={handleSave}
-            disabled={saving || isDemoMode}
-            className="shrink-0 bg-black text-white px-10 py-4 rounded-2xl font-black hover:bg-orange-600 transition-all shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
-          >
-            {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-            {isDemoMode ? 'Readonly Mode' : 'Save'}
-          </motion.button>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+            <button
+              onClick={handleSave}
+              disabled={saving || isDemoMode}
+              className="btn-primary w-full md:w-auto px-10 shadow-xl shadow-indigo-100 group/save"
+            >
+              {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} className="group-hover/save:scale-110 transition-transform" />}
+              <span>{isDemoMode ? 'Deployment Locked' : 'Synchronize Schema'}</span>
+            </button>
+          </motion.div>
         </header>
 
         {(error || success) && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`mb-10 p-5 rounded-2xl flex items-center gap-4 text-sm font-bold shadow-lg border ${error ? 'bg-rose-50 text-rose-600 border-rose-100 shadow-rose-500/5' : 'bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-500/5'}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${error ? 'bg-rose-500 text-white shadow-rose-500/20' : 'bg-emerald-500 text-white shadow-emerald-500/20'}`}>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`p-5 rounded-2xl flex items-center gap-4 text-sm font-bold shadow-xl border ${error ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${error ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
               {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
             </div>
             {error || success}
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-          {/* Main Custom Fields Column */}
-          <div className="lg:col-span-2 space-y-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-bl-[100px] -z-0 pointer-events-none transition-colors group-hover:bg-orange-100/50"></div>
-
-              <div className="p-8 sm:p-10 relative z-10">
-                <div className="flex items-center justify-between mb-10 pb-4 border-b border-orange-50">
-                  <h2 className="text-base font-black text-slate-800 uppercase tracking-[0.15em] flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shadow-inner"><Settings size={16} /></div>
-                    Custom Data Vectors
-                  </h2>
+          {/* Core Data Vectors Module */}
+          <div className="lg:col-span-2 space-y-10">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !rounded-[2.5rem] overflow-hidden relative border border-slate-200">
+              <div className="p-8 sm:p-12 space-y-12">
+                <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner border border-indigo-100"><Settings size={18} /></div>
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight">Custom Attributes</h2>
+                  </div>
                   {!isDemoMode && (
-                    <button onClick={addField} className="text-xs font-black text-orange-500 hover:text-orange-700 flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 rounded-lg transition-all active:scale-95">
-                      <Plus size={14} /> Add New Fields
+                    <button onClick={addField} className="text-[10px] font-black text-indigo-600 hover:text-white hover:bg-indigo-600 flex items-center gap-2 px-4 py-2 border border-indigo-100 rounded-xl transition-all active:scale-95 uppercase tracking-widest">
+                      <Plus size={14} /> New Attribute
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-6">
-                  <AnimatePresence>
+                <div className="space-y-8">
+                  <AnimatePresence mode="popLayout">
                     {fields.length === 0 ? (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 px-10 bg-orange-50/50 rounded-3xl border-2 border-dashed border-orange-100 flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-center text-slate-200 shadow-sm"><Wand2 size={28} /></div>
-                        <p className="text-slate-400 font-bold italic text-sm">No custom field definitions detected in the matrix.</p>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 px-10 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center gap-6">
+                        <div className="w-20 h-20 bg-white border border-slate-200 rounded-3xl flex items-center justify-center text-slate-200 shadow-xl shadow-slate-200/20"><Wand2 size={32} /></div>
+                        <p className="text-slate-400 font-bold italic text-sm max-w-xs uppercase tracking-widest leading-loose">No custom attribute structures detected in the current partition.</p>
                       </motion.div>
                     ) : fields.map((field, idx) => (
                       <motion.div
                         key={field.id}
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="p-6 bg-orange-50/50 border border-orange-100 rounded-3xl flex flex-col gap-6 relative group/field hover:bg-orange-50 hover:border-orange-100 transition-all duration-300"
+                        className="p-8 bg-slate-50/50 border border-slate-200 rounded-[2rem] flex flex-col gap-10 relative group/field hover:bg-white hover:ring-4 hover:ring-indigo-500/5 transition-all duration-500"
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
-                            <label className={labelClasses}>Field Label</label>
-                            <input type="text" value={field.name} onChange={(e) => updateField(field.id, { name: e.target.value })} placeholder="E.g. Gender, Deal Size" className={inputClasses} />
+                            <label className={labelClasses}>Attribute Identifier</label>
+                            <input type="text" value={field.name} onChange={(e) => updateField(field.id, { name: e.target.value })} placeholder="e.g. Industry Focus" className={inputClasses.replace(/orange/g, 'slate')} />
                           </div>
                           <div>
-                            <label className={labelClasses}>System Type</label>
-                            <select value={field.type} onChange={(e) => updateField(field.id, { type: e.target.value as any })} className={inputClasses}>
-                              <option value="TEXT">Short Text</option>
-                              <option value="NUMBER">Number </option>
-                              <option value="DROPDOWN">Dropdown Fields</option>
-                              <option value="DATE">Date</option>
-                              <option value="DATETIME">Date & Time</option>
+                            <label className={labelClasses}>Primitive Data Type</label>
+                            <select value={field.type} onChange={(e) => updateField(field.id, { type: e.target.value as any })} className={inputClasses.replace(/orange/g, 'slate')}>
+                              <option value="TEXT">Short String</option>
+                              <option value="NUMBER">Numeric Vector</option>
+                              <option value="DROPDOWN">Enum Selection</option>
+                              <option value="DATE">Standard Date</option>
+                              <option value="DATETIME">Precision Timestamp</option>
                             </select>
                           </div>
 
                           {field.type === 'DROPDOWN' && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="md:col-span-2 space-y-4">
-                              <label className={labelClasses}>Operational Options</label>
-                              <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-orange-50 rounded-2xl border border-orange-100 shadow-inner">
-                                {field.options.length === 0 && <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest pt-1">Null Options Pool</span>}
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="md:col-span-2 space-y-6">
+                              <label className={labelClasses}>Enum Parameters</label>
+                              <div className="flex flex-wrap gap-2.5 min-h-[50px] p-6 bg-white rounded-2xl border border-slate-100 shadow-inner">
+                                {field.options.length === 0 && <span className="text-[10px] font-black text-slate-200 uppercase tracking-[0.3em] pt-1">Null Options Set</span>}
                                 {field.options.map(opt => (
-                                  <span key={opt} className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 bg-orange-50 text-orange-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-orange-100 shadow-sm transition-all hover:bg-orange-100">
+                                  <span key={opt} className="inline-flex items-center gap-2.5 pl-4 pr-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100">
                                     {opt}
-                                    <button type="button" onClick={() => updateField(field.id, { options: field.options.filter(o => o !== opt) })} className="p-1 hover:bg-orange-50 hover:text-red-500 rounded-md transition-colors">
-                                      <X size={10} />
+                                    <button type="button" onClick={() => updateField(field.id, { options: field.options.filter(o => o !== opt) })} className="p-1 hover:bg-rose-100 hover:text-rose-600 rounded-md transition-colors">
+                                      <X size={12} />
                                     </button>
                                   </span>
                                 ))}
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-3">
                                 <input
                                   type="text"
                                   value={newOptionInputs[field.id] || ''}
@@ -260,8 +258,8 @@ export default function CustomFields({ user }: { user: any }) {
                                       }
                                     }
                                   }}
-                                  placeholder="Add new option parameter..."
-                                  className={`${inputClasses} flex-1`}
+                                  placeholder="Define new parameter..."
+                                  className={`${inputClasses.replace(/orange/g, 'slate')} flex-1`}
                                 />
                                 <button
                                   type="button"
@@ -272,17 +270,17 @@ export default function CustomFields({ user }: { user: any }) {
                                       setNewOptionInputs(prev => ({ ...prev, [field.id]: '' }));
                                     }
                                   }}
-                                  className="px-6 py-2 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95"
+                                  className="px-8 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
                                 >
-                                  ADD
+                                  Append
                                 </button>
                               </div>
                             </motion.div>
                           )}
                         </div>
                         {!isDemoMode && (
-                          <button onClick={() => removeField(field.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
-                            <Trash2 size={16} />
+                          <button onClick={() => removeField(field.id)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
+                            <Trash2 size={20} />
                           </button>
                         )}
                       </motion.div>
@@ -293,93 +291,91 @@ export default function CustomFields({ user }: { user: any }) {
             </motion.div>
           </div>
 
-          {/* Sidebar / Category Column */}
-          <div className="space-y-8">
+          {/* Categorization Matrices Column */}
+          <div className="space-y-10">
 
-            {/* Custom Sources */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
-              <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-inner"><Tag size={16} /></div>
-                Acquisition Sources
-              </h2>
+            {/* Acquisition Matrix */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-8 border border-slate-200 space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner border border-emerald-100"><Tag size={20} /></div>
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Source Channels</h2>
+              </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-orange-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-orange-100">{s} (SYS)</span>)}
+                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{s} Node</span>)}
                   {customSources.map(s => (
-                    <span key={s} className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-orange-100 shadow-sm group/chip transition-all hover:bg-orange-100">
+                    <span key={s} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-100 shadow-sm">
                       {s}
-                      <button onClick={() => setCustomSources(prev => prev.filter(x => x !== s))} className="p-0.5 text-orange-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                      <button onClick={() => setCustomSources(prev => prev.filter(x => x !== s))} className="p-0.5 hover:text-rose-500 transition-colors"><X size={10} /></button>
                     </span>
                   ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <input
                     type="text" value={newSource} onChange={e => setNewSource(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addSource()}
-                    placeholder="e.g. COLD_CALL"
-                    className={`${inputClasses} !py-2.5 !px-3 font-bold`}
+                    placeholder="e.g. PARTNERSHIP"
+                    className={`${inputClasses.replace(/orange/g, 'slate')} !py-3 !px-4 !text-xs`}
                   />
-                  <button onClick={addSource} className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all active:scale-95 uppercase">
-                    ADD
+                  <button onClick={addSource} className="px-5 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-emerald-600 transition-all uppercase tracking-widest shadow-md">
+                    Add
                   </button>
                 </div>
               </div>
             </motion.div>
 
-            {/* Custom Phases */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
-              <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-500 flex items-center justify-center shadow-inner"><GitBranch size={16} /></div>
-                Lifecycle Phases
-              </h2>
+            {/* Lifecycle Stages */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card p-8 border border-slate-200 space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-inner border border-violet-100"><GitBranch size={20} /></div>
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Pipeline Stages</h2>
+              </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-orange-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-orange-100">{p} (SYS)</span>)}
+                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{p} Core</span>)}
                   {customPhases.map(p => (
-                    <span key={p} className="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-violet-100 shadow-sm group/chip transition-all hover:bg-violet-100">
+                    <span key={p} className="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-violet-100 shadow-sm">
                       {p}
-                      <button onClick={() => setCustomPhases(prev => prev.filter(x => x !== p))} className="p-0.5 text-violet-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                      <button onClick={() => setCustomPhases(prev => prev.filter(x => x !== p))} className="p-0.5 hover:text-rose-50 transition-colors"><X size={10} /></button>
                     </span>
                   ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <input
                     type="text" value={newPhase} onChange={e => setNewPhase(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addPhase()}
-                    placeholder="e.g. PROPOSAL"
-                    className={`${inputClasses} !py-2.5 !px-3 font-bold`}
+                    placeholder="e.g. EVALUATION"
+                    className={`${inputClasses.replace(/orange/g, 'slate')} !py-3 !px-4 !text-xs`}
                   />
-                  <button onClick={addPhase} className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black hover:bg-violet-600 transition-all active:scale-95 uppercase">
-                    ADD
+                  <button onClick={addPhase} className="px-5 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-violet-600 transition-all uppercase tracking-widest shadow-md">
+                    Add
                   </button>
                 </div>
               </div>
             </motion.div>
 
-            {/* Custom Lead Types */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.02)] p-8">
-              <h2 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] mb-6 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shadow-inner"><Users size={16} /></div>
-                Lead Types
-              </h2>
+            {/* Entity Types */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="glass-card p-8 border border-slate-200 space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner border border-blue-100"><Users size={20} /></div>
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Profile Types</h2>
+              </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-orange-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-tighter border border-orange-100">{p} (SYS)</span>)}
+                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{p} Unit</span>)}
                   {customLeadTypes.map(p => (
-                    <span key={p} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-blue-100 shadow-sm group/chip transition-all hover:bg-orange-100">
+                    <span key={p} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-blue-100 shadow-sm">
                       {p}
-                      <button onClick={() => setCustomLeadTypes(prev => prev.filter(x => x !== p))} className="p-0.5 text-blue-300 hover:text-red-500 transition-colors"><X size={10} /></button>
+                      <button onClick={() => setCustomLeadTypes(prev => prev.filter(x => x !== p))} className="p-0.5 hover:text-rose-500 transition-colors"><X size={10} /></button>
                     </span>
                   ))}
                 </div>
-                <div className="flex gap-2">
-                  <input type="text" value={newLeadType} onChange={e => setNewLeadType(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLeadType()} placeholder="e.g. PARTNER" className={`${inputClasses} !py-2.5 !px-3 font-bold`} />
-                  <button onClick={addLeadType} className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all active:scale-95 uppercase">ADD</button>
+                <div className="flex gap-3">
+                  <input type="text" value={newLeadType} onChange={e => setNewLeadType(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLeadType()} placeholder="e.g. NON_PROFIT" className={`${inputClasses.replace(/orange/g, 'slate')} !py-3 !px-4 !text-xs`} />
+                  <button onClick={addLeadType} className="px-5 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black hover:bg-indigo-600 transition-all uppercase tracking-widest shadow-md">Add</button>
                 </div>
               </div>
             </motion.div>
-
-
 
           </div>
         </div>

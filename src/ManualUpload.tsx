@@ -218,16 +218,16 @@ export default function ManualUpload({ user }: { user: any }) {
   if (!user) return <div className="p-20 text-center text-slate-500 font-medium">Please sign in to add info.</div>;
 
   return (
-    <div className="flex-1 bg-orange-50 p-4 md:p-8 lg:p-12 min-h-full">
+    <div className="flex-1 bg-slate-50/50 p-4 md:p-8 lg:p-12 min-h-full">
       <div className="max-w-3xl mx-auto">
 
-        <header className="mb-8 md:mb-12 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-100/50 text-orange-600 text-xs font-bold uppercase tracking-widest mb-4">
-            <Sparkles size={14} /> Add Info
+        <header className="mb-8 md:mb-12 text-center md:text-left space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm mb-2">
+            <UploadCloud size={14} className="animate-pulse" /> Data Integration
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-black mb-3">Add Info</h1>
-          <p className="text-slate-500 text-base leading-relaxed max-w-2xl">
-            Upload a recording, document, or paste notes for a client.
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight uppercase tracking-tight">Add Intelligence</h1>
+          <p className="text-slate-500 font-medium max-w-2xl text-lg italic">
+            Upload recordings, documents, or manual context for your leads.
           </p>
         </header>
 
@@ -255,7 +255,7 @@ export default function ManualUpload({ user }: { user: any }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               onSubmit={handleSubmit}
-              className="bg-orange-50/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl shadow-slate-200/50 border border-orange-50"
+              className="glass-card !rounded-[2.5rem] p-6 md:p-10 shadow-2xl border-white/40"
             >
               {error && (
                 <div className="mb-8 p-4 rounded-2xl flex items-start gap-3 text-sm font-semibold bg-red-50 text-red-600 border border-red-100">
@@ -266,18 +266,18 @@ export default function ManualUpload({ user }: { user: any }) {
 
               <div className="space-y-8">
                 {/* Lead Selection */}
-                <div className="bg-orange-50/50 rounded-3xl p-6 border border-orange-100">
-                  <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3 ml-1">
-                    <UserCircle size={18} className="text-orange-500" />
-                    Client <span className="text-red-500">*</span>
+                <div className="bg-white/50 rounded-3xl p-6 border border-slate-100 shadow-sm">
+                  <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">
+                    <UserCircle size={18} className="text-indigo-500" />
+                    Target Lead <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={selectedLeadId}
                     onChange={e => setSelectedLeadId(e.target.value)}
-                    className="w-full bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 text-base font-semibold focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-slate-700 shadow-sm appearance-none cursor-pointer"
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-base font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-slate-700 shadow-sm appearance-none cursor-pointer"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 7l5 5 5-5'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
                   >
-                    <option value="" disabled>Select a Client</option>
+                    <option value="" disabled>Select a Lead</option>
                     {leads.map(l => (
                       <option key={l.id} value={l.id}>{l.name} {l.company ? `— ${l.company}` : ''}</option>
                     ))}
@@ -287,7 +287,7 @@ export default function ManualUpload({ user }: { user: any }) {
                 {/* Upload Zones Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Audio Upload Zone */}
-                  <div className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-orange-500 bg-orange-50/50' : 'border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-50'}`}>
+                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-200 bg-white/50 hover:border-indigo-400 hover:bg-white'}`}>
                     <input
                       type="file"
                       accept="audio/*"
@@ -297,21 +297,21 @@ export default function ManualUpload({ user }: { user: any }) {
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isAudio ? 'bg-orange-600 shadow-lg shadow-orange-500/30' : 'bg-orange-50 shadow-sm group-hover:bg-orange-50'}`}>
-                      <FileAudio className={`w-7 h-7 ${uploadFile && isAudio ? 'text-white' : 'text-orange-400'}`} />
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isAudio ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-slate-50 shadow-sm'}`}>
+                      <FileAudio className={`w-7 h-7 ${uploadFile && isAudio ? 'text-white' : 'text-slate-400'}`} />
                     </div>
                     <div className="text-center">
-                      <p className={`font-bold text-base mb-1 ${uploadFile && isAudio ? 'text-orange-900' : 'text-slate-700'}`}>
-                        {uploadFile && isAudio ? 'Recording Ready' : 'Upload Audio'}
+                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isAudio ? 'text-indigo-900' : 'text-slate-400'}`}>
+                        {uploadFile && isAudio ? 'Audio Loaded' : 'Upload Audio'}
                       </p>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                      <p className="text-[9px] font-bold text-slate-400 tracking-tighter">
                         {uploadFile && isAudio ? uploadFile.name : 'MP3, WAV, WEBM'}
                       </p>
                     </div>
                   </div>
 
                   {/* Document Upload Zone */}
-                  <div className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-orange-500 bg-orange-50/50' : 'border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-50'}`}>
+                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-200 bg-white/50 hover:border-indigo-400 hover:bg-white'}`}>
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.txt"
@@ -321,14 +321,14 @@ export default function ManualUpload({ user }: { user: any }) {
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isDoc ? 'bg-orange-600 shadow-lg shadow-orange-500/30' : 'bg-orange-50 shadow-sm group-hover:bg-orange-50'}`}>
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isDoc ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-slate-50 shadow-sm'}`}>
                       <FileText className={`w-7 h-7 ${uploadFile && isDoc ? 'text-white' : 'text-slate-400'}`} />
                     </div>
                     <div className="text-center">
-                      <p className={`font-bold text-base mb-1 ${uploadFile && isDoc ? 'text-orange-900' : 'text-slate-700'}`}>
-                        {uploadFile && isDoc ? 'Document Ready' : 'Upload Document'}
+                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isDoc ? 'text-indigo-900' : 'text-slate-400'}`}>
+                        {uploadFile && isDoc ? 'Doc Encrypted' : 'Upload File'}
                       </p>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                      <p className="text-[9px] font-bold text-slate-400 tracking-tighter">
                         {uploadFile && isDoc ? uploadFile.name : 'Word, PDF, TXT'}
                       </p>
                     </div>
@@ -338,31 +338,30 @@ export default function ManualUpload({ user }: { user: any }) {
                 {/* Manual Transcript Zone */}
                 <div className="pt-4">
                   <div className="relative">
-                    <div className="absolute top-4 left-4 text-slate-400 pointer-events-none">
-                      <Sparkles size={18} className="text-orange-400" />
+                    <div className="absolute top-5 left-5 text-slate-400 pointer-events-none">
+                      <Sparkles size={18} className="text-indigo-500" />
                     </div>
                     <textarea
                       value={manualText}
                       onChange={e => setManualText(e.target.value)}
-                      placeholder="Or, paste notes here..."
-                      className="w-full min-h-[160px] bg-orange-50 border border-orange-200 rounded-[2rem] pl-12 pr-6 py-4 text-sm font-medium focus:bg-orange-50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all resize-none text-slate-700 placeholder:text-slate-400 leading-relaxed shadow-inner"
+                      placeholder="Paste manual notes or context here..."
+                      className="w-full min-h-[180px] bg-white border border-slate-200 rounded-[2rem] pl-14 pr-8 py-5 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none text-slate-700 placeholder:text-slate-400 leading-relaxed shadow-sm"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Footer Actions */}
-              <div className="mt-10 pt-8 border-t border-orange-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <span className="text-xs font-bold text-slate-400 px-2 py-1 bg-orange-100 rounded-md">File or notes required</span>
+              <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-[9px] font-black text-slate-400 px-3 py-1 bg-slate-100 rounded-lg uppercase tracking-widest">Protocol validation required</span>
                 <button
                   type="submit"
                   disabled={isSubmitting || isDemoMode}
-                  className="w-full sm:w-auto relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-10 py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group"
+                  className="w-full sm:w-auto btn-primary !px-12 !py-5"
                 >
-                  <div className="absolute inset-0 bg-orange-50/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                  {isSubmitting ? <Loader2 className="animate-spin relative z-10" size={20} /> : isDemoMode ? <Eye className="relative z-10" size={20} /> : <UploadCloud className="relative z-10" size={20} />}
-                  <span className="relative z-10">
-                    {isSubmitting ? 'Saving...' : isDemoMode ? 'Readonly Mode' : 'Save'}
+                  {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
+                  <span>
+                    {isSubmitting ? 'Integrating...' : isDemoMode ? 'Readonly Node' : 'Commit Intelligence'}
                   </span>
                 </button>
               </div>
