@@ -107,9 +107,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {isDemoMode ? 'Demo Active' : 'Switch To Demo'}
           </button>
           
-          <div className="mt-4 px-4">
-            <p className="text-[10px] font-bold text-slate-600 flex items-center gap-1.5 uppercase tracking-widest">
-            &copy; {new Date().getFullYear()} handycrm.ai
+          <div className="mt-6 px-4 py-3 border-t border-white/5 cursor-default hover:bg-white/10 transition-colors">
+            <p className="text-[9px] font-black text-slate-200 flex items-center gap-2 uppercase tracking-[0.2em] whitespace-nowrap">
+              Made with <span className="text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
             </p>
           </div>
         </div>

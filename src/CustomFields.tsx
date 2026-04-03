@@ -150,23 +150,23 @@ export default function CustomFields({ user }: { user: any }) {
       <div className="max-w-6xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
 
         {/* Global Action Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-10">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <Sparkles size={14} className="animate-pulse" /> Data Schema Architect
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">Logic Modules</h1>
-            <p className="text-slate-500 font-medium max-w-2xl">Define custom data vectors and categorize lifecycle stages to optimize your intelligence pipeline.</p>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">Logic Modules</h1>
+            <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Define custom data vectors and categorize lifecycle stages to optimize your intelligence pipeline.</p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="w-full sm:w-auto">
             <button
               onClick={handleSave}
               disabled={saving || isDemoMode}
-              className="btn-primary w-full md:w-auto px-10 shadow-xl shadow-indigo-100 group/save"
+              className="btn-primary w-full px-8 py-3.5 shadow-xl shadow-indigo-100 group/save flex items-center justify-center gap-3"
             >
-              {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} className="group-hover/save:scale-110 transition-transform" />}
-              <span>{isDemoMode ? 'Deployment Locked' : 'Synchronize Schema'}</span>
+              {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} className="group-hover/save:scale-110 transition-transform" />}
+              <span>{isDemoMode ? 'Deployment Locked' : 'Sync Schema'}</span>
             </button>
           </motion.div>
         </header>
@@ -186,13 +186,13 @@ export default function CustomFields({ user }: { user: any }) {
           <div className="lg:col-span-2 space-y-10">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !rounded-[2.5rem] overflow-hidden relative border border-slate-200">
               <div className="p-8 sm:p-12 space-y-12">
-                <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner border border-indigo-100"><Settings size={18} /></div>
                     <h2 className="text-xl font-black text-slate-800 tracking-tight">Custom Attributes</h2>
                   </div>
                   {!isDemoMode && (
-                    <button onClick={addField} className="text-[10px] font-black text-indigo-600 hover:text-white hover:bg-indigo-600 flex items-center gap-2 px-4 py-2 border border-indigo-100 rounded-xl transition-all active:scale-95 uppercase tracking-widest">
+                    <button onClick={addField} className="text-[10px] font-black text-indigo-600 hover:text-white hover:bg-indigo-600 flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-100 rounded-xl transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto">
                       <Plus size={14} /> New Attribute
                     </button>
                   )}
@@ -211,7 +211,7 @@ export default function CustomFields({ user }: { user: any }) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="p-8 bg-slate-50/50 border border-slate-200 rounded-[2rem] flex flex-col gap-10 relative group/field hover:bg-white hover:ring-4 hover:ring-indigo-500/5 transition-all duration-500"
+                        className="p-6 sm:p-8 bg-slate-50/50 border border-slate-200 rounded-[2rem] flex flex-col gap-6 sm:gap-10 relative group/field hover:bg-white transition-all duration-500"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
@@ -243,7 +243,7 @@ export default function CustomFields({ user }: { user: any }) {
                                   </span>
                                 ))}
                               </div>
-                              <div className="flex gap-3">
+                              <div className="flex flex-col sm:flex-row gap-3">
                                 <input
                                   type="text"
                                   value={newOptionInputs[field.id] || ''}
@@ -270,7 +270,7 @@ export default function CustomFields({ user }: { user: any }) {
                                       setNewOptionInputs(prev => ({ ...prev, [field.id]: '' }));
                                     }
                                   }}
-                                  className="px-8 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
+                                  className="px-6 py-3.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200/20"
                                 >
                                   Append
                                 </button>

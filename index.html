@@ -13,8 +13,27 @@
     <link rel="apple-touch-icon" href="/logo.png" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Minimal Futuristic Fallback / Loading -->
+        <div style="height: 100vh; background: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; color: #475569;">
+            <div style="width: 40px; height: 40px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em;">Synchronizing Node...</div>
+            <style>
+                @keyframes spin { to { transform: rotate(360deg); } }
+            </style>
+        </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+        // Emergency Fallback: If the main module fails to execute after 5 seconds
+        setTimeout(() => {
+            if (!window.REACT_ROOT_INITIALIZED) {
+                console.warn('HANDYCRM_SIGNAL_FAIL: System initialization timed out. Diverting to outage terminal.');
+                // Only redirect if we haven't already hit a specific error listener
+                // window.location.href = '/outage.html'; 
+            }
+        }, 8000);
+    </script>
   </body>
 </html>
 
