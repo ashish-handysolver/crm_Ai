@@ -13,30 +13,30 @@ export default function Settings({ user }: { user: any }) {
     <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
         
-        {/* Header */}
+        {/* Header Section */}
         <header>
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <SettingsIcon size={14} className="animate-spin-slow" /> System Architecture
+              <SettingsIcon size={14} className="animate-spin-slow" /> System Architecture Protocol
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">Workspace Preferences</h1>
-            <p className="text-slate-500 font-medium max-w-2xl">Configure your data schemas, manage organizational units, and optimize your intelligence workflows.</p>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">Workspace Preferences</h1>
+            <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Configure your data schemas, manage organizational units, and optimize your intelligence workflows.</p>
           </motion.div>
         </header>
 
         {/* Dynamic Navigation Tabs */}
-        <div className="flex bg-white/60 backdrop-blur-md p-1.5 rounded-[2rem] w-full max-w-md border border-slate-200 shadow-xl shadow-slate-200/20">
+        <div className="flex bg-white/60 backdrop-blur-md p-1.5 rounded-2xl sm:rounded-[2rem] w-full max-w-md border border-slate-200 shadow-xl shadow-slate-200/20">
           <button 
             onClick={() => setActiveTab('fields')}
-            className={`flex-1 flex items-center justify-center gap-2.5 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'fields' ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'fields' ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}`}
           >
-            <Sliders size={18} /> Logic Modules
+            <Sliders size={18} className="hidden sm:block" /> Logic
           </button>
           <button 
             onClick={() => setActiveTab('team')}
-            className={`flex-1 flex items-center justify-center gap-2.5 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}`}
           >
-            <Users size={18} /> Human Resources
+            <Users size={18} className="hidden sm:block" /> Human
           </button>
         </div>
 

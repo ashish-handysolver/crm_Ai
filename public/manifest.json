@@ -1,12 +1,12 @@
 {
-  "name": "handycrm.ai | Next-Gen AI CRM",
+  "name": "handycrm.ai | Autonomous AI Terminal",
   "short_name": "handycrm.ai",
-  "description": "Premium CRM with AI-powered meeting intelligence.",
+  "description": "The secure neural workspace for sales intelligence and meeting synthesis.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#ffffff",
+  "background_color": "#020617",
   "theme_color": "#6366f1",
   "icons": [
     {

@@ -121,32 +121,31 @@ export default function Profile() {
     <div className="flex-1 bg-slate-50/50 p-4 sm:p-8 lg:p-12 min-h-screen font-sans overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-12">
 
-        {/* Header & Navigation */}
-        <div className="flex flex-col gap-8">
-          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit">
+        {/* Navigation & Header Section */}
+        <div className="flex flex-col gap-6 sm:gap-8">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit"
+          >
             <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 group-hover:shadow-lg group-hover:shadow-indigo-500/5 transition-all">
               <ArrowLeft size={14} />
             </div>
-            Back to Dashboard
+            Back Protocol
           </button>
 
-          <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-10">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-2 sm:space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-                <ShieldCheck size={14} /> Identity Matrix
+                <Sparkles size={14} className="animate-pulse" /> Access Authorization Verified
               </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-none">
-                Member Profile
-              </h1>
-              <p className="text-slate-500 font-medium max-w-2xl text-lg italic">
-                Manage your enterprise identity and access credentials.
-              </p>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-none">Account Configuration</h1>
+              <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-lg italic leading-relaxed">Manage your neural identity and authentication vectors.</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex gap-4 shrink-0">
-               <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[160px]">
-                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Access Level</div>
-                  <span className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 shrink-0">
+               <div className="px-5 py-3 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[140px] sm:min-w-[160px]">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Authorization Tier</div>
+                  <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                     {userRole || 'Entity'}
                   </span>
@@ -224,28 +223,28 @@ export default function Profile() {
             </div>
 
             {/* Security Summary */}
-            <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+            <div className="bg-slate-900 rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-10 text-white shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
               
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center border border-white/10 backdrop-blur-md shadow-xl"><ShieldCheck size={24} /></div>
+              <div className="flex items-center gap-4 mb-6 sm:mb-8">
+                <div className="w-11 h-11 sm:w-12 h-12 rounded-xl sm:rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center border border-white/10 backdrop-blur-md shadow-xl"><ShieldCheck size={24} /></div>
                 <div className="space-y-0.5">
-                  <h3 className="text-sm font-black text-white tracking-[0.1em] uppercase">Security Matrix</h3>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol Version 4.0.2</div>
+                  <h3 className="text-xs sm:text-sm font-black text-white tracking-[0.1em] uppercase">Security Matrix</h3>
+                  <div className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol Version 4.0.2</div>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorization</span>
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-center justify-between p-3.5 sm:p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorization</span>
+                  <span className="text-[9px] sm:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     L5 SECURE
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Storage Type</span>
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">AES-256 Cloud</span>
+                <div className="flex items-center justify-between p-3.5 sm:p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Storage Type</span>
+                  <span className="text-[9px] sm:text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">AES-256 Cloud</span>
                 </div>
               </div>
 
@@ -268,19 +267,20 @@ export default function Profile() {
 
           {/* Configuration Cell */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-8">
-            <form onSubmit={handleUpdateProfile} className="glass-card !rounded-[3.5rem] p-8 sm:p-14 border-slate-200 shadow-2xl shadow-slate-200/40 relative overflow-hidden">
+            <form onSubmit={handleUpdateProfile} className="glass-card !rounded-[2.5rem] sm:!rounded-[3.5rem] p-6 sm:p-14 border-slate-200 shadow-2xl shadow-slate-200/40 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
               
-              <div className="relative z-10 space-y-14">
+              <div className="relative z-10 space-y-10 sm:space-y-14">
 
-                <section className="space-y-10">
-                  <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-inner">
-                      <User size={28} />
+                <section className="space-y-8 sm:space-y-10">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="w-12 h-12 sm:w-14 h-14 rounded-xl sm:rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-inner">
+                      <User size={24} className="sm:hidden" />
+                      <User size={28} className="hidden sm:block" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-[0.05em]">Personal Metadata</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Identity Identification</p>
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase tracking-[0.05em]">Personal Metadata</h3>
+                      <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Identity Verification</p>
                     </div>
                   </div>
 

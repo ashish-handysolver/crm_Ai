@@ -159,70 +159,75 @@ export default function Login() {
           </p>
 
         </motion.div>
-        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest flex items-center justify-center gap-2 mb-8 lowercase">
-          Build &copy; {new Date().getFullYear()} handycrm.ai - enterprise grade security
+        <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 mb-8 cursor-default">
+          Made with <span className="text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
         </p>
       </div>
 
       {/* Right Area - Hero & Demo Showcase */}
-      <div className="hidden lg:flex flex-1 relative bg-slate-950 overflow-hidden items-center justify-center">
-        {/* Animated Background Gradients */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[150px] animate-pulse pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse delay-1000 pointer-events-none"></div>
+      <div className="hidden lg:flex flex-1 relative bg-[#0A0D14] overflow-hidden items-center justify-center">
+        {/* Abstract Glowing Background Elements - Ported from RegisterCompany */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-1000"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse delay-700"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-blue-500/10 rounded-full blur-[150px] mix-blend-screen"></div>
+
+          {/* Noise overlay */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+        </div>
 
         {/* Hero Content Layer */}
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative z-10 w-full max-w-4xl px-20 space-y-16">
-          
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-indigo-400 text-xs font-black uppercase tracking-widest backdrop-blur-md">
-              <Sparkles size={16} /> Now with 2.0 AI Engines
-            </div>
-            <h2 className="text-6xl xl:text-7xl font-black text-white leading-tight tracking-tighter">
-              Unlock the <span className="text-indigo-400">Power</span> of Your Data.
-            </h2>
-            <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-2xl italic">
-              Experience the next generation of sales intelligence. Summarize meetings, track lead progress, and boost productivity with AI.
-            </p>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative z-10 w-full max-w-2xl px-12">
+
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
+            <Flame className="text-indigo-400 w-4 h-4" />
+            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Multi-Tenant Intelligence</span>
           </div>
 
-          {/* Interactive Mockup Container */}
-          <div className="glass-card !p-2 !rounded-[2.5rem] border-white/5 shadow-3xl shadow-indigo-500/10 relative group perspective-1000">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-            <div className="relative overflow-hidden rounded-[2.2rem] aspect-[16/10] bg-slate-900 border border-white/10">
-              {/* Actual Image Mockup */}
-              <img 
-                src="/dashboard-preview.png" 
-                alt="handycrm.ai dashboard"
-                className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-700 hover:scale-105"
-              />
-              {/* Mockup Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
-              
-              {/* Play Demo Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
+          <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tightest">
+            Streamline.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-indigo-400 to-cyan-400">
+              Manage. Connect.
+            </span>
+          </h2>
+
+          <p className="text-lg lg:text-xl text-slate-400 font-medium leading-relaxed mb-10 max-w-xl">
+            Access your secure workspace instantly. Experience the next generation of sales intelligence. Summarize meetings, track lead progress, and boost productivity with AI.
+          </p>
+
+          {/* Floating UI Mockup element - Interactive Bar Graph from RegisterCompany */}
+          <div className="bg-[#1E293B]/20 border border-white/10 backdrop-blur-3xl rounded-2xl p-8 shadow-2xl relative overflow-hidden flex items-end gap-3 h-56 group/graph">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>
+            {[35, 65, 40, 85, 60, 80, 100].map((height, i) => (
+              <motion.div
+                key={i}
+                initial={{ height: 0 }}
+                animate={{ height: `${height}%` }}
+                transition={{ duration: 1.2, delay: 0.5 + i * 0.1, type: "spring" }}
+                className="flex-1 bg-gradient-to-t from-indigo-500/80 to-indigo-400/80 rounded-t-md relative group/bar hover:from-indigo-500 hover:to-indigo-300 transition-all border-t border-white/10"
+              >
+                <div className="absolute inset-0 bg-blue-400/10 blur-sm opacity-0 group-hover/bar:opacity-100 transition-opacity"></div>
+              </motion.div>
+            ))}
+          </div>
+          {/* 
+          <div className="grid grid-cols-2 gap-12 pt-12 mt-4 border-t border-white/5">
+             <div className="space-y-2">
+                <div className="text-2xl font-black text-white">99.8%</div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Transcription Accuracy</div>
+             </div>
+             <div className="space-y-2 text-right">
                 <button
                    onClick={() => {
                      setDemoMode(true);
                      navigate('/');
                    }}
-                   className="px-10 py-5 bg-white text-indigo-600 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-3"
+                   className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 ml-auto"
                 >
-                  <Flame size={20} /> Launch Demo Experience
+                  <Flame size={14} /> Launch Demo
                 </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-12 pt-8 border-t border-white/5">
-             <div className="space-y-2">
-                <div className="text-2xl font-black text-white">99.8%</div>
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Transcription Accuracy</div>
              </div>
-             <div className="space-y-2">
-                <div className="text-2xl font-black text-white">85%</div>
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efficiency Increase</div>
-             </div>
-          </div>
+          </div> */}
 
         </motion.div>
       </div>

@@ -48,14 +48,14 @@ export default function Analytics({ user }: { user: any }) {
     <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
       <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
         
-        {/* Header */}
+        {/* Header Section */}
         <header>
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <BarChart3 size={14} className="animate-pulse" /> Strategic Intelligence
+              <BarChart3 size={14} className="animate-pulse" /> Strategic Intelligence Vector
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">Lead Performance</h1>
-            <p className="text-slate-500 font-medium max-w-2xl">Visualizing conversion probability and AI-driven match scores across your lead pipeline.</p>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">Lead Performance</h1>
+            <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-base">Visualizing conversion probability and AI-driven match scores across your lead pipeline.</p>
           </motion.div>
         </header>
 
@@ -83,7 +83,7 @@ export default function Analytics({ user }: { user: any }) {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, type: 'spring', stiffness: 200, damping: 25 }}
-                  className="glass-card group p-8 flex flex-col relative overflow-hidden h-full ring-1 ring-slate-100 hover:ring-indigo-100 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500"
+                  className="glass-card group p-6 sm:p-8 flex flex-col relative overflow-hidden h-full ring-1 ring-slate-100 hover:ring-indigo-100 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500"
                 >
                   {/* Decorative Gradient Background */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-0 opacity-0 group-hover:opacity-60 transition-opacity"></div>

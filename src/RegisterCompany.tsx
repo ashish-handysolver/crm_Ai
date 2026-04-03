@@ -136,47 +136,47 @@ export default function RegisterCompany() {
   };
 
   return (
-    <div className="flex min-h-screen bg-orange-50 font-sans selection:bg-orange-500 selection:text-white" style={{ width: '100vw' }}>
+    <div className="flex min-h-[100dvh] bg-slate-50/50 font-sans selection:bg-indigo-500 selection:text-white overflow-hidden" style={{ width: '100%' }}>
       {/* Left Area - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-orange-50 border-r border-orange-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-white border-r border-slate-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
 
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-blue-100/40 blur-3xl"></div>
-          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-orange-100/40 blur-3xl"></div>
+          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-indigo-50/50 blur-3xl"></div>
+          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-slate-50/50 blur-3xl"></div>
         </div>
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
 
-          <Link to="/" className="flex items-center gap-3 group/logo mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/20 shadow-lg border border-orange-50/20 p-2 transition-transform duration-500 group-hover/logo:rotate-[10deg]">
-              <AudioLines className="text-white" size={24} />
+          <Link to="/" className="flex items-center gap-3 group/logo mb-10">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/5 border border-slate-100 p-2.5 transition-all duration-500 group-hover/logo:rotate-12 group-hover/logo:scale-110 overflow-hidden">
+               <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 leading-none mb-1">Handysolver</span>
-              <span className="text-[9px] font-black text-orange-500 uppercase tracking-[0.2em] leading-none">Intelligence Hub</span>
+              <span className="text-2xl font-black tracking-tighter text-slate-900 leading-none mb-1 lowercase">handycrm.ai</span>
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">Intelligence Hub</span>
             </div>
           </Link>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-black mb-2">
-            Create your account
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-black mb-3">
+            Create account
           </h1>
-          <p className="text-slate-500 font-medium text-lg mb-6">
-            Set up your company to start managing leads and AI meeting notes easily.
+          <p className="text-slate-500 font-medium text-lg mb-8">
+            Set up your organization to start managing leads and AI meeting notes easily.
           </p>
 
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><Building2 size={20} /></div>
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors"><Building2 size={20} /></div>
                 <input
                   type="text"
                   required
                   value={companyName}
                   onChange={e => setCompanyName(e.target.value)}
                   placeholder="e.g. Acme Corp"
-                  className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold text-black shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 shadow-sm"
                 />
               </div>
             </div>
@@ -185,15 +185,15 @@ export default function RegisterCompany() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Your Name</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><UserIcon size={20} /></div>
-                  <input type="text" required value={userName} onChange={e => setUserName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold shadow-sm" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors"><UserIcon size={20} /></div>
+                  <input type="text" required value={userName} onChange={e => setUserName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><Mail size={20} /></div>
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold shadow-sm" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors"><Mail size={20} /></div>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
                 </div>
               </div>
             </div>
@@ -201,8 +201,8 @@ export default function RegisterCompany() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors"><Lock size={20} /></div>
-                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} className="w-full pl-12 pr-4 py-4 bg-orange-50/50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-semibold shadow-sm" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors"><Lock size={20} /></div>
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold shadow-sm" />
               </div>
             </div>
 
@@ -216,17 +216,17 @@ export default function RegisterCompany() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#0F172A] text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-xl shadow-black/10 group"
+              className="w-full btn-primary !py-5 shadow-2xl shadow-indigo-200"
             >
-              <div className="absolute inset-0 bg-orange-50/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-              {loading ? <Loader2 className="animate-spin relative z-10" size={20} /> : <CheckCircle2 className="relative z-10 opacity-70" size={20} />}
-              <span className="relative z-10 text-base">{loading ? 'Setting up...' : 'Create Account'}</span>
+              {loading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 className="opacity-70" size={20} />}
+              <span className="text-base">{loading ? 'Scaling Engines...' : 'Initialize Workspace'}</span>
+              {!loading && <ArrowRight className="opacity-70 group-hover:translate-x-1 transition-transform" size={20} />}
             </button>
           </form>
 
-          <p className="mt-10 text-center text-sm font-medium text-slate-500">
-            Already have an account?{' '}
-            <button onClick={handleGoToLogin} className="text-orange-600 font-bold hover:text-orange-500 transition-colors ml-1">
+          <p className="mt-10 text-center text-sm font-black text-slate-400 uppercase tracking-widest">
+            Already have a secured workspace?{' '}
+            <button onClick={handleGoToLogin} className="text-indigo-600 hover:text-indigo-500 transition-colors ml-1 decoration-skip-ink decoration-2 underline">
               Sign in to Workspace
             </button>
           </p>
@@ -238,8 +238,9 @@ export default function RegisterCompany() {
             </div>
           )}
         </motion.div>
-        <p className="text-[11px] font-medium text-slate-500 flex items-center justify-center gap-1.5">
-          Made with <span className="text-[14px]">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
+        
+        <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 mb-8 cursor-default">
+          Made with <span className="text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
         </p>
       </div>
 

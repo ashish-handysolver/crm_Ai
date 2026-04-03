@@ -189,44 +189,44 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
   const { companyName } = useAuth();
 
   return (
-    <nav className="glass-nav z-[90] px-4 py-4 sm:px-12 flex items-center justify-between border-b border-slate-200/50">
-      <div className="flex items-center gap-6">
-        <button onClick={onMenuClick} className="lg:hidden p-3 text-slate-500 hover:bg-slate-100 rounded-2xl transition-all shadow-sm active:scale-95 border border-slate-100">
+    <nav className="glass-nav z-[90] px-4 sm:px-12 py-3.5 sm:py-4 flex items-center justify-between border-b border-slate-200/50">
+      <div className="flex items-center gap-3 sm:gap-6">
+        <button onClick={onMenuClick} className="lg:hidden p-2.5 text-slate-500 hover:bg-slate-100 rounded-xl transition-all shadow-sm active:scale-95 border border-slate-100">
           <Menu size={20} />
         </button>
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-100 overflow-hidden">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-100 overflow-hidden">
              <img src="/logo.png" className="w-full h-full object-contain" alt="logo" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.3em] leading-none mb-1 shadow-sm">Workspace</span>
-            <span className="text-sm font-black text-slate-900 tracking-tight uppercase tracking-[0.05em]">{companyName || 'handycrm.ai'}</span>
+            <span className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] leading-none mb-1 shadow-sm">Protocol</span>
+            <span className="text-xs sm:text-sm font-black text-slate-900 tracking-tight uppercase tracking-[0.05em] truncate max-w-[100px] sm:max-w-none">{companyName || 'handycrm.ai'}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-6">
         {showInstallButton && (
           <button
             onClick={onInstall}
-            className="hidden md:flex items-center gap-2.5 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-200 hover:text-indigo-600 transition-all shadow-xl shadow-slate-200/50 active:scale-95 shadow-sm"
+            className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-200 hover:text-indigo-600 transition-all shadow-xl shadow-slate-200/50 active:scale-95"
           >
             <Download size={14} /> Install
           </button>
         )}
         <NotificationBell />
-        <div className="h-8 w-[1px] bg-slate-200 mx-2 hidden sm:block"></div>
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-xs font-black text-slate-900 leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Unknown Terminal'}</span>
+        <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
+        <div className="hidden md:flex flex-col items-end">
+          <span className="text-xs font-black text-slate-900 leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
         </div>
-        <Link to="/profile" className="relative group p-1 bg-white border border-slate-100 rounded-[1.25rem] shadow-xl shadow-slate-200/50 hover:border-indigo-200 transition-all">
+        <Link to="/profile" className="relative group p-1 bg-white border border-slate-100 rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-slate-200/50 hover:border-indigo-200 transition-all">
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=6366f1&color=fff`}
             alt="Profile"
-            className="w-10 h-10 rounded-[1rem] object-cover border border-white group-hover:scale-105 transition-all group-active:scale-95"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover border border-white group-hover:scale-105 transition-all group-active:scale-95"
           />
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white shadow-sm ring-2 ring-emerald-500/20"></div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-[3px] border-white shadow-sm ring-1 ring-emerald-500/20"></div>
         </Link>
       </div>
     </nav>
@@ -361,7 +361,7 @@ const RecordingView = () => {
     if (!recording || !recording.audioUrl || isSyncing || !id) return;
     setIsSyncing(true);
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
       if (!apiKey) throw new Error("Gemini API Key is missing (VITE_GEMINI_API_KEY).");
       let audioBlob: Blob | null = null;
       try {

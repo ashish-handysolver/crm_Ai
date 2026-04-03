@@ -7,7 +7,7 @@ import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft,
-  Briefcase, ChevronLeft, Calendar, Edit3, Check, Plus, Trash2, ArrowUpRight,
+  Briefcase, ChevronLeft, Calendar, Edit, Check, Plus, Trash2, ArrowUpRight,
   CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2
 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
@@ -507,7 +507,7 @@ export default function LeadInsights({ user }: { user: any }) {
       <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-10">
 
         {/* Navigation & Header */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6 sm:gap-8">
           <Link to="/clients" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit">
             <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-200 group-hover:shadow-lg group-hover:shadow-indigo-500/5 transition-all">
               <ChevronLeft size={14} />
@@ -515,21 +515,21 @@ export default function LeadInsights({ user }: { user: any }) {
             Back to Pipeline
           </Link>
 
-          <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 sm:gap-10">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-                <Zap size={14} className="animate-pulse" /> Active Intelligence
+                <Zap size={14} className="animate-pulse" /> Intelligence Vector Alpha
               </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-tight">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-none">
                 {lead.company || lead.name}
               </h1>
-              <p className="text-slate-500 font-medium max-w-2xl text-lg italic">
-                View meeting details and AI generated insights.
+              <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-lg italic leading-relaxed">
+                Aggregated meeting heuristics and AI-generated insights.
               </p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap gap-4 shrink-0">
-              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[160px]">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap sm:flex-nowrap gap-4 shrink-0">
+              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end flex-1 sm:min-w-[160px]">
                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Lead Phase</div>
                 <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-rose-500' : 'bg-indigo-500 animate-pulse'}`} />
@@ -537,7 +537,7 @@ export default function LeadInsights({ user }: { user: any }) {
                 </span>
               </div>
 
-              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end min-w-[160px]">
+              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end flex-1 sm:min-w-[160px]">
                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Call Sentiment</div>
                 <div className="relative w-full">
                   <select
@@ -552,7 +552,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     <option value="Analyzing...">Analyzing...</option>
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <Edit3 size={10} />
+                    <Edit size={12} />
                   </div>
                 </div>
               </div>
@@ -561,12 +561,12 @@ export default function LeadInsights({ user }: { user: any }) {
         </div>
 
         {/* Intelligence Timeline */}
-        <div className="glass-card !p-2 !rounded-3xl border-slate-200 flex flex-nowrap items-center gap-3 overflow-x-auto shadow-xl shadow-slate-200/20 scrollbar-hide">
-          <div className="pl-6 pr-8 shrink-0 flex items-center gap-3 border-r border-slate-100 py-3">
+        <div className="glass-card !p-2 !rounded-3xl border-slate-200 flex flex-nowrap items-center gap-3 overflow-x-auto shadow-xl shadow-slate-200/20 hide-scrollbar scroll-smooth">
+          <div className="pl-6 pr-8 shrink-0 hidden sm:flex items-center gap-3 border-r border-slate-100 py-3">
             <Calendar size={18} className="text-slate-400" />
             <span className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">Recordings</span>
           </div>
-          <div className="flex gap-3 py-2">
+          <div className="flex gap-3 py-2 px-3 sm:px-0">
             {recordings.length > 0 ? (
               recordings.map((rec) => {
                 const dateStr = rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'Legacy Core';
@@ -575,14 +575,14 @@ export default function LeadInsights({ user }: { user: any }) {
                   <button
                     key={rec.id}
                     onClick={() => setSelectedRecId(rec.id)}
-                    className={`shrink-0 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-400/20' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'}`}
+                    className={`shrink-0 px-5 sm:px-6 py-2.5 sm:py-3 rounded-[1.2rem] text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all shadow-sm border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-400/20' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'}`}
                   >
                     {dateStr}
                   </button>
                 );
               })
             ) : (
-              <span className="text-xs font-bold text-slate-400 py-3 px-6 italic uppercase tracking-widest">No recordings data-stream available.</span>
+              <span className="text-xs font-bold text-slate-400 py-3 px-6 italic uppercase tracking-widest">Initialization Pending...</span>
             )}
           </div>
         </div>
@@ -663,7 +663,7 @@ export default function LeadInsights({ user }: { user: any }) {
                           <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')}`}></div>
                           <span className="text-xs font-semibold text-slate-600 pr-10">{item}</span>
                           <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                            <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12} /></button>
+                            <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit size={12} /></button>
                             <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
                           </div>
                         </li>
@@ -702,7 +702,7 @@ export default function LeadInsights({ user }: { user: any }) {
                           <RotateCcw size={18} className={generatingAI ? "animate-spin" : ""} />
                         </button>
                         <button onClick={() => setEditingOverview(insights.overview)} title="Override Content" className="p-2.5 text-indigo-300 hover:text-white hover:bg-white/10 bg-white/5 border border-white/10 rounded-xl transition-all shadow-xl">
-                          <Edit3 size={18} />
+                          <Edit size={18} />
                         </button>
                       </>
                     ) : null}
@@ -896,7 +896,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
                     {!isEditingTask && (
                       <div className="hidden group-hover/task:flex items-center gap-1 opacity-0 group-hover/task:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-all"><Edit3 size={14} /></button>
+                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-all"><Edit size={14} /></button>
                         <button onClick={() => handleTaskDelete(idx)} className="p-1.5 text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
                       </div>
                     )}
@@ -948,7 +948,7 @@ export default function LeadInsights({ user }: { user: any }) {
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                         <span className="text-[13px] font-bold text-slate-900 leading-relaxed pr-10">{point}</span>
                         <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit3 size={12} /></button>
+                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit size={12} /></button>
                           <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
                         </div>
                       </div>
@@ -1023,7 +1023,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
           <div className="relative z-10 md:w-auto w-full">
             <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-10 py-5 bg-white text-slate-900 hover:bg-indigo-50 hover:text-indigo-600 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl hover:shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-3">
-              <Edit3 size={18} /> Modify Profile
+              <Edit size={18} /> Modify Profile
             </Link>
           </div>
         </div>

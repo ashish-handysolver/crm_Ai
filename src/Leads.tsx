@@ -582,32 +582,32 @@ export default function Leads({ user }: { user: any }) {
   );
 
   return (
-    <div className="flex-1 bg-slate-50/50 min-h-full">
-      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-10">
+    <div className={`flex-1 bg-slate-50/30 min-h-full ${viewMode === 'kanban' ? 'overflow-x-hidden' : ''}`}>
+      <div className={`max-w-[1600px] mx-auto ${viewMode === 'kanban' ? 'p-0 sm:p-8 lg:p-12' : 'p-4 sm:p-8 lg:p-12'} space-y-6 sm:space-y-10`}>
 
-        {/* Header */}
-        <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-2">
+        {/* Header Section */}
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">
-              <Users size={14} /> CRM Lead Center
+              <Users size={14} /> Lead Management Protocol
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 uppercase tracking-tight">All Leads</h1>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">All Leads</h1>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-4">
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
             {!isDemoMode ? (
               <>
-                <button onClick={() => setIsImportModalOpen(true)} className="btn-secondary">
-                  <UploadCloud size={18} /> Import Excel
+                <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                  <UploadCloud size={18} /> <span className="hidden sm:inline">Import Excel</span>
                 </button>
-                <Link to="/clients/new" className="btn-primary">
+                <Link to="/clients/new" className="flex items-center gap-3 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200">
                   <Plus size={18} />
                   <span>New Lead</span>
                 </Link>
               </>
             ) : (
               <div className="px-6 py-3 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-200">
-                Demo Environment
+                Demo Territory
               </div>
             )}
           </motion.div>
@@ -625,25 +625,25 @@ export default function Leads({ user }: { user: any }) {
         </AnimatePresence>
 
         {/* Toolbar */}
-        <div className="glass-card p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="glass-card p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
           <div className="relative w-full max-w-md group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
             <input
               type="text"
-              placeholder="Search leads by name, email..."
+              placeholder="Filter leads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-14 pr-6 text-sm font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-inner"
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 sm:py-4 pl-14 pr-6 text-sm font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-inner"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto">
             <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 shadow-inner">
-              <button onClick={() => setViewMode('list')} className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:text-slate-600'}`}>LIST</button>
-              <button onClick={() => setViewMode('kanban')} className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:text-slate-600'}`}>KANBAN</button>
+              <button onClick={() => setViewMode('list')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:text-slate-600'}`}>LIST</button>
+              <button onClick={() => setViewMode('kanban')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:text-slate-600'}`}>KANBAN</button>
             </div>
 
-            <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
+            <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
 
             <div className="flex items-center gap-3">
               <div className="relative">
