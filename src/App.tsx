@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles } from 'lucide-react';
+import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -39,6 +39,7 @@ import GuestRecord from './GuestRecord';
 import Analytics from './Analytics';
 import ManualUpload from './ManualUpload';
 import LeadInsights from './LeadInsights';
+import LeadCapture from './LeadCapture';
 import CalendarPage from './Calendar';
 import ImportModal from './ImportModal';
 import Login from './Login';
@@ -116,8 +117,8 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button 
-        onClick={() => setShowDropdown(!showDropdown)} 
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
         className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${showDropdown ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}
       >
         <Bell size={20} />
@@ -125,10 +126,10 @@ const NotificationBell = () => {
           <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white shadow-sm ring-2 ring-rose-500/20 animate-pulse"></span>
         )}
       </button>
-      
+
       <AnimatePresence>
         {showDropdown && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -138,7 +139,7 @@ const NotificationBell = () => {
               <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">Notifications</h3>
               <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase tracking-widest">{meetings.length} Upcoming</span>
             </div>
-            
+
             <div className="max-h-[400px] overflow-y-auto scrollbar-hide py-2">
               {!pushEnabled && (
                 <div className="p-4 mx-2 mb-2 rounded-2xl bg-rose-50/50 border border-rose-100 hover:bg-rose-50 transition-all cursor-pointer group" onClick={handleRequestPush}>
@@ -151,7 +152,7 @@ const NotificationBell = () => {
                   </div>
                 </div>
               )}
-              
+
               {meetings.length > 0 ? meetings.map((m, idx) => (
                 <div key={m.id} className="px-4 py-4 hover:bg-slate-50 transition-all cursor-pointer border-b border-slate-50 last:border-0 group">
                   <div className="font-bold text-slate-900 text-sm mb-1 group-hover:text-indigo-600 transition-colors">{m.title}</div>
@@ -174,7 +175,7 @@ const NotificationBell = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="p-4 border-t border-slate-100 bg-slate-50/50 text-center">
               <Link to="/calendar" className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-all">View Calendar &rarr;</Link>
             </div>
@@ -196,7 +197,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
         </button>
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-100 overflow-hidden">
-             <img src="/logo.png" className="w-full h-full object-contain" alt="logo" />
+            <img src="/logo.png" className="w-full h-full object-contain" alt="logo" />
           </div>
           <div className="flex flex-col">
             <span className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] leading-none mb-1 shadow-sm">Protocol</span>
@@ -453,7 +454,7 @@ const RecordingView = () => {
           className="glass-card !p-10 sm:!p-16 border-slate-200 shadow-[0_32px_120px_rgba(0,0,0,0.06)] relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-50 rounded-full blur-[100px] pointer-events-none translate-x-1/2 -translate-y-1/2 opacity-60"></div>
-          
+
           <header className="mb-16 border-b border-slate-100 pb-10 flex flex-col md:flex-row justify-between items-start gap-10 relative z-10">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
@@ -506,20 +507,20 @@ const RecordingView = () => {
             </div>
 
             <div className="p-10 bg-indigo-50/30 rounded-[2.5rem] border border-indigo-100 border-dashed relative group/ai overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[40px] opacity-20 group-hover/ai:opacity-40 transition-all duration-1000"></div>
-                <div className="flex items-center gap-4 relative z-10">
-                    <div className="p-4 bg-white rounded-2xl text-indigo-600 shadow-xl shadow-indigo-200/50 border border-indigo-100"><Sparkles size={24} className="animate-pulse" /></div>
-                    <div className="space-y-1">
-                        <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">AI Analysis Summary</h3>
-                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] opacity-80">Autonomous analysis generated via Gemini AI</p>
-                    </div>
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[40px] opacity-20 group-hover/ai:opacity-40 transition-all duration-1000"></div>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="p-4 bg-white rounded-2xl text-indigo-600 shadow-xl shadow-indigo-200/50 border border-indigo-100"><Sparkles size={24} className="animate-pulse" /></div>
+                <div className="space-y-1">
+                  <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">AI Analysis Summary</h3>
+                  <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] opacity-80">Autonomous analysis generated via Gemini AI</p>
                 </div>
+              </div>
             </div>
           </section>
         </motion.div>
-        
+
         <div className="text-center">
-            <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Handydash CRM AI &bull; Handysolver Systems</p>
+          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Handydash CRM AI &bull; Handysolver Systems</p>
         </div>
       </div>
     </div>
@@ -574,7 +575,7 @@ const AppContent = () => {
       const isAuthPath = location.pathname === '/login' || location.pathname === '/register-company' || location.pathname === '/super-login';
       const isSuperPath = location.pathname.startsWith('/super-admin-console');
       const isOnboardingPath = location.pathname === '/onboarding';
-      const isGuestPath = location.pathname.startsWith('/m/');
+      const isGuestPath = location.pathname.startsWith('/m/') || location.pathname.startsWith('/capture/');
 
       // In Demo Mode, we bypass auth checks for main app paths
       if (isDemoMode) {
@@ -606,7 +607,7 @@ const AppContent = () => {
     );
   }
 
-  const isGuestRoute = location.pathname.startsWith('/m/');
+  const isGuestRoute = location.pathname.startsWith('/m/') || location.pathname.startsWith('/capture/');
   const isSuperRoute = location.pathname.startsWith('/super-admin-console');
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company' || location.pathname === '/super-login';
   const isOnboardingRoute = location.pathname === '/onboarding';
@@ -616,6 +617,7 @@ const AppContent = () => {
       <div className="flex min-h-screen bg-zinc-50 text-zinc-900 font-sans w-full">
         <Routes>
           <Route path="/m/:meetingId" element={<GuestRecord />} />
+          <Route path="/capture/:companyId" element={<LeadCapture />} />
         </Routes>
       </div>
     );
@@ -654,6 +656,7 @@ const AppContent = () => {
             {/* <Route path="/history" element={<HistoryView user={user} />} /> */}
             <Route path="/history" element={<Reports user={user} />} />
             <Route path="/clients" element={<Leads user={user} />} />
+            <Route path="/active-clients" element={<Leads user={user} isActiveOnlyRoute={true} />} />
             <Route path="/clients/new" element={<LeadForm user={user} />} />
             <Route path="/clients/:id/edit" element={<LeadForm user={user} />} />
             <Route path="/upload" element={<ManualUpload user={user} />} />
