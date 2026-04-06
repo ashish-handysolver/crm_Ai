@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadFileToGemini } from './utils/gemini';
-import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
 import { CustomFieldDef } from './CustomFields';
@@ -36,6 +36,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const [shareUrls, setShareUrls] = useState<Record<string, string>>({});
   const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
   const [customLeadTypes, setCustomLeadTypes] = useState<string[]>([]);
+  const [customPhases, setCustomPhases] = useState<string[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -118,6 +119,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     getDoc(doc(db, 'companies', companyId)).then(snap => {
       if (snap.exists()) {
         setCustomLeadTypes(snap.data().customLeadTypes || []);
+        setCustomPhases(snap.data().customPhases || []);
       }
     }).catch(console.error);
   }, [companyId]);
@@ -460,6 +462,15 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     }
   };
 
+  const handlePhaseChange = async (leadId: string, newPhase: string) => {
+    if (isDemoMode) return;
+    try {
+      await updateDoc(doc(db, 'leads', leadId), { phase: newPhase, updatedAt: Timestamp.now() });
+    } catch (e) {
+      console.error('Failed to update phase', e);
+    }
+  };
+
   const filteredLeads = leads.filter(l => {
     const matchesSearch = !searchTerm || l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || l.company?.toLowerCase().includes(searchTerm.toLowerCase()) || l.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -491,6 +502,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const availableLeadTypes = Array.from(new Set([...DEFAULT_LEAD_TYPES, ...customLeadTypes]));
 
   const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
+  const availablePhases = Array.from(new Set([...PHASES, ...customPhases]));
 
   const isAllSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeads.includes(l.id));
 
@@ -533,7 +545,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
   const KanbanView = () => (
     <div className="flex gap-8 overflow-x-auto pb-10 min-h-[600px] hide-scrollbar snap-x">
-      {PHASES.map(phase => {
+      {availablePhases.map(phase => {
         const phaseLeads = filteredLeads.filter(l => l.phase === phase);
         return (
           <div key={phase} className="min-w-[340px] w-[340px] flex flex-col gap-6 snap-start">
@@ -779,7 +791,17 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         </div>
                       </div>
                     </div>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border shrink-0 mt-1 ${getPhaseColor(lead.phase)}`}>{lead.phase}</span>
+                    <div className="relative shrink-0 mt-1">
+                      <select
+                        value={lead.phase || 'DISCOVERY'}
+                        onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                      >
+                        {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5 p-3 sm:p-4 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-200">
@@ -872,6 +894,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                       </th>
                       <th className="py-6 px-8 relative">Name <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-300"></div></th>
                       <th className="py-6 px-6 relative">Company <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-300"></div></th>
+                      <th className="py-6 px-6 relative w-32">Status <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-300"></div></th>
                       <th className="py-6 px-6 relative w-32">Lead Type <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-300"></div></th>
                       <th className="py-6 px-6 relative w-32">AI Score <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-slate-300"></div></th>
                       <th className="py-6 px-8 text-right">Actions</th>
@@ -880,7 +903,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   <tbody className="text-sm">
                     {loadingLeads ? (
                       <tr className="bg-white">
-                        <td colSpan={6} className="py-24 text-center">
+                        <td colSpan={7} className="py-24 text-center">
                           <Loader2 size={32} className="animate-spin text-orange-500 mx-auto" />
                         </td>
                       </tr>
@@ -921,6 +944,19 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                             <td className="py-5 px-6 min-w-[200px] whitespace-normal">
                               <div className="font-extrabold text-slate-700 break-words leading-tight">{lead.company}</div>
                               <div className="text-slate-400 font-semibold text-xs mt-1 flex items-start gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1 shrink-0" /><span className="break-words">{lead.location}</span></div>
+                            </td>
+                            <td className="py-5 px-6 whitespace-nowrap">
+                              <div className="relative inline-block w-full max-w-[140px]">
+                                <select
+                                  value={lead.phase || 'DISCOVERY'}
+                                  onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                                >
+                                  {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                              </div>
                             </td>
                             <td className="py-5 px-6 whitespace-nowrap">
                               {lead.leadType ? <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-slate-50 text-slate-600 border-slate-200">{lead.leadType}</span> : <span className="text-slate-300 text-xs font-bold">-</span>}
@@ -982,7 +1018,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                           <AnimatePresence>
                             {isExp && (
                               <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-gradient-to-b from-slate-50/30 to-white/50 border-b border-slate-100">
-                                <td colSpan={6} className="p-0">
+                                <td colSpan={7} className="p-0">
                                   <div className="p-8 px-12">
                                     {customFieldDefs.length > 0 && (
                                       <div className="mb-8 pb-8 border-b border-orange-100 border-dashed">

@@ -116,7 +116,8 @@ export default function LeadInsights({ user }: { user: any }) {
             "tasks": [
               { "title": "...", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
             ],
-            "recommendedPhase": "Evaluate the conversation and strictly return ONE of these exact strings: DISCOVERY, NURTURING, QUALIFIED, WON, LOST, INACTIVE"
+            "recommendedPhase": "Evaluate the conversation and strictly return ONE of these exact strings: DISCOVERY, NURTURING, QUALIFIED, WON, LOST, INACTIVE",
+            "leadScore": "A number from 0 to 100 evaluating the lead's conversion probability based on the call."
           }
         `;
 
@@ -168,15 +169,22 @@ export default function LeadInsights({ user }: { user: any }) {
           aiInsights: parsed
         });
 
-        // Auto-sync the Sales State Machine
-        if (parsed.recommendedPhase) {
-          const newPhase = parsed.recommendedPhase.toUpperCase();
-          if (lead.phase !== newPhase) {
-            await updateDoc(doc(db, 'leads', lead.id), {
-              phase: newPhase,
-              updatedAt: Timestamp.now()
-            });
+        // Auto-sync the Sales State Machine and Score
+        const leadUpdates: any = {};
+        if (parsed.recommendedPhase && lead.phase !== parsed.recommendedPhase.toUpperCase()) {
+          leadUpdates.phase = parsed.recommendedPhase.toUpperCase();
+        }
+        if (parsed.leadScore !== undefined) {
+          const newScore = Number(parsed.leadScore);
+          if (!isNaN(newScore)) {
+            leadUpdates.score = newScore;
           }
+        }
+
+        if (Object.keys(leadUpdates).length > 0) {
+          leadUpdates.updatedAt = Timestamp.now();
+          await updateDoc(doc(db, 'leads', lead.id), leadUpdates);
+          setLead((prev: any) => ({ ...prev, ...leadUpdates }));
         }
       } catch (err) {
         console.error("Failed to generate AI insights:", err);
@@ -662,7 +670,7 @@ export default function LeadInsights({ user }: { user: any }) {
                         <li key={i} className="group/item relative pl-4 leading-relaxed bg-slate-50/50 hover:bg-white p-4 rounded-[1.5rem] border border-transparent hover:border-slate-200/60 transition-all shadow-sm flex items-start gap-3">
                           <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')}`}></div>
                           <span className="text-xs font-semibold text-slate-600 pr-10">{item}</span>
-                          <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                          <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                             <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit size={12} /></button>
                             <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
                           </div>
@@ -895,7 +903,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     </div>
 
                     {!isEditingTask && (
-                      <div className="hidden group-hover/task:flex items-center gap-1 opacity-0 group-hover/task:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                      <div className="flex sm:hidden group-hover/task:flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/task:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                         <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-all"><Edit size={14} /></button>
                         <button onClick={() => handleTaskDelete(idx)} className="p-1.5 text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
                       </div>
@@ -947,7 +955,7 @@ export default function LeadInsights({ user }: { user: any }) {
                       <div className="flex gap-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                         <span className="text-[13px] font-bold text-slate-900 leading-relaxed pr-10">{point}</span>
-                        <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                        <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                           <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit size={12} /></button>
                           <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
                         </div>

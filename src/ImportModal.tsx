@@ -71,7 +71,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
 
     try {
       const text = await uploadedFile.text();
-      
+
       Papa.parse(text, {
         header: false,
         skipEmptyLines: true,
@@ -90,7 +90,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
             }
             return row;
           });
-          
+
           setCsvHeaders(headers);
           setCsvRows(dataRows);
 
@@ -176,7 +176,7 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
           companyId: companyId,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
-          score: 50, // default
+          score: 0, // default
           phase: 'DISCOVERY', // default
           leadType: 'B2B', // default
           health: 'WARM', // default
