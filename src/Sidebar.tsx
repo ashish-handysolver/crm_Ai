@@ -72,7 +72,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="px-6 py-8 flex items-center justify-between relative z-10">
           <Link to="/" onClick={onClose} className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/10 border border-white/10 p-1.5 overflow-hidden">
-               <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
+              <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tighter text-white lowercase">handycrm.ai</span>
@@ -88,7 +88,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto hide-scrollbar relative z-10">
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4 mt-2">Menu</div>
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" />
-          <NavItem onClick={onClose} to="/clients" icon={<Users />} label="Leads" />
+          <NavItem onClick={onClose} to="/clients" icon={<Users />} label="All Leads" />
+          <NavItem onClick={onClose} to="/active-clients" icon={<Activity />} label="Active Leads" />
           <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Import" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" />
           <NavItem onClick={onClose} to="/history" icon={<History />} label="Logs" />
@@ -106,15 +107,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {isDemoMode ? <Eye size={16} /> : <EyeOff size={16} />}
             {isDemoMode ? 'Demo Active' : 'Switch To Demo'}
           </button>
-          
-          <div className="mt-6 px-4 py-3 border-t border-white/5 cursor-default hover:bg-white/10 transition-colors">
-            <p className="text-[9px] font-black text-slate-200 flex items-center gap-2 uppercase tracking-[0.2em] whitespace-nowrap">
-              Made with <span className="text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
-            </p>
+
+          <div className="mt-6 pt-4 border-t border-white/5 flex justify-center">
+            <div className="px-3 py-2.5 w-full rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all cursor-default group text-center">
+              <p className="text-[8px] sm:text-[9px] font-black text-slate-400 group-hover:text-slate-200 flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 uppercase tracking-wider sm:tracking-[0.2em] transition-colors">
+                Made with <span className="text-[10px] sm:text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
+              </p>
+            </div>
           </div>
         </div>
       </aside>
     </>
   );
 }
-

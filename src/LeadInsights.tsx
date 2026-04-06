@@ -529,7 +529,7 @@ export default function LeadInsights({ user }: { user: any }) {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap sm:flex-nowrap gap-4 shrink-0">
-              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end flex-1 sm:min-w-[160px]">
+              <div className="glass-card !p-4 !rounded-2xl border-slate-200/60 shadow-xl shadow-slate-200/20 flex flex-col items-end flex-1 sm:min-w-[160px]">
                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Lead Phase</div>
                 <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm ${lead.status === 'Won' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : lead.status === 'Lost' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'Won' ? 'bg-emerald-500' : lead.status === 'Lost' ? 'bg-rose-500' : 'bg-indigo-500 animate-pulse'}`} />
@@ -537,13 +537,13 @@ export default function LeadInsights({ user }: { user: any }) {
                 </span>
               </div>
 
-              <div className="glass-card !p-4 !rounded-2xl border-slate-200 shadow-xl shadow-slate-200/20 flex flex-col items-end flex-1 sm:min-w-[160px]">
+              <div className="glass-card !p-4 !rounded-2xl border-slate-200/60 shadow-xl shadow-slate-200/20 flex flex-col items-end flex-1 sm:min-w-[160px]">
                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Call Sentiment</div>
                 <div className="relative w-full">
                   <select
                     value={insights.sentiment}
                     onChange={handleSentimentChange}
-                    className={`w-full px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm appearance-none cursor-pointer outline-none transition-all pr-8 ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                    className={`w-full px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm appearance-none cursor-pointer outline-none transition-all pr-8 ${insights.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50' : insights.sentiment === 'Negative' ? 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50' : 'bg-slate-50 text-slate-600 border-slate-200/60 hover:bg-slate-100'}`}
                     disabled={!selectedRec}
                   >
                     <option value="Positive">Positive</option>
@@ -561,7 +561,7 @@ export default function LeadInsights({ user }: { user: any }) {
         </div>
 
         {/* Intelligence Timeline */}
-        <div className="glass-card !p-2 !rounded-3xl border-slate-200 flex flex-nowrap items-center gap-3 overflow-x-auto shadow-xl shadow-slate-200/20 hide-scrollbar scroll-smooth">
+        <div className="glass-card !p-2 !rounded-3xl border-slate-200/60 flex flex-nowrap items-center gap-3 overflow-x-auto shadow-xl shadow-slate-200/20 hide-scrollbar scroll-smooth">
           <div className="pl-6 pr-8 shrink-0 hidden sm:flex items-center gap-3 border-r border-slate-100 py-3">
             <Calendar size={18} className="text-slate-400" />
             <span className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">Recordings</span>
@@ -575,7 +575,7 @@ export default function LeadInsights({ user }: { user: any }) {
                   <button
                     key={rec.id}
                     onClick={() => setSelectedRecId(rec.id)}
-                    className={`shrink-0 px-5 sm:px-6 py-2.5 sm:py-3 rounded-[1.2rem] text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all shadow-sm border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-400/20' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'}`}
+                    className={`shrink-0 px-5 sm:px-6 py-2.5 sm:py-3 rounded-[1.2rem] text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all shadow-sm border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-slate-900 text-white border-transparent shadow-xl shadow-slate-400/20' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200/60'}`}
                   >
                     {dateStr}
                   </button>
@@ -589,10 +589,10 @@ export default function LeadInsights({ user }: { user: any }) {
 
         {/* Action Controls */}
         {selectedRec && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-end gap-4">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-end gap-4">
             <button
               onClick={handleExportPDF}
-              className="px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-200/50 border border-slate-200 transition-all flex items-center gap-2 active:scale-95"
+              className="px-6 py-3 rounded-2xl bg-white text-slate-600 hover:text-slate-900 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-200/50 border border-slate-200/60 transition-all flex items-center gap-2 active:scale-95"
             >
               <Download size={14} /> Export Summary
             </button>
@@ -628,9 +628,9 @@ export default function LeadInsights({ user }: { user: any }) {
             const Icon = col.icon;
             const dataArr = insights[col.id] || [];
             return (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={col.id} className="glass-card !rounded-[2.5rem] border-slate-200 overflow-hidden group/card hover:border-indigo-300 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/5">
-                <div className="p-8 space-y-8">
-                  <div className="flex justify-between items-center">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={col.id} className="glass-card !rounded-[2.5rem] border-slate-200/60 overflow-hidden group/card hover:border-indigo-200/60 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/5 flex flex-col h-[420px]">
+                <div className="p-8 flex flex-col h-full">
+                  <div className="flex justify-between items-center mb-8 shrink-0">
                     <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
                       <div className={`p-2 rounded-xl ${col.bg} ${col.color} border ${col.border}`}><Icon size={16} /></div> {col.title}
                     </h3>
@@ -642,14 +642,14 @@ export default function LeadInsights({ user }: { user: any }) {
                     </button>
                   </div>
 
-                  <ul className="space-y-4">
+                  <ul className="space-y-4 flex-1 overflow-y-auto scrollbar-hide pr-2">
                     {dataArr.map((item: string, i: number) => {
                       const isEditingThis = editingItem?.field === col.id && editingItem?.index === i;
                       return isEditingThis ? (
                         <div key={i} className="space-y-3">
                           <textarea
                             autoFocus
-                            className="w-full text-xs font-bold bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/5 resize-none min-h-[100px] text-slate-700 shadow-inner"
+                            className="w-full text-xs font-bold bg-slate-50/50 border border-slate-200/60 rounded-2xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/5 resize-none min-h-[100px] text-slate-700 shadow-inner"
                             value={editingItem.value}
                             onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
                           />
@@ -659,7 +659,7 @@ export default function LeadInsights({ user }: { user: any }) {
                           </div>
                         </div>
                       ) : (
-                        <li key={i} className="group/item relative pl-4 leading-relaxed bg-slate-50/50 hover:bg-white p-4 rounded-[1.5rem] border border-transparent hover:border-slate-200 transition-all shadow-sm flex items-start gap-3">
+                        <li key={i} className="group/item relative pl-4 leading-relaxed bg-slate-50/50 hover:bg-white p-4 rounded-[1.5rem] border border-transparent hover:border-slate-200/60 transition-all shadow-sm flex items-start gap-3">
                           <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')}`}></div>
                           <span className="text-xs font-semibold text-slate-600 pr-10">{item}</span>
                           <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
@@ -686,7 +686,7 @@ export default function LeadInsights({ user }: { user: any }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             {/* Executive Summary Card */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl text-white relative overflow-hidden group/summary border border-slate-800">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl text-white relative overflow-hidden group/summary border border-slate-700/50">
               <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
 
               <div className="relative z-10 space-y-10">
@@ -731,7 +731,7 @@ export default function LeadInsights({ user }: { user: any }) {
             </motion.div>
 
             {/* Pipeline Stage Visualizer */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass-card !rounded-[2.5rem] border-slate-200 p-12 shadow-2xl shadow-slate-200/20 flex flex-col justify-center relative overflow-hidden group/stage">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass-card !rounded-[2.5rem] border-slate-200/60 p-12 shadow-2xl shadow-slate-200/20 flex flex-col justify-center relative overflow-hidden group/stage">
               <div className="absolute -top-10 -right-10 w-48 h-48 bg-indigo-50 rounded-full blur-[80px] -z-0 group-hover:bg-indigo-100 transition-colors duration-700"></div>
 
               <div className="relative z-10 space-y-10">
@@ -792,7 +792,7 @@ export default function LeadInsights({ user }: { user: any }) {
                 return (
                   <motion.div key={m.id}
                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
-                    className={`glass-card !p-6 border-slate-200 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/5 group/meet ${isPast ? 'opacity-60 bg-slate-50/50' : 'hover:border-indigo-200'}`}
+                    className={`glass-card !p-6 border-slate-200/60 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/5 group/meet ${isPast ? 'opacity-60 bg-slate-50/50' : 'hover:border-indigo-200/60'}`}
                   >
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${isPast ? 'bg-white border-slate-200 text-slate-300' : 'bg-indigo-50 border-indigo-100 text-indigo-600 shadow-sm'}`}>
@@ -820,7 +820,7 @@ export default function LeadInsights({ user }: { user: any }) {
               })}
             </div>
           ) : (
-            <div className="glass-card !py-20 text-center border-slate-200 border-2 border-dashed shadow-inner flex flex-col items-center gap-4">
+            <div className="glass-card !py-20 text-center border-slate-200/60 border border-dashed shadow-inner flex flex-col items-center gap-4">
               <div className="p-4 bg-slate-50 rounded-full text-slate-200">
                 <CalendarDays size={40} />
               </div>
@@ -833,7 +833,7 @@ export default function LeadInsights({ user }: { user: any }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Actionable Path */}
-          <div className="glass-card !rounded-[2.5rem] border-slate-200 p-8 shadow-xl shadow-slate-200/20 flex flex-col group/card relative">
+          <div className="glass-card !rounded-[2.5rem] border-slate-200/60 p-8 shadow-xl shadow-slate-200/20 flex flex-col group/card relative">
             <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6">
               <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
                 <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm"><CheckSquare size={18} /></div> Actionable Path
@@ -850,7 +850,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
             <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-2 scrollbar-hide">
               {insights.tasks.length === 0 && (
-                <div className="text-center p-12 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-4">
+                <div className="text-center p-12 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200/60 flex flex-col items-center gap-4">
                   <div className="p-3 bg-white rounded-full text-slate-200"><CheckSquare size={24} /></div>
                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">No strategic tasks defined.</p>
                 </div>
@@ -859,10 +859,10 @@ export default function LeadInsights({ user }: { user: any }) {
               {insights.tasks.map((task: any, idx: number) => {
                 const isEditingTask = editingItem?.field === 'tasks' && editingItem?.index === idx;
                 return (
-                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className={`p-4 rounded-2xl border transition-all flex items-start gap-4 group/task ${task.completed ? 'bg-slate-50/50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5'}`}>
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className={`p-4 rounded-2xl border transition-all flex items-start gap-4 group/task ${task.completed ? 'bg-slate-50/50 border-slate-200/40 opacity-60' : 'bg-white border-slate-200/60 hover:border-indigo-200/60 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5'}`}>
                     <button
                       onClick={() => handleTaskToggle(idx)}
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border-2 transition-all ${task.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 hover:border-indigo-300'}`}
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border transition-all ${task.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 hover:border-indigo-300'}`}
                     >
                       {task.completed && <Check size={12} strokeWidth={4} />}
                     </button>
@@ -874,7 +874,7 @@ export default function LeadInsights({ user }: { user: any }) {
                             const parsed = JSON.parse(editingItem.value || "{}");
                             parsed.title = e.target.value;
                             setEditingItem({ ...editingItem, value: JSON.stringify(parsed) });
-                          }} className="w-full text-xs font-bold bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/5" />
+                          }} className="w-full text-xs font-bold bg-slate-50/50 border border-slate-200/60 p-3 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/5" />
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all tracking-widest">Abort</button>
                             <button onClick={async () => {
@@ -907,7 +907,7 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
 
           {/* Minutes of Meeting */}
-          <div className="glass-card !rounded-[2.5rem] border-slate-200 p-8 shadow-xl shadow-slate-200/20 flex flex-col group/card relative">
+          <div className="glass-card !rounded-[2.5rem] border-slate-200/60 p-8 shadow-xl shadow-slate-200/20 flex flex-col group/card relative">
             <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6">
               <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
                 <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm"><AlignLeft size={18} /></div> Session Minutes
@@ -929,12 +929,12 @@ export default function LeadInsights({ user }: { user: any }) {
               {(Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : []).map((point: string, idx: number) => {
                 const isEditingThis = editingItem?.field === 'meetingMinutes' && editingItem?.index === idx;
                 return (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className="group/item relative bg-slate-50/50 hover:bg-white p-6 rounded-2xl border border-transparent hover:border-slate-200 transition-all shadow-sm hover:shadow-lg hover:shadow-slate-500/5">
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className="group/item relative bg-slate-50/50 hover:bg-white p-6 rounded-2xl border border-transparent hover:border-slate-200/60 transition-all shadow-sm hover:shadow-lg hover:shadow-slate-500/5">
                     {isEditingThis ? (
                       <div className="space-y-3">
                         <textarea
                           autoFocus
-                          className="w-full text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/5 resize-none min-h-[100px] text-slate-700 shadow-inner"
+                          className="w-full text-xs font-bold bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/5 resize-none min-h-[100px] text-slate-700 shadow-inner"
                           value={editingItem.value}
                           onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
                         />
@@ -960,7 +960,7 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
 
           {/* Transcript Core */}
-          <div className="glass-card !rounded-[2.5rem] border-slate-200 p-8 shadow-xl shadow-slate-200/20 flex flex-col relative overflow-hidden group/transcript">
+          <div className="glass-card !rounded-[2.5rem] border-slate-200/60 p-8 shadow-xl shadow-slate-200/20 flex flex-col relative overflow-hidden group/transcript">
             <div className="absolute top-10 right-10 text-9xl text-slate-100 font-serif leading-none italic pointer-events-none select-none z-0 rotate-12 -mr-8 -mt-8 opacity-50">"</div>
             <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-6 relative z-10">
               <h3 className="font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest">
@@ -1004,7 +1004,7 @@ export default function LeadInsights({ user }: { user: any }) {
         </div>
 
         {/* Lead Identity Footer Card */}
-        <div className="bg-slate-900 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl border border-slate-800">
+        <div className="bg-slate-900 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl border border-slate-700/50">
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
 
           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 text-center md:text-left">
@@ -1053,8 +1053,8 @@ export default function LeadInsights({ user }: { user: any }) {
                   {expandedSection === 'tasks' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {insights.tasks.map((task: any, idx: number) => (
-                        <div key={idx} className={`p-8 rounded-[2rem] border-2 transition-all flex items-start gap-6 ${task.completed ? 'bg-slate-50/50 border-slate-100 opacity-60' : 'bg-white border-slate-100 shadow-xl shadow-slate-200/20'}`}>
-                          <button onClick={() => handleTaskToggle(idx)} className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 border-2 transition-all ${task.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200'}`}>
+                        <div key={idx} className={`p-8 rounded-[2rem] border transition-all flex items-start gap-6 ${task.completed ? 'bg-slate-50/50 border-slate-200/40 opacity-60' : 'bg-white border-slate-200/60 shadow-xl shadow-slate-200/20'}`}>
+                          <button onClick={() => handleTaskToggle(idx)} className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 border transition-all ${task.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
                             {task.completed && <Check size={16} strokeWidth={4} />}
                           </button>
                           <div className="space-y-3">

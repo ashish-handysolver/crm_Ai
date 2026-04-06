@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -24,7 +24,7 @@ const DUMMY_LEADS = [
 
 const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
 
-export default function Leads({ user }: { user: any }) {
+export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActiveOnlyRoute?: boolean }) {
   const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [recordingId, setRecordingId] = useState<string | null>(null);
@@ -41,7 +41,10 @@ export default function Leads({ user }: { user: any }) {
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
+  const [activityFilter, setActivityFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>(isActiveOnlyRoute ? 'ACTIVE' : 'ALL');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -52,6 +55,16 @@ export default function Leads({ user }: { user: any }) {
   const autoSubmitRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const SAFETY_CHECK_SECONDS = (Number((import.meta as any).env.VITE_SAFETY_CHECK_DURATION_MINS) || 5) * 60;
+
+  // Reset page on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, leadTypeFilter, activityFilter]);
+
+  // Keep filter in sync if route changes
+  useEffect(() => {
+    setActivityFilter(isActiveOnlyRoute ? 'ACTIVE' : 'ALL');
+  }, [isActiveOnlyRoute]);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -452,20 +465,41 @@ export default function Leads({ user }: { user: any }) {
 
     const matchesType = !leadTypeFilter || l.leadType === leadTypeFilter;
 
-    return matchesSearch && matchesType;
+    const hasActivity = recordings.some(r => r.leadId === l.id || r.meetingId === l.id);
+    const matchesActivity = activityFilter === 'ALL' || (activityFilter === 'ACTIVE' && hasActivity) || (activityFilter === 'INACTIVE' && !hasActivity);
+
+    return matchesSearch && matchesType && matchesActivity;
   });
 
-  const availableLeadTypes = Array.from(new Set([...DEFAULT_LEAD_TYPES, ...customLeadTypes, ...leads.map(l => l.leadType).filter(Boolean)]));
+  // Pagination logic
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+  const paginatedLeads = filteredLeads.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
+
+  const availableLeadTypes = Array.from(new Set([...DEFAULT_LEAD_TYPES, ...customLeadTypes]));
 
   const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
 
-  const isAllSelected = filteredLeads.length > 0 && selectedLeads.length === filteredLeads.length;
+  const isAllSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeads.includes(l.id));
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedLeads([]);
+      setSelectedLeads(prev => prev.filter(id => !paginatedLeads.find(l => l.id === id)));
     } else {
-      setSelectedLeads(filteredLeads.map(l => l.id));
+      const newIds = paginatedLeads.map(l => l.id).filter(id => !selectedLeads.includes(id));
+      setSelectedLeads(prev => [...prev, ...newIds]);
     }
   };
 
@@ -547,9 +581,9 @@ export default function Leads({ user }: { user: any }) {
                           )}
                           <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${lead.health === 'HOT' ? 'bg-rose-500' : lead.health === 'WARM' ? 'bg-amber-400' : 'bg-slate-400'}`} />
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-black text-slate-900 text-sm truncate">{lead.name}</div>
-                          <div className="text-xs font-bold text-slate-400 truncate">{lead.company}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-black text-slate-900 text-sm break-words leading-tight">{lead.name}</div>
+                          <div className="text-xs font-bold text-slate-400 break-words mt-0.5 leading-snug">{lead.company}</div>
                         </div>
                       </div>
 
@@ -558,7 +592,7 @@ export default function Leads({ user }: { user: any }) {
                           <div className="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black uppercase">
                             {lead.score || 0}% Match
                           </div>
-                          {lead.leadType && <span className="px-2.5 py-1 bg-slate-50 text-slate-500 border border-slate-100 rounded-lg text-[8px] font-black uppercase tracking-widest">{lead.leadType}</span>}
+                          {lead.leadType && <span className="px-2.5 py-1 bg-slate-50 text-slate-500 border border-slate-100 rounded-lg text-[8px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
                         </div>
 
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
@@ -591,12 +625,15 @@ export default function Leads({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">
               <Users size={14} /> Lead Management Protocol
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">All Leads</h1>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">{isActiveOnlyRoute ? 'Active Leads' : 'All Leads'}</h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
             {!isDemoMode ? (
               <>
+                <button onClick={() => setShowQrModal(true)} className="flex items-center gap-2 px-5 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                  <ScanQrCode size={18} /> <span className="hidden sm:inline">QR Capture</span>
+                </button>
                 <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
                   <UploadCloud size={18} /> <span className="hidden sm:inline">Import Excel</span>
                 </button>
@@ -616,6 +653,22 @@ export default function Leads({ user }: { user: any }) {
         <ImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} user={user} />
 
         <AnimatePresence>
+          {showQrModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
+              <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-200 text-center" onClick={e => e.stopPropagation()}>
+                <h2 className="text-2xl font-black mb-2 text-slate-900 tracking-tight">Lead Capture QR</h2>
+                <p className="text-sm text-slate-500 mb-6 font-medium">Prospects can scan this to automatically join your pipeline.</p>
+                <div className="bg-slate-50 p-4 rounded-[2rem] border border-slate-200 inline-block mb-6 shadow-inner">
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/capture/${companyId}`)}`} alt="QR Code" className="w-48 h-48 rounded-xl mix-blend-multiply" />
+                </div>
+                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/capture/${companyId}`); setSuccess("Capture link copied!"); setTimeout(() => setSuccess(''), 3000); }} className="w-full py-3.5 bg-slate-50 border border-slate-200 text-indigo-600 font-black text-xs uppercase tracking-widest rounded-xl mb-3 hover:bg-indigo-50 hover:border-indigo-200 transition-all active:scale-95 shadow-sm">Copy Direct Link</button>
+                <button onClick={() => setShowQrModal(false)} className="w-full py-3.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 active:scale-95">Close Window</button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {(error || success) && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-8 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm border ${error ? 'bg-red-50 text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>
               {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
@@ -633,7 +686,7 @@ export default function Leads({ user }: { user: any }) {
               placeholder="Filter leads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 sm:py-4 pl-14 pr-6 text-sm font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-inner"
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 sm:py-4 pl-14 pr-6 text-sm font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-inner"
             />
           </div>
 
@@ -645,18 +698,33 @@ export default function Leads({ user }: { user: any }) {
 
             <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden lg:block"></div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
                 <select
                   value={leadTypeFilter}
                   onChange={(e) => setLeadTypeFilter(e.target.value)}
-                  className="pl-5 pr-10 py-3 border border-slate-200 bg-white rounded-2xl text-xs font-bold text-slate-600 outline-none hover:bg-slate-50 transition-all appearance-none cursor-pointer shadow-sm min-w-[140px]"
+                  className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-slate-200 bg-white rounded-2xl text-[10px] sm:text-xs font-bold text-slate-600 outline-none hover:bg-slate-50 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px]"
                 >
                   <option value="">All Types</option>
                   {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
+
+              {!isActiveOnlyRoute && (
+                <div className="relative flex-1 sm:flex-none">
+                  <select
+                    value={activityFilter}
+                    onChange={(e) => setActivityFilter(e.target.value as any)}
+                    className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-slate-200 bg-white rounded-2xl text-[10px] sm:text-xs font-bold text-slate-600 outline-none hover:bg-slate-50 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px]"
+                  >
+                    <option value="ALL">All Activity</option>
+                    <option value="ACTIVE">Active (Connected)</option>
+                    <option value="INACTIVE">Inactive (No Recs)</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              )}
 
               <AnimatePresence>
                 {selectedLeads.length > 0 && (
@@ -681,11 +749,11 @@ export default function Leads({ user }: { user: any }) {
 
             {/* Mobile View (Cards) */}
             <div className="lg:hidden space-y-4">
-              {filteredLeads.map(lead => (
-                <div key={lead.id} className="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+              {paginatedLeads.map(lead => (
+                <div key={lead.id} className="bg-white rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-orange-400 to-orange-500"></div>
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-start justify-between mb-4 gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-2">
                       <input
                         type="checkbox"
                         checked={selectedLeads.includes(lead.id)}
@@ -693,28 +761,28 @@ export default function Leads({ user }: { user: any }) {
                         onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 rounded border-orange-300 text-orange-600 focus:ring-orange-600 cursor-pointer shrink-0"
                       />
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         {lead.avatar ? (
-                          <img src={lead.avatar} className="w-12 h-12 rounded-[1rem] object-cover ring-2 ring-slate-50" alt={lead.name} />
+                          <img src={lead.avatar} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] object-cover ring-2 ring-slate-50" alt={lead.name} />
                         ) : (
-                          <div className="w-12 h-12 rounded-[1rem] bg-slate-100 flex items-center justify-center text-slate-400 text-sm font-black ring-2 ring-slate-50">
-                            {lead.name.split(' ').map(n => n[0]).join('')}
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] bg-slate-100 flex items-center justify-center text-slate-400 text-xs sm:text-sm font-black ring-2 ring-slate-50">
+                            {lead.name.split(' ').map((n: string) => n[0]).join('')}
                           </div>
                         )}
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-orange-50 bg-emerald-400" />
                       </div>
-                      <div>
-                        <h3 className="font-extrabold text-base text-black">{lead.name}</h3>
-                        <div className="text-slate-500 text-xs font-semibold mt-0.5 flex items-center gap-2">
-                          <span className="truncate max-w-[140px]">{lead.company}</span>
-                          {lead.leadType && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-widest">{lead.leadType}</span>}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-extrabold text-sm sm:text-base text-black break-words leading-tight">{lead.name}</h3>
+                        <div className="text-slate-500 text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
+                          <span className="break-words">{lead.company}</span>
+                          {lead.leadType && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
                         </div>
                       </div>
                     </div>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${getPhaseColor(lead.phase)}`}>{lead.phase}</span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border shrink-0 mt-1 ${getPhaseColor(lead.phase)}`}>{lead.phase}</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5 p-3 sm:p-4 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-200">
                     <div>
                       <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5">Score</div>
                       <div className="font-extrabold text-orange-600">{lead.score || 0}%</div>
@@ -731,21 +799,21 @@ export default function Leads({ user }: { user: any }) {
                         <>
                           {recordingId === lead.id ? (
                             <div className="flex items-center gap-2">
-                              <div className="bg-black text-white px-3 py-2 rounded-xl flex items-center gap-2 font-mono text-xs">
+                              <div className="bg-black text-white px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs">
                                 <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-pulse'}`} />
                                 {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
                               </div>
-                              <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-3 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100">
+                              <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-2 sm:p-3 bg-amber-50 text-amber-600 rounded-lg sm:rounded-xl hover:bg-amber-100">
                                 {isPaused ? <Play size={16} /> : <Pause size={16} />}
                               </button>
-                              <button onClick={stopRecording} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100">
+                              <button onClick={stopRecording} className="p-2 sm:p-3 bg-red-50 text-red-600 rounded-lg sm:rounded-xl hover:bg-red-100">
                                 <Square size={16} />
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => startRecording(lead.id)}
-                              className="p-3 bg-slate-50 text-indigo-600 rounded-xl hover:bg-slate-100 transition-all flex items-center gap-2 font-bold text-xs border border-slate-200"
+                              className="p-2 sm:p-3 bg-slate-50 text-indigo-600 rounded-lg sm:rounded-xl hover:bg-slate-100 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-slate-200"
                               title="Start Session"
                               disabled={!!recordingId}
                             >
@@ -753,24 +821,24 @@ export default function Leads({ user }: { user: any }) {
                             </button>
                           )}
                           {shareUrls[lead.id] ? (
-                            <button onClick={() => handleShare(lead.id, shareUrls[lead.id])} className="p-3 text-emerald-600 bg-emerald-50 rounded-xl transition-all" title="Share Link">
-                              <Share2 size={18} />
+                            <button onClick={() => handleShare(lead.id, shareUrls[lead.id])} className="p-2 sm:p-3 text-emerald-600 bg-emerald-50 rounded-lg sm:rounded-xl transition-all" title="Share Link">
+                              <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                             </button>
                           ) : (
-                            <button onClick={() => createMeeting(lead.id, lead.name)} disabled={isCreatingMeeting} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all disabled:opacity-50 border border-transparent" title="Create Guest Link">
-                              {isCreatingMeeting ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+                            <button onClick={() => createMeeting(lead.id, lead.name)} disabled={isCreatingMeeting} className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent" title="Create Guest Link">
+                              {isCreatingMeeting ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button>
                           )}
-                          <Link to={`/clients/${lead.id}/edit`} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all border border-transparent">
-                            <Edit2 size={18} />
+                          <Link to={`/clients/${lead.id}/edit`} className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg sm:rounded-xl transition-all border border-transparent">
+                            <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                           </Link>
                           {(role === 'admin' || role === 'super_admin') && (
                             <button
                               onClick={() => handleDeleteLead(lead.id)}
-                              className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-transparent"
+                              className="p-2 sm:p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg sm:rounded-xl transition-all border border-transparent"
                               title="Delete Lead"
                             >
-                              <Trash2 size={18} />
+                              <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                             </button>
                           )}
                         </>
@@ -779,7 +847,7 @@ export default function Leads({ user }: { user: any }) {
                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-lg">Readonly</div>
                       )}
                     </div>
-                    <Link to={`/analytics/${lead.id}`} className="flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 px-4 py-2.5 rounded-xl transition-colors">
+                    <Link to={`/analytics/${lead.id}`} className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-colors">
                       View Details <ArrowUpRight size={14} />
                     </Link>
                   </div>
@@ -816,7 +884,7 @@ export default function Leads({ user }: { user: any }) {
                           <Loader2 size={32} className="animate-spin text-orange-500 mx-auto" />
                         </td>
                       </tr>
-                    ) : filteredLeads.map((lead) => {
+                    ) : paginatedLeads.map((lead) => {
                       const leadRecs = recordings.filter(r => r.meetingId === lead.id || r.leadId === lead.id);
                       const isExp = expandedLeadId === lead.id;
 
@@ -832,7 +900,7 @@ export default function Leads({ user }: { user: any }) {
                                 className="w-4 h-4 rounded border-orange-300 text-orange-600 focus:ring-orange-600 cursor-pointer"
                               />
                             </td>
-                            <td className="py-5 px-8 whitespace-nowrap">
+                            <td className="py-5 px-8 min-w-[250px] whitespace-normal">
                               <div className="flex items-center gap-4">
                                 <div className="relative shrink-0">
                                   {lead.avatar ? (
@@ -844,15 +912,15 @@ export default function Leads({ user }: { user: any }) {
                                   )}
                                   <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-orange-50 bg-emerald-400" />
                                 </div>
-                                <div>
-                                  <div className="font-extrabold text-black text-base">{lead.name}</div>
-                                  <div className="text-slate-500 font-medium text-xs mt-0.5">{lead.email}</div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-extrabold text-black text-base break-words leading-tight">{lead.name}</div>
+                                  <div className="text-slate-500 font-medium text-xs mt-1 break-all">{lead.email}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-5 px-6 whitespace-nowrap">
-                              <div className="font-extrabold text-slate-700">{lead.company}</div>
-                              <div className="text-slate-400 font-semibold text-xs mt-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-300" />{lead.location}</div>
+                            <td className="py-5 px-6 min-w-[200px] whitespace-normal">
+                              <div className="font-extrabold text-slate-700 break-words leading-tight">{lead.company}</div>
+                              <div className="text-slate-400 font-semibold text-xs mt-1 flex items-start gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1 shrink-0" /><span className="break-words">{lead.location}</span></div>
                             </td>
                             <td className="py-5 px-6 whitespace-nowrap">
                               {lead.leadType ? <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-slate-50 text-slate-600 border-slate-200">{lead.leadType}</span> : <span className="text-slate-300 text-xs font-bold">-</span>}
@@ -986,14 +1054,25 @@ export default function Leads({ user }: { user: any }) {
                 </table>
               </div>
               <div className="p-5 border-t border-slate-200 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between text-sm text-slate-500 gap-4">
-                <div className="font-medium">Showing <span className="font-extrabold text-black">{filteredLeads.length}</span> active leads</div>
-                <div className="flex items-center gap-1.5">
-                  <button className="p-2 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-orange-50 shadow-sm transition-all"><ChevronLeft size={16} /></button>
-                  <button className="px-4 py-2 font-black shadow-md bg-indigo-600 text-white rounded-xl text-xs transition-all">1</button>
-                  <button className="px-4 py-2 font-bold text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl text-xs transition-all">2</button>
-                  <button className="px-4 py-2 font-bold text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl text-xs transition-all">3</button>
-                  <button className="p-2 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-white shadow-sm transition-all"><ChevronRight size={16} /></button>
-                </div>
+                <div className="font-medium">Showing <span className="font-extrabold text-black">{paginatedLeads.length}</span> of <span className="font-extrabold text-black">{filteredLeads.length}</span> results</div>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-orange-50 shadow-sm transition-all disabled:opacity-50">
+                      <ChevronLeft size={16} />
+                    </button>
+                    {getPageNumbers().map(pageNum => (
+                      <button
+                        key={pageNum} onClick={() => setCurrentPage(pageNum)}
+                        className={`px-4 py-2 font-bold shadow-sm border rounded-xl text-xs transition-all ${currentPage === pageNum ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'text-slate-600 bg-white border-transparent hover:border-slate-200'}`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-white shadow-sm transition-all disabled:opacity-50">
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </>

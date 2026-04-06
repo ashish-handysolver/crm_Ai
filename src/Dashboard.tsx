@@ -71,7 +71,7 @@ export default function Dashboard({ user }: { user: any }) {
   const getPhaseCount = (phase: string) => leads.filter(l => l.phase?.toUpperCase() === phase.toUpperCase()).length;
 
   const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
-  const availablePhases = Array.from(new Set([...DEFAULT_PHASES, ...customPhases, ...leads.map(l => l.phase).filter(Boolean)]));
+  const availablePhases = Array.from(new Set([...DEFAULT_PHASES, ...customPhases]));
   const pipelineData = availablePhases.map(phase => ({
     name: phase,
     value: getPhaseCount(phase)
@@ -114,7 +114,7 @@ export default function Dashboard({ user }: { user: any }) {
             </h1>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {/* <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
             <div className="relative group flex-1 sm:flex-none">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
               <input
@@ -123,7 +123,7 @@ export default function Dashboard({ user }: { user: any }) {
                 className="pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-2xl w-full sm:w-64 focus:sm:w-80 transition-all outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm text-sm font-medium"
               />
             </div>
-          </motion.div>
+          </motion.div> */}
         </header>
 
         {/* Navigation Tabs */}
@@ -428,4 +428,3 @@ export default function Dashboard({ user }: { user: any }) {
     </div>
   );
 }
-

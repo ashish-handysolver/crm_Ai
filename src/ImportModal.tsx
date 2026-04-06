@@ -6,6 +6,7 @@ import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
+import Papa from 'papaparse';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -70,26 +71,45 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
 
     try {
       const text = await uploadedFile.text();
-      const rows = text.split('\n').filter(row => row.trim().length > 0).map(r => r.split(','));
-      if (rows.length < 2) {
-        throw new Error('CSV file must have at least a header row and one data row.');
-      }
+      
+      Papa.parse(text, {
+        header: false,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const rows = results.data as string[][];
+          if (rows.length < 2) {
+            throw new Error('CSV file must have at least a header row and one data row.');
+          }
 
-      const headers = rows[0].map(h => h.trim());
-      setCsvHeaders(headers);
-      setCsvRows(rows.slice(1));
+          const headers = rows[0].map(h => h.trim());
+          const headerLength = headers.length;
+          const dataRows = rows.slice(1).map(row => {
+            // Pad row to match header length with empty strings
+            while (row.length < headerLength) {
+              row.push('');
+            }
+            return row;
+          });
+          
+          setCsvHeaders(headers);
+          setCsvRows(dataRows);
 
-      // Auto-map where possible
-      const newMappings: Record<string, number> = {};
-      dynamicSystemFields.forEach(sysField => {
-        const matchIdx = headers.findIndex(h => h.toLowerCase() === sysField.id.toLowerCase() || h.toLowerCase().includes(sysField.id.toLowerCase()));
-        if (matchIdx !== -1) {
-          newMappings[sysField.id] = matchIdx;
+          // Auto-map where possible
+          const newMappings: Record<string, number> = {};
+          dynamicSystemFields.forEach(sysField => {
+            const matchIdx = headers.findIndex(h => h.toLowerCase() === sysField.id.toLowerCase() || h.toLowerCase().includes(sysField.id.toLowerCase()));
+            if (matchIdx !== -1) {
+              newMappings[sysField.id] = matchIdx;
+            }
+          });
+          setMappings(newMappings);
+
+          setStep(2);
+        },
+        error: (error) => {
+          throw new Error('Failed to parse CSV file: ' + error.message);
         }
       });
-      setMappings(newMappings);
-
-      setStep(2);
     } catch (err: any) {
       setError(err.message || 'Failed to parse CSV file.');
       setFile(null);

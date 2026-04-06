@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, Timestamp, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, Timestamp, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from './firebase';
 import { Loader2, Settings, Plus, Trash2, Save, AlertCircle, CheckCircle2, Tag, GitBranch, Sparkles, Wand2, Info, ChevronRight, X, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -82,6 +82,25 @@ export default function CustomFields({ user }: { user: any }) {
   const removeField = async (id: string) => {
     if (!window.confirm("Abort this field definition from the matrix?")) return;
     try {
+      if (companyId) {
+        const fieldDocRef = doc(db, 'custom_fields', id);
+        const fieldDocSnap = await getDoc(fieldDocRef);
+
+        if (fieldDocSnap.exists()) {
+          const actualFieldName = fieldDocSnap.data().name;
+          if (actualFieldName) {
+            const leadsSnap = await getDocs(query(collection(db, 'leads'), where('companyId', '==', companyId)));
+            const updatePromises = leadsSnap.docs.map(leadDoc => {
+              const data = leadDoc.data();
+              if (data[actualFieldName] !== undefined) {
+                return updateDoc(leadDoc.ref, { [actualFieldName]: deleteField() });
+              }
+              return Promise.resolve();
+            });
+            await Promise.all(updatePromises);
+          }
+        }
+      }
       await deleteDoc(doc(db, 'custom_fields', id));
       setFields(prev => prev.filter(f => f.id !== id));
     } catch (err: any) {
@@ -124,6 +143,42 @@ export default function CustomFields({ user }: { user: any }) {
 
       const compRef = doc(db, 'companies', companyId);
       await setDoc(compRef, { customSources, customPhases, customLeadTypes }, { merge: true });
+
+      // Clean up orphaned data in leads table
+      const leadsSnap = await getDocs(query(collection(db, 'leads'), where('companyId', '==', companyId)));
+      const allSources = [...DEFAULT_SOURCES, ...customSources];
+      const allPhases = [...DEFAULT_PHASES, ...customPhases];
+      const allLeadTypes = [...DEFAULT_LEAD_TYPES, ...customLeadTypes];
+
+      const updatePromises = leadsSnap.docs.map(leadDoc => {
+        const data = leadDoc.data();
+        let needsUpdate = false;
+        const updates: any = {};
+
+        if (data.source && !allSources.includes(data.source)) {
+          updates.source = 'DIRECT';
+          needsUpdate = true;
+        }
+        if (data.phase && !allPhases.includes(data.phase)) {
+          updates.phase = 'DISCOVERY';
+          needsUpdate = true;
+        }
+        if (data.leadType && !allLeadTypes.includes(data.leadType)) {
+          updates.leadType = 'B2B';
+          needsUpdate = true;
+        }
+
+        fields.forEach(f => {
+          if (f.type === 'DROPDOWN' && data[f.name] && !f.options.includes(data[f.name])) {
+            updates[f.name] = deleteField();
+            needsUpdate = true;
+          }
+        });
+
+        if (needsUpdate) return updateDoc(leadDoc.ref, updates);
+        return Promise.resolve();
+      });
+      await Promise.all(updatePromises);
 
       setSuccess('Logic Synthesis Complete: All configurations committed to the core.');
       setTimeout(() => setSuccess(''), 5000);
