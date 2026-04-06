@@ -53,7 +53,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] lg:hidden"
         />
       )}
     </AnimatePresence>
@@ -63,7 +63,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {mobileOverlay}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-[100dvh] w-[280px] bg-slate-950 border-r border-white/5 shadow-2xl lg:shadow-none flex flex-col z-50 transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed lg:sticky top-0 left-0 h-[100dvh] w-[280px] bg-slate-950 border-r border-white/5 shadow-2xl lg:shadow-none flex flex-col z-[100] transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {/* Glow Effects */}
         <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none"></div>
