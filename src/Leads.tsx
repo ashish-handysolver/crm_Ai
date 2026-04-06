@@ -667,7 +667,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         <AnimatePresence>
           {showQrModal && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
-              <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-200 text-center" onClick={e => e.stopPropagation()}>
+              <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-200 text-center relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-500"></div>
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg"><Sparkles size={16} className="text-white" /></div>
+                  <span className="text-lg font-black tracking-tight text-slate-900">Handysolver<span className="text-indigo-600">.AI</span></span>
+                </div>
                 <h2 className="text-2xl font-black mb-2 text-slate-900 tracking-tight">Lead Capture QR</h2>
                 <p className="text-sm text-slate-500 mb-6 font-medium">Prospects can scan this to automatically join your pipeline.</p>
                 <div className="bg-slate-50 p-4 rounded-[2rem] border border-slate-200 inline-block mb-6 shadow-inner">

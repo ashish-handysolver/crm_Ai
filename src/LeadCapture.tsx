@@ -28,10 +28,7 @@ export default function LeadCapture() {
                 id: leadId,
                 companyId,
                 ...formData,
-                source: 'DIRECT',
-                leadType: 'B2B',
-                health: 'WARM',
-                score: 50,
+                score: 0,
                 phase: 'DISCOVERY',
                 createdAt: Timestamp.now(),
                 updatedAt: Timestamp.now()
@@ -39,7 +36,11 @@ export default function LeadCapture() {
             setSubmitted(true);
         } catch (err: any) {
             console.error("Error creating lead:", err);
-            setError("Failed to submit your details. Please try again.");
+            if (err?.code === 'permission-denied') {
+                setError("Database configuration error: Missing permissions to write. Please update your Firebase Security Rules to allow public creation.");
+            } else {
+                setError("Failed to submit your details. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
