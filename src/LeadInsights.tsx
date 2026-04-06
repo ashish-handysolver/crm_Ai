@@ -663,7 +663,7 @@ export default function LeadInsights({ user }: { user: any }) {
                           />
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setEditingItem(null)} className="px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all tracking-widest">Cancel</button>
-                            <button onClick={handleArraySave} className="px-5 py-2 text-[10px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest flex items-center gap-2"><Check size={12} /> Commit</button>
+                            <button onClick={handleArraySave} className="px-5 py-2 text-[10px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest flex items-center gap-2"><Check size={12} /> Save</button>
                           </div>
                         </div>
                       ) : (
@@ -727,7 +727,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     />
                     <div className="flex justify-end gap-3">
                       <button onClick={() => setEditingOverview(null)} className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all tracking-widest">Abort</button>
-                      <button onClick={handleOverviewSave} className="px-8 py-3 text-[10px] font-black uppercase bg-indigo-500 hover:bg-indigo-400 text-white flex items-center gap-2 rounded-xl shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all tracking-widest"><Check size={14} /> Commit Changes</button>
+                      <button onClick={handleOverviewSave} className="px-8 py-3 text-[10px] font-black uppercase bg-indigo-500 hover:bg-indigo-400 text-white flex items-center gap-2 rounded-xl shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all tracking-widest"><Check size={14} /> Save Changes</button>
                     </div>
                   </div>
                 ) : (
@@ -891,7 +891,7 @@ export default function LeadInsights({ user }: { user: any }) {
                               newArr[idx] = parsed;
                               await saveInsights({ ...insights, tasks: newArr });
                               setEditingItem(null);
-                            }} className="px-5 py-1.5 text-[9px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest">Commit</button>
+                            }} className="px-5 py-1.5 text-[9px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest">Save</button>
                           </div>
                         </div>
                       ) : (
@@ -948,7 +948,7 @@ export default function LeadInsights({ user }: { user: any }) {
                         />
                         <div className="flex justify-end gap-2">
                           <button onClick={() => setEditingItem(null)} className="px-3 py-1.5 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 transition-all tracking-widest">Abort</button>
-                          <button onClick={handleArraySave} className="px-5 py-1.5 text-[9px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest">Commit</button>
+                          <button onClick={handleArraySave} className="px-5 py-1.5 text-[9px] font-black uppercase bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all tracking-widest">Save</button>
                         </div>
                       </div>
                     ) : (
