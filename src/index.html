@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>handycrm.ai | Multi-Tenant AI Sales CRM</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 5s ease-in-out infinite',
+                        'slow-pulse': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shine': 'shine 8s linear infinite',
+                        'fade-up': 'fadeUp 0.7s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        shine: {
+                            '0%': { backgroundPosition: '200% 0' },
+                            '100%': { backgroundPosition: '-200% 0' },
+                        },
+                        fadeUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #030014;
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glass-modern {
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 2rem;
+        }
+
+        .text-gradient-flow {
+            background: linear-gradient(135deg, #a5b4fc, #c084fc, #f0abfc, #a5b4fc);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 6s linear infinite;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .noise-bg::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1), transform 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .reveal-on-scroll.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-6px) scale(1.01);
+            border-color: rgba(129, 140, 248, 0.5);
+            box-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(115deg, rgba(255, 255, 255, 0) 10%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 90%);
+            transform: rotate(25deg);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+
+        .btn-shine:hover::after {
+            opacity: 1;
+            transform: rotate(25deg) translate(10%, 10%);
+        }
+
+        .keyword-highlight {
+            color: #a5b4fc;
+            font-weight: 600;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f0f1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+
+<body class="noise-bg antialiased">
+
+    <div class="fixed inset-0 pointer-events-none -z-5 overflow-hidden">
+        <div
+            class="absolute top-[-30%] left-[-10%] w-[80%] h-[80%] bg-indigo-600/15 rounded-full blur-[130px] animate-float">
+        </div>
+        <div class="absolute bottom-[-20%] right-[-15%] w-[70%] h-[70%] bg-fuchsia-600/10 rounded-full blur-[120px] animate-float"
+            style="animation-delay: -2s;"></div>
+    </div>
+
+    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-400 px-5 pt-5">
+        <div
+            class="max-w-6xl mx-auto glass-modern px-6 py-3 flex justify-between items-center shadow-2xl shadow-black/20 transition-all duration-400 border border-white/5">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
+                    <i data-lucide="building2" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-display font-bold tracking-tight text-white">handycrm<span
+                            class="text-indigo-400">.ai</span></span>
+                </div>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#multi-tenant" class="hover:text-white transition">Multi-Tenant</a>
+                <a href="#pricing" class="hover:text-white transition">Pricing</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+
+                <a href="https://handydashcrmai.vercel.app/register-company"
+                    class="px-5 py-2 rounded-xl bg-white/10 text-sm font-bold text-white border border-white/10 hover:bg-white/20 transition-all duration-300 shadow-lg shadow-indigo-500/10">
+                    Register
+                </a>
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-300 hover:text-white transition">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu"
+            class="fixed inset-x-0 top-[72px] mx-5 glass-modern p-6 flex flex-col gap-6 opacity-0 invisible -translate-y-4 transition-all duration-300 z-40 border border-white/10">
+            <a href="#features" class="mobile-link text-base font-bold text-slate-200">Features</a>
+            <a href="#multi-tenant" class="mobile-link text-base font-bold text-slate-200">Multi-Tenant</a>
+            <a href="#pricing" class="mobile-link text-base font-bold text-slate-200">Pricing</a>
+            <hr class="border-white/10">
+            <a href="https://handydashcrmai.vercel.app/register-company"
+                class="text-center py-3 rounded-xl bg-indigo-600 text-white font-bold">Register Now</a>
+        </div>
+    </nav>
+
+    <section class="relative pt-32 md:pt-44 pb-20 px-6 overflow-hidden">
+        <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+            <div class="text-center lg:text-left space-y-7">
+                <div
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider mx-auto lg:mx-0 backdrop-blur-sm">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
+                    Multi-tenant AI CRM · v3.0
+                </div>
+
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-display font-black tracking-tight leading-[1.1]">
+                    AI that <span
+                        class="text-white underline decoration-indigo-500/50 decoration-4 underline-offset-8">listens</span>,<br>
+                    <span class="text-gradient-flow">multi‑tenant</span> by design.
+                </h1>
+
+                <p class="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed mx-auto lg:mx-0">
+                    One platform for your entire <span class="text-slate-200 font-semibold italic">sales
+                        organization</span>.
+                    Company‑wide workspaces, <span class="text-slate-200 font-semibold">role‑based access</span>, and a
+                    powerful AI that <span class="keyword-highlight">transcribes</span>, <span
+                        class="keyword-highlight">analyzes</span>,
+                    and <span class="keyword-highlight">automates</span> every customer interaction.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
+                    <a href="https://handydashcrmai.vercel.app/register-company"
+                        class="btn-shine px-8 py-4 rounded-xl bg-indigo-600 text-white text-sm font-bold uppercase tracking-wide shadow-xl hover:bg-indigo-500 transition-all duration-200 flex items-center gap-2 justify-center group">
+                        <i data-lucide="zap" class="w-4 h-4 group-hover:rotate-12 transition"></i>
+                        Start free company trial
+                    </a>
+
+                </div>
+            </div>
+
+            <div class="relative animate-float" style="animation-duration: 6s;">
+                <div class="absolute -inset-8 bg-indigo-500/20 blur-[80px] rounded-full"></div>
+                <div
+                    class="relative rounded-3xl border border-white/10 bg-slate-900/50 p-3 backdrop-blur-2xl shadow-2xl">
+                    <div
+                        class="aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col justify-center p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center"><i
+                                    data-lucide="users" class="w-4 h-4 text-indigo-300"></i></div>
+                            <span class="text-xs font-mono text-indigo-300">Acme Inc. · <span
+                                    class="text-white">Enterprise workspace</span></span>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-sm"><span>🎙️ Meeting: Q1 review</span><span
+                                    class="text-green-400 font-bold">AI processed</span></div>
+                            <div class="h-1 bg-white/10 rounded-full">
+                                <div class="w-3/4 h-full bg-indigo-500 rounded-full"></div>
+                            </div>
+                            <div class="flex text-xs text-slate-400 gap-4"><span>📝 Transcript ready</span><span>🧠
+                                    Summary + follow-ups</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="py-24 px-6 relative">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16 space-y-4 reveal-on-scroll">
+                <span class="text-indigo-400 text-xs uppercase tracking-[0.3em] font-bold">Intelligence layer</span>
+                <h2 class="text-4xl md:text-5xl font-display font-black text-white">Everything a <span
+                        class="text-indigo-400">sales team</span> needs</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">From AI‑powered <span class="text-slate-200">meeting
+                        analysis</span> to pipeline automation — built for scale.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div
+                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">
+                        <i data-lucide="mic" class="w-6 h-6"></i></div>
+                    <h3 class="text-2xl font-bold text-white mb-3">AI <span class="text-indigo-400">Meeting
+                            Analysis</span></h3>
+                    <p class="text-slate-400 leading-relaxed">
+                        <span class="text-slate-200 font-medium">Gemini AI</span> transcribes with timestamps, extracts
+                        action items, and generates smart summaries.
+                    </p>
+                </div>
+                <div
+                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">
+                        <i data-lucide="target" class="w-6 h-6"></i></div>
+                    <h3 class="text-2xl font-bold text-white mb-3"><span class="text-indigo-400">Neural</span> Lead Mgmt
+                    </h3>
+                    <p class="text-slate-400 leading-relaxed">
+                        Advanced <span class="text-slate-200 font-medium">lead scoring</span> and AI‑driven insights.
+                        Know which deals need attention first.
+                    </p>
+                </div>
+                <div
+                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">
+                        <i data-lucide="calendar" class="w-6 h-6"></i></div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Calendar <span class="text-indigo-400">Sync</span>
+                    </h3>
+                    <p class="text-slate-400 leading-relaxed">
+                        <span class="text-slate-200 font-medium">Real-time notifications</span> and browser alerts.
+                        Auto‑sync with your entire team’s schedule.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Multi-Tenant & Role Based Section (highlighted) -->
+    <section id="multi-tenant" class="py-24 px-6 bg-slate-950/40 relative">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16 reveal-on-scroll">
+                <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">multi-tenant
+                    architecture</span>
+                <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">One CRM, infinite teams</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto mt-4">Designed for SaaS companies, agencies, and enterprises
+                    that manage multiple clients or departments under one roof.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8 reveal-on-scroll">
+                    <div class="flex gap-5">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="building" class="w-6 h-6 text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Company workspaces</h3>
+                            <p class="text-slate-400">Register your entire company, invite team members, and manage
+                                everything from a unified dashboard. Each workspace is fully isolated.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-5">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="shield" class="w-6 h-6 text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Role‑based access</h3>
+                            <p class="text-slate-400">Admin, member, and guest roles. Guests can access specific meeting
+                                records via secure shareable links — perfect for external stakeholders.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-5">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="sparkles" class="w-6 h-6 text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Demo mode + SuperAdmin</h3>
+                            <p class="text-slate-400">Prospects can test the full experience without signing up. Global
+                                SuperAdmin console gives you full control over all tenants.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal-on-scroll relative">
+                    <div class="rounded-3xl bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 p-1">
+                        <div class="rounded-2xl bg-slate-900/80 p-6 backdrop-blur-md border border-white/10">
+                            <div class="flex items-center gap-2 mb-5"><i data-lucide="users"
+                                    class="w-5 h-5 text-indigo-300"></i><span
+                                    class="text-sm font-mono text-indigo-300">Active tenants: 3 workspaces</span></div>
+                            <div class="space-y-4">
+                                <div class="flex justify-between p-3 rounded-xl bg-white/5"><span>🏢 Acme Corp (Admin: 5
+                                        members)</span><span class="text-green-400">● Live</span></div>
+                                <div class="flex justify-between p-3 rounded-xl bg-white/5"><span>🏢 StellarTech (Admin:
+                                        12 members)</span><span class="text-green-400">● Live</span></div>
+                                <div class="flex justify-between p-3 rounded-xl bg-white/5"><span>🏢 Beta SaaS (Guest
+                                        access active)</span><span class="text-yellow-400">● Demo mode</span></div>
+                            </div>
+                            <div class="mt-5 text-xs font-mono text-slate-400 border-t border-white/10 pt-4">🔐 Role
+                                tags: Owner · Manager · Guest · Viewer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Additional Tech & Integration -->
+    <section class="py-20 px-6">
+        <div class="max-w-6xl mx-auto text-center reveal-on-scroll">
+            <div class="flex flex-wrap justify-center gap-8 items-center text-slate-500 text-sm font-mono">
+                <span class="flex items-center gap-2"><i data-lucide="database" class="w-4 h-4"></i> Firebase /
+                    Firestore</span>
+                <span class="flex items-center gap-2"><i data-lucide="brain" class="w-4 h-4"></i> Gemini AI 2.0
+                    Flash</span>
+                <span class="flex items-center gap-2"><i data-lucide="cloud" class="w-4 h-4"></i> Real‑time sync</span>
+                <span class="flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i> Bank‑grade
+                    encryption</span>
+                <span class="flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4"></i> Multi‑tenant
+                    isolation</span>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="pricing" class="py-28 px-6 relative">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16 reveal-on-scroll">
+                <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Simple, <span
+                        class="text-indigo-400">Scalable</span> Pricing</h2>
+                <p class="text-slate-400 mt-4">Start with a <span class="keyword-highlight">free 14‑day trial</span> —
+                    no credit card required.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 items-stretch">
+                <div
+                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.02] border border-white/10 backdrop-blur-sm flex flex-col hover-lift">
+                    <div><i data-lucide="flask" class="w-8 h-8 text-indigo-400 mb-6"></i></div>
+                    <h3 class="text-2xl font-black text-white">Trial</h3>
+                    <div class="mt-3 mb-6"><span class="text-4xl font-black">₹0</span><span
+                            class="text-slate-500 ml-2">/14 days</span></div>
+                    <ul class="space-y-3 flex-1 text-slate-300 text-sm">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> Up to 5 team
+                            members</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> 1 isolated
+                            workspace</li>
+                    </ul>
+                    <a href="https://handydashcrmai.vercel.app/register-company"
+                        class="mt-8 w-full py-3 rounded-xl border border-white/20 text-sm font-bold text-center hover:bg-white/10 transition">Start
+                        trial</a>
+                </div>
+
+                <div
+                    class="reveal-on-scroll p-8 rounded-3xl bg-indigo-600/5 border border-indigo-500/40 backdrop-blur-sm flex flex-col relative shadow-xl scale-105 z-10 hover-lift">
+                    <div
+                        class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-wider px-4 py-1 rounded-full">
+                        Most popular</div>
+                    <div><i data-lucide="building2" class="w-8 h-8 text-indigo-300 mb-6"></i></div>
+                    <h3 class="text-2xl font-black text-white">Business</h3>
+                    <div class="mt-3 mb-6"><span class="text-4xl font-black">₹79</span><span
+                            class="text-slate-400 ml-2">/mo</span></div>
+                    <ul class="space-y-3 flex-1 text-slate-200 text-sm">
+                        <li class="flex gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-indigo-400"></i> <span
+                                class="font-bold">Unlimited</span> members</li>
+                        <li class="flex gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-indigo-400"></i> <span
+                                class="font-bold">Unlimited</span> AI transcription</li>
+                    </ul>
+                    <a href="https://handydashcrmai.vercel.app/register-company"
+                        class="mt-8 w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-center hover:bg-indigo-500 transition shadow-lg">Get
+                        started</a>
+                </div>
+
+                <div
+                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.02] border border-white/10 backdrop-blur-sm flex flex-col hover-lift">
+                    <div><i data-lucide="globe" class="w-8 h-8 text-indigo-400 mb-6"></i></div>
+                    <h3 class="text-2xl font-black text-white">Enterprise</h3>
+                    <div class="mt-3 mb-6"><span class="text-4xl font-black">Custom</span></div>
+                    <ul class="space-y-3 flex-1 text-slate-300 text-sm">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> SSO +
+                            Compliance</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> Multi‑tenant
+                            isolation</li>
+                    </ul>
+                    <a href="https://handydashcrmai.vercel.app/register-company"
+                        class="mt-8 w-full py-3 rounded-xl border border-white/20 text-sm font-bold text-center hover:bg-white/10 transition">Contact
+                        sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-14 px-6 border-t border-white/5 mt-12">
+        <div
+            class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-slate-500">
+            <div class="flex items-center gap-3">
+                <i data-lucide="cpu" class="w-5 h-5 text-indigo-400"></i>
+                <span class="font-display font-bold text-white">handycrm.ai</span>
+                <span class="text-xs">© 2026</span>
+            </div>
+            <!-- <p class="text-[11px] font-mono">⚡ Multi‑tenant AI CRM · Built with <span class="text-slate-300">React + Firebase + Gemini</span></p> -->
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Mobile menu toggle
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            const isVisible = mobileMenu.classList.contains('visible');
+            if (isVisible) {
+                mobileMenu.classList.add('opacity-0', 'invisible', '-translate-y-4');
+                mobileMenu.classList.remove('opacity-100', 'visible', 'translate-y-0');
+            } else {
+                mobileMenu.classList.remove('opacity-0', 'invisible', '-translate-y-4');
+                mobileMenu.classList.add('opacity-100', 'visible', 'translate-y-0');
+            }
+        });
+
+        // Scroll reveal logic
+        const revealElements = document.querySelectorAll('.reveal-on-scroll');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, { threshold: 0.1 });
+        revealElements.forEach(el => observer.observe(el));
+
+        // Navbar shrink on scroll
+        const navDiv = document.querySelector('#navbar > div');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navDiv.classList.add('bg-slate-950/90', 'py-2');
+                navDiv.classList.remove('py-3');
+            } else {
+                navDiv.classList.remove('bg-slate-950/90', 'py-2');
+                navDiv.classList.add('py-3');
+            }
+        });
+    </script>
+</body>
+
+</html>
