@@ -519,8 +519,8 @@ export default function GuestRecord() {
                       onClick={isPaused ? resumeRecording : isRecording ? stopRecording : startRecording}
                       whileTap={{ scale: 0.93 }}
                       className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${isRecording
-                          ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
-                          : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
+                        ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
+                        : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
                         } ${isPaused ? 'opacity-70' : ''}`}
                     >
                       {isPaused
