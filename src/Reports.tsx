@@ -77,8 +77,23 @@ export default function Reports({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
+      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+        <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-10 animate-pulse">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="space-y-4 w-full">
+              <div className="w-48 h-6 bg-slate-200 rounded-full"></div>
+              <div className="w-64 sm:w-96 h-10 sm:h-12 bg-slate-200 rounded-xl"></div>
+              <div className="w-full max-w-2xl h-4 bg-slate-200 rounded"></div>
+            </div>
+          </div>
+
+          <div className="h-20 bg-slate-200/50 rounded-2xl w-full"></div>
+          <div className="space-y-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-48 sm:h-64 bg-slate-200/50 rounded-[2.5rem] w-full"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

@@ -280,8 +280,29 @@ export default function LeadInsights({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-slate-50/50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-10 animate-pulse">
+          <div className="flex flex-col gap-6 sm:gap-8">
+            <div className="w-32 h-8 bg-slate-200 rounded-lg"></div>
+            <div className="flex flex-col lg:flex-row justify-between gap-8 sm:gap-10">
+              <div className="space-y-4">
+                <div className="w-48 h-6 bg-slate-200 rounded-full"></div>
+                <div className="w-64 sm:w-96 h-12 sm:h-16 bg-slate-200 rounded-xl"></div>
+                <div className="w-full sm:w-80 h-6 bg-slate-200 rounded"></div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-32 sm:w-40 h-24 bg-slate-200 rounded-2xl"></div>
+                <div className="w-32 sm:w-40 h-24 bg-slate-200 rounded-2xl"></div>
+              </div>
+            </div>
+          </div>
+          <div className="h-16 bg-slate-200 rounded-[1.2rem] w-full"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-[420px] bg-slate-200/50 rounded-[2.5rem]"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -669,7 +690,7 @@ export default function LeadInsights({ user }: { user: any }) {
                       ) : (
                         <li key={i} className="group/item relative pl-4 leading-relaxed bg-slate-50/50 hover:bg-white p-4 rounded-[1.5rem] border border-transparent hover:border-slate-200/60 transition-all shadow-sm flex items-start gap-3">
                           <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')}`}></div>
-                          <span className="text-xs font-semibold text-slate-600 pr-10">{item}</span>
+                            <span className="text-xs font-semibold text-slate-600 pr-16">{item}</span>
                           <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                             <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit size={12} /></button>
                             <button onClick={() => handleArrayDelete(col.id, i)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>
@@ -755,11 +776,11 @@ export default function LeadInsights({ user }: { user: any }) {
                     />
                   </div>
 
-                  <div className="flex items-end justify-between">
-                    <h2 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 uppercase">
+                  <div className="flex items-end justify-between gap-4">
+                    <h2 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 uppercase truncate">
                       {lead.phase?.toLowerCase() || 'Deployment'}
                     </h2>
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end shrink-0">
                       <span className="text-2xl font-black text-indigo-600">{getPhaseProgress(lead.phase)}%</span>
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pipeline Score</span>
                     </div>
@@ -903,7 +924,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     </div>
 
                     {!isEditingTask && (
-                      <div className="flex sm:hidden group-hover/task:flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/task:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
+                      <div className="flex sm:hidden group-hover/task:flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/task:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0 shrink-0">
                         <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-all"><Edit size={14} /></button>
                         <button onClick={() => handleTaskDelete(idx)} className="p-1.5 text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
                       </div>
@@ -954,7 +975,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     ) : (
                       <div className="flex gap-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                        <span className="text-[13px] font-bold text-slate-900 leading-relaxed pr-10">{point}</span>
+                        <span className="text-[13px] font-bold text-slate-900 leading-relaxed pr-16">{point}</span>
                         <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                           <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Edit size={12} /></button>
                           <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 rounded-lg shadow-sm transition-all"><Trash2 size={12} /></button>

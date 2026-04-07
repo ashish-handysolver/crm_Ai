@@ -38,8 +38,19 @@ export default function Analytics({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
+      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+        <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-12 animate-pulse">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="w-48 h-6 bg-slate-200 rounded-full"></div>
+            <div className="w-64 sm:w-96 h-10 sm:h-12 bg-slate-200 rounded-xl"></div>
+            <div className="w-full max-w-2xl h-4 bg-slate-200 rounded"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-[400px] bg-slate-200/50 rounded-[2.5rem]"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

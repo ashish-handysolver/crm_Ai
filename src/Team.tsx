@@ -305,9 +305,24 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                 </div>
 
                 {loading ? (
-                  <div className="p-24 sm:p-32 flex flex-col items-center justify-center gap-6">
-                    <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Crawling Organizational Ledger...</span>
+                  <div className="w-full">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="p-6 border-b border-slate-100 flex items-center justify-between animate-pulse">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-slate-200 shrink-0"></div>
+                          <div className="space-y-2">
+                            <div className="w-32 h-4 bg-slate-200 rounded"></div>
+                            <div className="w-48 h-3 bg-slate-200 rounded"></div>
+                          </div>
+                        </div>
+                        <div className="hidden sm:block w-24 h-6 bg-slate-200 rounded-lg"></div>
+                        <div className="hidden lg:flex flex-col gap-2">
+                          <div className="w-20 h-4 bg-slate-200 rounded"></div>
+                          <div className="w-16 h-3 bg-slate-200 rounded"></div>
+                        </div>
+                        <div className="w-16 h-8 bg-slate-200 rounded-xl"></div>
+                      </div>
+                    ))}
                   </div>
                 ) : teamMembers.length === 0 ? (
                   <div className="p-24 sm:p-32 text-center flex flex-col items-center gap-6">
