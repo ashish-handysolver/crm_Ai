@@ -815,6 +815,21 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           </div>
         </div>
 
+<div className="flex flex-wrap gap-3 mb-6">
+  {['All', ...availablePhases].map((phase) => (
+    <button
+      key={phase}
+      onClick={() => setSelectedPhase(phase)}
+      className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+        selectedPhase === phase
+          ? 'bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-sm'
+          : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
+      }`}
+    >
+      {phase} <span className="ml-1 opacity-75">({phaseCounts[phase] || 0})</span>
+    </button>
+  ))}
+</div>
         {viewMode === 'kanban' ? <KanbanView /> : (
           <>
 
@@ -945,21 +960,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               ))}
             </div>
 
-<div className="flex flex-wrap gap-3 mb-6">
-  {['All', ...availablePhases].map((phase) => (
-    <button
-      key={phase}
-      onClick={() => setSelectedPhase(phase)}
-      className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
-        selectedPhase === phase
-          ? 'bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-sm'
-          : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
-      }`}
-    >
-      {phase} <span className="ml-1 opacity-75">({phaseCounts[phase] || 0})</span>
-    </button>
-  ))}
-</div>
 
             {/* Desktop View (Premium Table) */}
             <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
