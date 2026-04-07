@@ -56,11 +56,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const autoSubmitRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const SAFETY_CHECK_SECONDS = (Number((import.meta as any).env.VITE_SAFETY_CHECK_DURATION_MINS) || 5) * 60;
+  const [selectedPhase, setSelectedPhase] = useState('All');
 
   // Reset page on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, leadTypeFilter, activityFilter]);
+  }, [searchTerm, leadTypeFilter, activityFilter, selectedPhase]);
 
   // Keep filter in sync if route changes
   useEffect(() => {
@@ -496,6 +497,17 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     }
   };
 
+  const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
+  const availablePhases = Array.from(new Set([...PHASES, ...customPhases]));
+
+  const phaseCounts = leads.reduce((acc: Record<string, number>, lead) => {
+    const phase = lead.phase || 'DISCOVERY'; 
+    acc[phase] = (acc[phase] || 0) + 1;
+    return acc;
+  }, { All: leads.length });
+
+
+
   const filteredLeads = leads.filter(l => {
     const matchesSearch = !searchTerm || l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || l.company?.toLowerCase().includes(searchTerm.toLowerCase()) || l.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -504,7 +516,9 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     const hasActivity = recordings.some(r => r.leadId === l.id || r.meetingId === l.id);
     const matchesActivity = activityFilter === 'ALL' || (activityFilter === 'ACTIVE' && hasActivity) || (activityFilter === 'INACTIVE' && !hasActivity);
 
-    return matchesSearch && matchesType && matchesActivity;
+    const matchesPhase = selectedPhase === 'All' || (l.phase || 'DISCOVERY') === selectedPhase;
+
+    return matchesSearch && matchesType && matchesActivity && matchesPhase;
   });
 
   // Pagination logic
@@ -525,9 +539,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   };
 
   const availableLeadTypes = Array.from(new Set([...DEFAULT_LEAD_TYPES, ...customLeadTypes]));
-
-  const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
-  const availablePhases = Array.from(new Set([...PHASES, ...customPhases]));
 
   const isAllSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeads.includes(l.id));
 
@@ -933,6 +944,22 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                 </div>
               ))}
             </div>
+
+<div className="flex flex-wrap gap-3 mb-6">
+  {['All', ...availablePhases].map((phase) => (
+    <button
+      key={phase}
+      onClick={() => setSelectedPhase(phase)}
+      className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+        selectedPhase === phase
+          ? 'bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-sm'
+          : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
+      }`}
+    >
+      {phase} <span className="ml-1 opacity-75">({phaseCounts[phase] || 0})</span>
+    </button>
+  ))}
+</div>
 
             {/* Desktop View (Premium Table) */}
             <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">

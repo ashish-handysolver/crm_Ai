@@ -306,7 +306,7 @@ export default function CalendarPage({ user }: { user: any }) {
             {/* Month nav */}
             <div className="flex items-center justify-between px-10 py-8 border-b border-slate-100 relative z-10">
               <button onClick={prevMonth} className="p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronLeft size={20} className="text-slate-600" /></button>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight lowercase">{MONTHS[currentMonth]} {currentYear}</h2>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{MONTHS[currentMonth]} {currentYear}</h2>
               <button onClick={nextMonth} className="p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl transition-all active:scale-90 hover:shadow-md"><ChevronRight size={20} className="text-slate-600" /></button>
             </div>
 
