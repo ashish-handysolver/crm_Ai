@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Plus, Users, Settings, LogOut, LayoutDashboard, FileText,
-  BarChart3, ChevronRight, Menu, X, Sparkles, Mic, Monitor, Activity, Eye, EyeOff, History, CalendarDays, UploadCloud, Download
+  BarChart3, ChevronRight, Menu, X, Sparkles, Mic, Monitor, Activity, Eye, EyeOff, History, CalendarDays, UploadCloud, Download, ScanQrCode, CheckCircle2
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
@@ -40,9 +40,25 @@ function NavItem({ to, icon, label, onClick }: { to: string, icon: React.ReactEl
   );
 }
 
+function NavButton({ icon, label, onClick }: { icon: React.ReactElement, label: string, onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="sidebar-item sidebar-item-inactive w-full text-left flex items-center"
+    >
+      <div className="relative z-10 transition-transform duration-300 group-hover:scale-110">
+        {React.cloneElement(icon, { size: 20, strokeWidth: 2 })}
+      </div>
+      <span className="relative z-10 font-bold transition-all">{label}</span>
+    </button>
+  );
+}
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { companyName, role, logout } = useAuth();
+  const { companyId, companyName, role, logout } = useAuth();
   const { isDemoMode, setDemoMode } = useDemo();
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [success, setSuccess] = useState('');
 
   // Mobile backdrop
   const mobileOverlay = (
@@ -90,6 +106,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" />
           <NavItem onClick={onClose} to="/clients" icon={<Users />} label="All Leads" />
           <NavItem onClick={onClose} to="/active-clients" icon={<Activity />} label="Active Leads" />
+          <NavButton onClick={() => { setShowQrModal(true); if (window.innerWidth < 1024) onClose(); }} icon={<ScanQrCode />} label="My QR" />
           <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Import" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" />
           <NavItem onClick={onClose} to="/history" icon={<History />} label="Logs" />
@@ -117,6 +134,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
       </aside>
+
+      <AnimatePresence>
+        {showQrModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-200 text-center relative overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-500"></div>
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg"><Sparkles size={16} className="text-white" /></div>
+                <span className="text-lg font-black tracking-tight text-slate-900">Handysolver<span className="text-indigo-600">.AI</span></span>
+              </div>
+              <h2 className="text-2xl font-black mb-2 text-slate-900 tracking-tight">Lead Capture QR</h2>
+              <p className="text-sm text-slate-500 mb-6 font-medium">Prospects can scan this to automatically join your pipeline.</p>
+              <div className="bg-slate-50 p-4 rounded-[2rem] border border-slate-200 inline-block mb-6 shadow-inner">
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/capture/${companyId}`)}`} alt="QR Code" className="w-48 h-48 rounded-xl mix-blend-multiply" />
+              </div>
+              <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/capture/${companyId}`); setSuccess("Capture link copied!"); setTimeout(() => setSuccess(''), 3000); }} className="w-full py-3.5 bg-slate-50 border border-slate-200 text-indigo-600 font-black text-xs uppercase tracking-widest rounded-xl mb-3 hover:bg-indigo-50 hover:border-indigo-200 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2">
+                {success ? <><CheckCircle2 size={16} /> Copied!</> : 'Copy Direct Link'}
+              </button>
+              <button onClick={() => setShowQrModal(false)} className="w-full py-3.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 active:scale-95">Close Window</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

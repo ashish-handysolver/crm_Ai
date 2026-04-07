@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Copy, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -378,7 +378,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   };
 
   const createMeeting = async (leadId: string, leadName: string) => {
-    if (!companyId) return;
+    if (!companyId) return null;
     setIsCreatingMeeting(true);
     try {
       const id = uuidv4().slice(0, 8);
@@ -390,12 +390,37 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         createdAt: Timestamp.now()
       });
       const origin = window.location.hostname === 'localhost' ? 'https://handydashcrmai.vercel.app' : window.location.origin;
-      setShareUrls(prev => ({ ...prev, [leadId]: `${origin}/m/${id}?l=${leadId}` }));
+      const url = `${origin}/m/${id}?l=${leadId}`;
+      setShareUrls(prev => ({ ...prev, [leadId]: url }));
+      return url;
     } catch (err) {
       console.error(err);
       setError("Failed to create shareable link.");
+      return null;
     } finally {
       setIsCreatingMeeting(false);
+    }
+  };
+
+  const onCopyLink = async (leadId: string, leadName: string) => {
+    let url = shareUrls[leadId];
+    if (!url) {
+      url = await createMeeting(leadId, leadName);
+    }
+    if (url) {
+      navigator.clipboard.writeText(url);
+      setSuccess("Copied to clipboard!");
+      setTimeout(() => setSuccess(""), 2000);
+    }
+  };
+
+  const onShareLink = async (leadId: string, leadName: string) => {
+    let url = shareUrls[leadId];
+    if (!url) {
+      url = await createMeeting(leadId, leadName);
+    }
+    if (url) {
+      handleShare(leadId, url);
     }
   };
 
@@ -560,7 +585,20 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
             </div>
 
             <div className="flex-1 space-y-4">
-              {phaseLeads.length === 0 ? (
+              {loadingLeads ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm animate-pulse space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-200 rounded-2xl shrink-0"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                    <div className="h-12 bg-slate-50 rounded-xl"></div>
+                  </div>
+                ))
+              ) : phaseLeads.length === 0 ? (
                 <div className="h-32 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-slate-300 gap-2 bg-white/20">
                   <ShieldAlert size={20} className="opacity-20" />
                   <span className="text-[10px] font-black uppercase tracking-widest">No leads</span>
@@ -608,6 +646,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         </div>
 
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          <button onClick={(e) => { e.preventDefault(); onCopyLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-600 hover:bg-indigo-100 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`} title="Copy Link">
+                            {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+                          </button>
+                          <button onClick={(e) => { e.preventDefault(); onShareLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-600 hover:bg-emerald-100 bg-emerald-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-50'}`} title="Share Link">
+                            {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                          </button>
                           <Link to={`/analytics/${lead.id}`} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                             <Sparkles size={16} />
                           </Link>
@@ -766,7 +810,21 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
             {/* Mobile View (Cards) */}
             <div className="lg:hidden space-y-4">
-              {paginatedLeads.map(lead => (
+              {loadingLeads ? (
+                [...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-slate-200 shadow-sm space-y-4 animate-pulse">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-200 shrink-0"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                    <div className="h-16 bg-slate-100 rounded-xl"></div>
+                    <div className="h-10 bg-slate-100 rounded-xl"></div>
+                  </div>
+                ))
+              ) : paginatedLeads.map(lead => (
                 <div key={lead.id} className="bg-white rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-orange-400 to-orange-500"></div>
                   <div className="flex items-start justify-between mb-4 gap-4">
@@ -796,12 +854,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         </div>
                       </div>
                     </div>
-                    <div className="relative shrink-0 mt-1">
+                    <div className="relative shrink-0 mt-1 max-w-[120px]">
                       <select
                         value={lead.phase || 'DISCOVERY'}
                         onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className={`text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                        className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
                       >
                         {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
@@ -820,8 +878,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2 pt-4 border-t border-slate-200">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-between mt-2 pt-4 border-t border-slate-200 gap-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {!isDemoMode && (
                         <>
                           {recordingId === lead.id ? (
@@ -838,24 +896,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                               </button>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => startRecording(lead.id)}
-                              className="p-2 sm:p-3 bg-slate-50 text-indigo-600 rounded-lg sm:rounded-xl hover:bg-slate-100 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-slate-200"
-                              title="Start Session"
-                              disabled={!!recordingId}
-                            >
+                            <button onClick={() => startRecording(lead.id)} className="p-2 sm:p-3 bg-slate-50 text-indigo-600 rounded-lg sm:rounded-xl hover:bg-slate-100 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-slate-200" title="Start Session" disabled={!!recordingId}>
                               <Mic size={16} /> Record
                             </button>
                           )}
-                          {shareUrls[lead.id] ? (
-                            <button onClick={() => handleShare(lead.id, shareUrls[lead.id])} className="p-2 sm:p-3 text-emerald-600 bg-emerald-50 rounded-lg sm:rounded-xl transition-all" title="Share Link">
-                              <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`} title="Copy Link">
+                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button>
-                          ) : (
-                            <button onClick={() => createMeeting(lead.id, lead.name)} disabled={isCreatingMeeting} className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent" title="Create Guest Link">
-                              {isCreatingMeeting ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                            <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-50'}`} title="Share Link">
+                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button>
-                          )}
+                          </div>
                           <Link to={`/clients/${lead.id}/edit`} className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg sm:rounded-xl transition-all border border-transparent">
                             <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                           </Link>
@@ -907,11 +959,30 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   </thead>
                   <tbody className="text-sm">
                     {loadingLeads ? (
-                      <tr className="bg-white">
-                        <td colSpan={7} className="py-24 text-center">
-                          <Loader2 size={32} className="animate-spin text-orange-500 mx-auto" />
-                        </td>
-                      </tr>
+                      [...Array(5)].map((_, i) => (
+                        <tr key={i} className="border-b border-slate-100">
+                          <td className="py-5 px-6 text-center"><div className="w-4 h-4 rounded bg-slate-200 animate-pulse mx-auto"></div></td>
+                          <td className="py-5 px-8">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-[1rem] bg-slate-200 animate-pulse shrink-0"></div>
+                              <div className="flex-1 space-y-2">
+                                <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4"></div>
+                                <div className="h-3 bg-slate-200 rounded animate-pulse w-1/2"></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="space-y-2 w-full">
+                              <div className="h-4 bg-slate-200 rounded animate-pulse w-2/3"></div>
+                              <div className="h-3 bg-slate-200 rounded animate-pulse w-1/3"></div>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6"><div className="h-8 bg-slate-200 rounded-lg animate-pulse w-24"></div></td>
+                          <td className="py-5 px-6"><div className="h-6 bg-slate-200 rounded-lg animate-pulse w-16"></div></td>
+                          <td className="py-5 px-6"><div className="h-6 bg-slate-200 rounded-full animate-pulse w-full"></div></td>
+                          <td className="py-5 px-8"><div className="h-8 bg-slate-200 rounded-xl animate-pulse w-full"></div></td>
+                        </tr>
+                      ))
                     ) : paginatedLeads.map((lead) => {
                       const leadRecs = recordings.filter(r => r.meetingId === lead.id || r.leadId === lead.id);
                       const isExp = expandedLeadId === lead.id;
@@ -956,7 +1027,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                   value={lead.phase || 'DISCOVERY'}
                                   onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
                                 >
                                   {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
                                 </select>
@@ -974,8 +1045,15 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 <span className="font-black text-sm text-slate-700">{lead.score || 0}</span>
                               </div>
                             </td>
-                            <td className="py-5 px-8 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2">
+                            <td className="py-5 px-8 text-right">
+                              <div className="flex items-center justify-end gap-2 flex-wrap">
+                                <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50 hover:border-slate-200'}`} title="Copy Link">
+                                  {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+                                </button>
+                                <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-50 hover:border-slate-200'}`} title="Share Link">
+                                  {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                                </button>
+                                
                                 <Link to={`/analytics/${lead.id}`} className="text-slate-400 hover:text-indigo-600 hover:bg-slate-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-slate-200">
                                   <BarChart3 size={14} />
                                 </Link>
@@ -1047,16 +1125,24 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                       <div className="flex items-center gap-3">
 
                                         {shareUrls[lead.id] ? (
-                                          <div className="flex items-center gap-2 w-64 bg-slate-50 rounded-xl shadow-inner border border-slate-200 p-1">
-                                            <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none" />
-                                            <button onClick={() => handleShare(lead.id, shareUrls[lead.id])} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
+                                          <div className="flex items-center gap-2 w-72 bg-slate-50 rounded-xl shadow-inner border border-slate-200 p-1">
+                                            <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-600 outline-none text-ellipsis" />
+                                            <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
+                                              <Copy size={16} />
+                                            </button>
+                                            <button onClick={() => onShareLink(lead.id, lead.name)} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
                                               <Share2 size={16} />
                                             </button>
                                           </div>
                                         ) : (
-                                          <button onClick={() => createMeeting(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-white bg-black hover:bg-indigo-600 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
-                                            {isCreatingMeeting ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />} Share Link
-                                          </button>
+                                          <div className="flex items-center gap-2">
+                                            <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
+                                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Copy size={14} />} Copy Link
+                                            </button>
+                                            <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
+                                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />} Share Link
+                                            </button>
+                                          </div>
                                         )}
                                       </div>
                                     </div>

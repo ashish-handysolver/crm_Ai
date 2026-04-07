@@ -157,8 +157,16 @@ export default function LeadForm({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-white flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
+      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12 space-y-8 animate-pulse">
+          <div className="w-32 h-6 bg-slate-200 rounded"></div>
+          <div className="space-y-4">
+            <div className="w-48 h-6 bg-slate-200 rounded-full"></div>
+            <div className="w-64 sm:w-96 h-10 sm:h-12 bg-slate-200 rounded-xl"></div>
+            <div className="w-full max-w-2xl h-4 bg-slate-200 rounded"></div>
+          </div>
+          <div className="h-[800px] bg-slate-200/50 rounded-[2.5rem]"></div>
+        </div>
       </div>
     );
   }
@@ -410,4 +418,3 @@ export default function LeadForm({ user }: { user: any }) {
     </>
   );
 }
-

@@ -231,8 +231,21 @@ export default function CalendarPage({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-slate-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+      <div className="flex-1 bg-slate-50/50 text-black p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+        <div className="max-w-7xl mx-auto animate-pulse">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+            <div className="space-y-4 w-full">
+              <div className="w-32 h-4 bg-slate-200 rounded-full"></div>
+              <div className="w-64 sm:w-96 h-12 bg-slate-200 rounded-xl"></div>
+              <div className="w-full max-w-xl h-6 bg-slate-200 rounded"></div>
+            </div>
+            <div className="w-48 h-14 bg-slate-200 rounded-2xl shrink-0"></div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+            <div className="lg:col-span-3 h-[600px] bg-slate-200/50 rounded-[2.5rem]"></div>
+            <div className="h-[600px] bg-slate-200/50 rounded-[2.5rem]"></div>
+          </div>
+        </div>
       </div>
     );
   }
