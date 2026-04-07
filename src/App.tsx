@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles, Activity } from 'lucide-react';
+import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +19,9 @@ import {
 } from 'firebase/firestore';
 import {
   ref,
-  getBytes
+  getBytes,
+  uploadBytes,
+  getDownloadURL
 } from 'firebase/storage';
 import {
   signInWithPopup,
@@ -388,7 +390,7 @@ const RecordingView = () => {
       if (!audioBlob) throw new Error("Unable to retrieve audio stream.");
       const fileUri = await uploadFileToGemini(audioBlob, apiKey);
       const ai = new GoogleGenAI({ apiKey });
-      const validModels = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-pro-exp'];
+      const validModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
       let success = false;
       let finalTranscriptData = null;
       for (const modelName of validModels) {
@@ -396,7 +398,7 @@ const RecordingView = () => {
           const prompt = "Transcribe this audio recording into English with timestamps. Return a JSON object with a 'fullText' string and a 'segments' array ({text: string, startTime: float, endTime: float}). Provide ONLY the raw JSON.";
           const response = await ai.models.generateContent({
             model: modelName,
-            config: { maxOutputTokens: 25000, responseMimeType: "application/json" },
+            config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
             contents: [{ role: 'user', parts: [{ text: prompt }, { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }] }]
           });
           const rawText = response.text || "{}";
@@ -409,16 +411,39 @@ const RecordingView = () => {
             await new Promise(resolve => setTimeout(resolve, 3000));
             continue;
           }
-          throw err;
+          console.warn(`Model ${modelName} failed:`, err);
         }
       }
-      if (!success) throw new Error("Intelligence services temporarily unavailable.");
+      if (!success) throw new Error("Intelligence services temporarily unavailable or quota exceeded.");
+      
+      let aiInsights = null;
+      for (const modelName of validModels) {
+        try {
+          const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${finalTranscriptData?.fullText || ''}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
+          const res2 = await ai.models.generateContent({
+            model: modelName,
+            config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
+            contents: [{ role: 'user', parts: [{ text: prompt2 }] }]
+          });
+          const rawText2 = res2.text || "{}";
+          const jsonStr2 = rawText2.replace(/```json/g, '').replace(/```/g, '').trim();
+          aiInsights = JSON.parse(jsonStr2);
+          break;
+        } catch(e: any) {
+          if (e?.status === 429) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            continue;
+          }
+          console.warn(`Analytics failed on ${modelName}`, e);
+        }
+      }
       await updateDoc(doc(db, 'recordings', id), {
         transcript: String(finalTranscriptData.fullText || recording.transcript || ''),
         transcriptData: finalTranscriptData.segments || [],
+        ...(aiInsights ? { aiInsights } : {}),
         updatedAt: Timestamp.now()
       });
-      setRecording((prev: any) => ({ ...prev, transcript: finalTranscriptData.fullText, transcriptData: finalTranscriptData.segments }));
+      setRecording((prev: any) => ({ ...prev, transcript: finalTranscriptData.fullText, transcriptData: finalTranscriptData.segments, ...(aiInsights ? { aiInsights } : {}) }));
     } catch (err: any) { alert(err.message || "Protocol transmission failed."); } finally { setIsSyncing(false); }
   };
 
@@ -432,6 +457,23 @@ const RecordingView = () => {
     };
     fetchRec();
   }, [id]);
+
+  const handleShareWhatsApp = () => {
+    if (!recording) return;
+    let text = `*Meeting Analytics & Minutes*\n\n`;
+    const insights = recording.aiInsights;
+    if (insights) {
+      text += `*Executive Summary:*\n${insights.overview || 'N/A'}\n\n`;
+      text += `*Key Points:*\n`;
+      (insights.meetingMinutes || []).forEach((p: string) => text += `• ${p}\n`);
+      text += `\n*Action Items:*\n`;
+      (insights.tasks || []).forEach((t: any) => text += `• [${t.completed ? 'DONE' : 'OPEN'}] ${t.title}\n`);
+    } else {
+      text += `*Transcript:*\n${recording.transcript?.substring(0, 500)}...\n`;
+    }
+    text += `\nView full details: ${window.location.origin}/r/${recording.id}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
 
   if (loading) return (
     <div className="flex-1 bg-slate-50 min-h-screen flex items-center justify-center">
@@ -468,6 +510,12 @@ const RecordingView = () => {
             </div>
 
             <div className="flex flex-wrap gap-4 shrink-0">
+              <button
+                onClick={handleShareWhatsApp}
+                className="px-6 py-3.5 bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-200/50 active:scale-95 flex items-center gap-2"
+              >
+                <MessageSquare size={16} /> WhatsApp Report
+              </button>
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
@@ -506,16 +554,49 @@ const RecordingView = () => {
               </div>
             </div>
 
-            <div className="p-10 bg-indigo-50/30 rounded-[2.5rem] border border-indigo-100 border-dashed relative group/ai overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[40px] opacity-20 group-hover/ai:opacity-40 transition-all duration-1000"></div>
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="p-4 bg-white rounded-2xl text-indigo-600 shadow-xl shadow-indigo-200/50 border border-indigo-100"><Sparkles size={24} className="animate-pulse" /></div>
-                <div className="space-y-1">
-                  <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">AI Analysis Summary</h3>
-                  <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] opacity-80">Autonomous analysis generated via Gemini AI</p>
+            {recording.aiInsights ? (
+              <div className="space-y-6 relative z-10 w-full mb-12">
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                  <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-xs">Executive Summary</h4>
+                  <p className="text-slate-600 leading-relaxed font-medium">{recording.aiInsights.overview}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                    <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-xs">Meeting Minutes</h4>
+                    <ul className="space-y-3">
+                      {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
+                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
+                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2.5 shrink-0" />
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                    <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-xs">Action Items</h4>
+                    <ul className="space-y-3">
+                      {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
+                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
+                          <CheckCircle2 size={18} className={t.completed ? "text-emerald-500 shrink-0" : "text-slate-300 shrink-0"} />
+                          <span className={t.completed ? "line-through text-slate-400" : ""}>{t.title} <span className="text-[10px] font-black uppercase text-slate-400 ml-2">({t.assignee})</span></span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-10 bg-indigo-50/30 rounded-[2.5rem] border border-indigo-100 border-dashed relative group/ai overflow-hidden mb-12">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[40px] opacity-20 group-hover/ai:opacity-40 transition-all duration-1000"></div>
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="p-4 bg-white rounded-2xl text-indigo-600 shadow-xl shadow-indigo-200/50 border border-indigo-100"><Sparkles size={24} className="animate-pulse" /></div>
+                  <div className="space-y-1">
+                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">AI Analysis Missing</h3>
+                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] opacity-80">Click 'Recalibrate' to generate intelligent analytics.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         </motion.div>
 
@@ -528,6 +609,276 @@ const RecordingView = () => {
 };
 
 
+
+const GlobalRecorder = () => {
+  const { user, companyId } = useAuth();
+  const { isDemoMode } = useDemo();
+  const navigate = useNavigate();
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusText, setStatusText] = useState('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamsRef = useRef<MediaStream[]>([]);
+  const timerRef = useRef<any>(null);
+
+  const startRecording = async () => {
+    if (isDemoMode) return alert("Demo mode active");
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Browser audio API not available. If testing on a mobile phone via local network IP, you must use HTTPS (e.g., via ngrok or Vite basic-ssl).");
+      }
+
+      const streams: MediaStream[] = [];
+      const isChromium = !!(window as any).chrome;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile && !sessionStorage.getItem('mobile_audio_warned')) {
+        alert("📱 Mobile Browser Limitation\n\nTo record the other person on a call, please put your phone on SPEAKERPHONE.\n\nMobile web browsers are blocked by Apple/Google from capturing internal system audio directly.");
+        sessionStorage.setItem('mobile_audio_warned', 'true');
+      }
+
+      let sysStream: MediaStream | null = null;
+      if (!isMobile) {
+        try {
+          if (navigator.mediaDevices.getDisplayMedia) {
+            sysStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: isChromium ? {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                systemAudio: 'include',
+              } : true,
+            });
+          }
+        } catch (e) {
+          console.warn("System audio omitted or cancelled", e);
+        }
+      }
+
+      const micStream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      streams.push(micStream);
+      let finalStream = micStream;
+
+      if (sysStream && sysStream.getAudioTracks().length > 0) {
+        streams.push(sysStream);
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        const ctx = new AudioContextClass();
+        audioContextRef.current = ctx;
+        if (ctx.state === 'suspended') await ctx.resume();
+        const dest = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(micStream).connect(dest);
+        
+        const sysAudioStream = new MediaStream(sysStream.getAudioTracks());
+        ctx.createMediaStreamSource(sysAudioStream).connect(dest);
+        
+        finalStream = dest.stream;
+      } else if (sysStream) {
+        alert("System Audio Missing: You didn't check the 'Also share tab audio' box. Only your microphone will be recorded.\n\nTip for YouTube/Music: Select 'Chrome Tab' in the popup and ensure 'Share tab audio' is toggled ON.");
+        sysStream.getTracks().forEach(t => t.stop());
+      }
+
+      streamsRef.current = streams;
+
+      let mimeType = 'audio/webm';
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
+      }
+      const recorder = new MediaRecorder(finalStream, { mimeType, audioBitsPerSecond: 64000 });
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
+        await processAudio(blob);
+      };
+
+      recorder.start();
+      setIsRecording(true);
+      setIsPaused(false);
+      setSeconds(0);
+      timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
+    } catch (e: any) {
+      console.error(e);
+      alert(`Microphone access failed: ${e.message || "Denied or unavailable."}`);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    clearInterval(timerRef.current);
+  };
+
+  const pauseRecording = () => {
+    mediaRecorderRef.current?.pause();
+    setIsPaused(true);
+    clearInterval(timerRef.current);
+  };
+
+  const resumeRecording = () => {
+    mediaRecorderRef.current?.resume();
+    setIsPaused(false);
+    timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
+  };
+
+  const processAudio = async (blob: Blob) => {
+    setIsProcessing(true);
+    setStatusText('Uploading audio...');
+    try {
+      const recordId = uuidv4().slice(0, 8);
+      const storageRef = ref(storage, `recordings/${recordId}/audio.webm`);
+      await uploadBytes(storageRef, blob);
+      const audioUrl = await getDownloadURL(storageRef);
+
+      setStatusText('Transcribing & Analyzing...');
+      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+      let transcript = "No transcript generated.";
+      let transcriptData = null;
+      let aiInsights = null;
+
+      if (apiKey) {
+        const ai = new GoogleGenAI({ apiKey });
+        const fileUri = await uploadFileToGemini(blob, apiKey);
+        const validModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
+
+        // 1. Transcribe
+        const prompt1 = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
+        
+        let text1 = "{}";
+        for (const model of validModels) {
+          try {
+            const res1 = await ai.models.generateContent({
+              model: model,
+              config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
+              contents: [{ role: 'user', parts: [{ text: prompt1 }, { fileData: { mimeType: blob.type || "audio/webm", fileUri } }] }]
+            });
+            text1 = res1.text || "{}";
+            break;
+          } catch (e: any) {
+            if (e?.status === 429) {
+              await new Promise(r => setTimeout(r, 3000));
+              continue;
+            }
+            console.warn(`Transcription failed on ${model}`, e);
+          }
+        }
+
+        try {
+          const p1 = JSON.parse(text1.replace(/```json/g, '').replace(/```/g, '').trim() || '{}');
+          transcript = p1.fullText || transcript;
+          transcriptData = p1.segments || [];
+        } catch (e) {
+          transcript = text1;
+        }
+
+        // 2. Analytics
+        setStatusText('Generating Analytics Report...');
+        const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${transcript}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
+        
+        for (const model of validModels) {
+          try {
+            const res2 = await ai.models.generateContent({
+              model: model,
+              config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
+              contents: [{ role: 'user', parts: [{ text: prompt2 }] }]
+            });
+            aiInsights = JSON.parse((res2.text || "{}").replace(/```json/g, '').replace(/```/g, '').trim());
+            break;
+          } catch (e: any) {
+            if (e?.status === 429) {
+              await new Promise(r => setTimeout(r, 3000));
+              continue;
+            }
+            console.warn(`Analytics failed on ${model}`, e);
+          }
+        }
+      }
+
+      setStatusText('Saving...');
+      await setDoc(doc(db, 'recordings', recordId), {
+        id: recordId,
+        audioUrl,
+        transcript,
+        transcriptData,
+        aiInsights,
+        createdAt: Timestamp.now(),
+        authorUid: user?.uid || '',
+        companyId: companyId || '',
+        leadId: 'general' // No specific lead associated
+      });
+
+      navigate(`/r/${recordId}`);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to process recording.");
+    } finally {
+      setIsProcessing(false);
+      setStatusText('');
+    }
+  };
+
+  return (
+    <>
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[99]">
+        {!isRecording && !isProcessing && (
+          <button onClick={startRecording} title="Record Meeting" className="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all group border border-indigo-500">
+            <Mic size={24} className="group-hover:animate-pulse" />
+          </button>
+        )}
+        {isRecording && !isProcessing && (
+          <div className="flex items-center gap-3 bg-slate-900 p-2.5 rounded-full shadow-2xl border border-slate-700">
+            <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 animate-pulse">
+              <Mic size={20} />
+            </div>
+            <div className="text-white font-mono text-xs font-bold px-2">
+              {Math.floor(seconds / 60).toString().padStart(2, '0')}:{(seconds % 60).toString().padStart(2, '0')}
+            </div>
+            <button onClick={isPaused ? resumeRecording : pauseRecording} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-white/20 transition-colors">
+              {isPaused ? <Play size={16} className="ml-0.5" /> : <Pause size={16} />}
+            </button>
+            <button onClick={stopRecording} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-red-400 hover:bg-white/20 transition-colors">
+              <Square size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+      <AnimatePresence>
+        {isProcessing && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md text-white text-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="animate-spin text-indigo-400 w-12 h-12" />
+              <div className="text-lg font-black">{statusText}</div>
+              <div className="text-sm text-slate-400 font-medium">Please wait while we generate your meeting analytics...</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
 
 const AppContent = () => {
   const { user, companyId, role, active, onboardingComplete, loading } = useAuth();
@@ -667,6 +1018,7 @@ const AppContent = () => {
             <Route path="/download-app" element={<DownloadApp />} />
           </Routes>
         </main>
+        <GlobalRecorder />
       </div>
     </div>
   );
