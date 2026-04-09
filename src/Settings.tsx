@@ -10,44 +10,45 @@ export default function Settings({ user }: { user: any }) {
   const { companyId } = useAuth();
 
   return (
-    <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
-      <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
-        
+    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto relative">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+      <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12 relative z-10">
+
         {/* Header Section */}
         <header>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <SettingsIcon size={14} className="animate-spin-slow" /> System Architecture Protocol
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+              <SettingsIcon size={14} className="animate-spin-slow" /> System Settings
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-none">Workspace Preferences</h1>
-            <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Configure your data schemas, manage organizational units, and optimize your intelligence workflows.</p>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-none">Workspace Settings</h1>
+            <p className="text-slate-400 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Configure your custom fields, manage team members, and update your preferences.</p>
           </motion.div>
         </header>
 
         {/* Dynamic Navigation Tabs */}
-        <div className="flex bg-white/60 backdrop-blur-md p-1.5 rounded-2xl sm:rounded-[2rem] w-full max-w-md border border-slate-200 shadow-xl shadow-slate-200/20">
-          <button 
+        <div className="flex bg-white/5 backdrop-blur-md p-1.5 rounded-2xl sm:rounded-[2rem] w-full max-w-md border border-white/10 shadow-xl shadow-black/20">
+          <button
             onClick={() => setActiveTab('fields')}
-            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'fields' ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'fields' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
           >
-            <Sliders size={18} className="hidden sm:block" /> Logic
+            <Sliders size={18} className="hidden sm:block" /> Custom Fields
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('team')}
-            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
           >
-            <Users size={18} className="hidden sm:block" /> Human
+            <Users size={18} className="hidden sm:block" /> Team
           </button>
         </div>
 
         {/* Content Container */}
-        <motion.div 
+        <motion.div
           layout
-          className="glass-card !p-0 !rounded-[2.5rem] overflow-hidden min-h-[600px] ring-1 ring-slate-100"
+          className="glass-card !bg-transparent !p-0 !rounded-[2.5rem] border-none shadow-none ring-0 overflow-hidden min-h-[600px]"
         >
           <AnimatePresence mode="wait">
             {activeTab === 'fields' ? (
-              <motion.div 
+              <motion.div
                 key="fields"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -58,7 +59,7 @@ export default function Settings({ user }: { user: any }) {
                 <CustomFields user={user} />
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 key="team"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -74,9 +75,9 @@ export default function Settings({ user }: { user: any }) {
 
         {/* Administrative Badge */}
         <div className="flex justify-center pt-6 opacity-40">
-           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-4">
-             <ShieldCheck size={12} /> Secure Override Permissions - Root Authenticated
-           </p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-4">
+            <ShieldCheck size={12} /> Admin Permissions Required
+          </p>
         </div>
 
       </div>

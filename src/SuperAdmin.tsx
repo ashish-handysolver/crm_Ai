@@ -5,7 +5,8 @@ import { db, auth, firebaseConfig } from './firebase';
 import { 
   Loader2, Users, Building2, BarChart3, Search, Filter, 
   ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar,
-  MoreVertical, Trash2, ExternalLink, ArrowLeft, MessageSquare, Clock
+  MoreVertical, Trash2, ExternalLink, ArrowLeft, MessageSquare, Clock,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -211,114 +212,158 @@ export default function SuperAdmin() {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-orange-50 flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
+      <div className="flex-1 bg-[#030014] flex items-center justify-center min-h-[100dvh]">
+        <div className="relative">
+          <Loader2 className="animate-spin text-indigo-500 w-16 h-16" />
+          <div className="absolute inset-0 bg-indigo-500/20 blur-2xl animate-pulse"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 bg-orange-50 text-black p-4 sm:p-6 lg:p-10 min-h-[100dvh] font-sans">
-      <div className="max-w-[1400px] mx-auto">
+    <div className="flex-1 bg-[#030014] text-white p-4 sm:p-8 lg:p-12 min-h-[100dvh] font-sans relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-600/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-[40rem] h-[40rem] bg-cyan-600/5 rounded-full blur-[140px] translate-y-1/2 -translate-x-1/2"></div>
+
+      <div className="max-w-[1600px] mx-auto relative z-10">
         
         <AnimatePresence mode="wait">
           {!selectedOrg ? (
             <motion.div 
               key="list"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.5 }}
             >
-              <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-100/50 text-orange-600 text-[10px] font-bold uppercase tracking-widest mb-3 border border-orange-200/50">
-                    <ShieldCheck size={14} /> System Authority
+              <header className="mb-14 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)]">
+                    <ShieldCheck size={14} className="animate-pulse" /> System Authority Node
                   </div>
-                  <h1 className="text-3xl md:text-5xl font-black tracking-tight text-black mb-2">Super Admin Console</h1>
-                  <p className="text-slate-500 font-medium">Global oversight of all registered entities and users across the platform.</p>
+                  <h1 className="text-5xl lg:text-7xl font-black tracking-tightest text-white leading-none">
+                    Super <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-indigo-500 animate-gradient-x">Console</span>
+                  </h1>
+                  <p className="text-slate-400 font-medium text-lg max-w-2xl">Global intelligence oversight, entity provisioning, and protocol monitoring.</p>
                 </div>
-                <button 
-                  onClick={() => { sessionStorage.removeItem('is_super_admin'); navigate('/super-login'); }}
-                  className="px-6 py-3 bg-orange-50 border border-orange-200 rounded-2xl text-sm font-bold text-slate-600 hover:text-rose-600 hover:border-rose-100 transition-all shadow-sm"
-                >
-                  Terminate Session
-                </button>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => { sessionStorage.removeItem('is_super_admin'); navigate('/super-login'); }}
+                    className="group px-8 py-4 bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/50 rounded-2xl text-[10px] font-black text-slate-400 hover:text-rose-400 transition-all active:scale-95 flex items-center gap-3 uppercase tracking-widest shadow-2xl"
+                  >
+                    Terminate Uplink <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                  </button>
+                </div>
               </header>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-14">
                 {[
-                  { label: 'Total Organizations', value: companies.length, icon: Building2, color: 'text-blue-500', bg: 'bg-blue-50' },
-                  { label: 'Registered Users', value: allUsers.length, icon: Users, color: 'text-orange-500', bg: 'bg-orange-50' },
-                  { label: 'Active Sessions', value: 'Live', icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-                  { label: 'Global Reach', value: 'BOM1', icon: Globe, color: 'text-pink-500', bg: 'bg-pink-50' },
+                  { label: 'Total Organizations', value: companies.length, icon: Building2, color: 'text-indigo-400', glow: 'shadow-indigo-500/10' },
+                  { label: 'System Identities', value: allUsers.length, icon: Users, color: 'text-cyan-400', glow: 'shadow-cyan-500/10' },
+                  { label: 'Uptime Protocol', value: 'Live', icon: Activity, color: 'text-emerald-400', glow: 'shadow-emerald-500/10' },
+                  { label: 'Network Node', value: 'BOM-1', icon: Globe, color: 'text-violet-400', glow: 'shadow-violet-500/10' },
                 ].map((stat, idx) => (
-                  <motion.div key={idx} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }} className="bg-orange-50 p-6 rounded-3xl border border-orange-100 shadow-sm flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center shadow-inner`}>
-                      <stat.icon size={24} />
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</div>
-                      <div className="text-2xl font-black text-black">{stat.value}</div>
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: idx * 0.1 }} 
+                    className={`glass-card !bg-white/[0.02] border-white/5 hover:border-white/10 p-8 rounded-[2rem] transition-all group ${stat.glow} hover:shadow-2xl`}
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className={`w-16 h-16 rounded-2xl bg-white/5 border border-white/10 ${stat.color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500`}>
+                        <stat.icon size={28} />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">{stat.label}</div>
+                        <div className="text-3xl font-black text-white tracking-tight">{stat.value}</div>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Search & Tabs */}
-              <div className="bg-orange-50 rounded-[2.5rem] border border-orange-100 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-orange-50 flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div className="flex p-1 bg-orange-100 rounded-2xl w-full md:w-auto">
-                    <button onClick={() => setActiveTab('companies')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'companies' ? 'bg-orange-50 text-black shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>Organizations</button>
-                    <button onClick={() => setActiveTab('users')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'users' ? 'bg-orange-50 text-black shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>Users</button>
-                    <button onClick={() => setActiveTab('leads')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'leads' ? 'bg-orange-50 text-black shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>Leads</button>
+              {/* Control Panel Section */}
+              <div className="glass-card !bg-white/[0.01] border-white/5 rounded-[3rem] shadow-3xl overflow-hidden flex flex-col">
+                <div className="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 bg-white/[0.02]">
+                  <div className="flex p-1.5 bg-black/40 border border-white/5 rounded-2xl w-full md:w-auto">
+                    {[
+                      { id: 'companies', label: 'Organizations' },
+                      { id: 'users', label: 'Identities' },
+                      { id: 'leads', label: 'Protocol Nodes' }
+                    ].map(tab => (
+                      <button 
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)} 
+                        className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-900/40' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
                   
                   <div className="relative w-full md:w-96 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-cyan-400 transition-colors" size={20} />
                     <input 
                       type="text" 
-                      placeholder={`Search ${activeTab}...`} 
+                      placeholder={`Filter global ${activeTab}...`} 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 bg-orange-50 border border-orange-200 rounded-2xl focus:bg-orange-50 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 font-semibold outline-none transition-all shadow-inner"
+                      className="w-full pl-14 pr-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 text-white font-bold outline-none transition-all shadow-inner"
                     />
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 flex gap-1">
+                       <Filter size={14} className="text-slate-700" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto min-h-[400px]">
+                <div className="overflow-x-auto min-h-[500px] scrollbar-hide">
                   {(activeTab === 'companies' && fetchingData.companies) || 
                    (activeTab === 'users' && fetchingData.users) || 
                    (activeTab === 'leads' && fetchingData.leads) ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                      <Loader2 className="animate-spin text-orange-500" size={32} />
-                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Loading data...</span>
+                    <div className="flex flex-col items-center justify-center py-32 gap-6">
+                      <div className="relative">
+                        <Loader2 className="animate-spin text-cyan-400" size={40} />
+                        <div className="absolute inset-0 bg-cyan-400/20 blur-xl animate-pulse"></div>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Establishing Logic Link...</span>
                     </div>
                   ) : activeTab === 'companies' ? (
-                    <table className="w-full text-left">
+                    <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-orange-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-orange-50/50">
-                          <th className="py-5 px-8">Company</th>
-                          <th className="py-5 px-6">ID</th>
-                          <th className="py-5 px-6">Created</th>
-                          <th className="py-5 px-6">Admin UID</th>
-                          <th className="py-5 px-8 text-right">Actions</th>
+                        <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-white/[0.02]">
+                          <th className="py-6 px-10">Entity Identification</th>
+                          <th className="py-6 px-6">Access Hash</th>
+                          <th className="py-6 px-6">Timestamp</th>
+                          <th className="py-6 px-6">Root Authority</th>
+                          <th className="py-6 px-10 text-right">Operations</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
+                      <tbody className="divide-y divide-white/[0.03]">
                         {filteredCompanies.map(c => (
-                          <tr key={c.id} className="hover:bg-orange-50/50 transition-all group cursor-pointer" onClick={() => fetchOrgDetails(c)}>
-                            <td className="py-5 px-8">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center font-black shadow-sm group-hover:scale-110 transition-transform">{c.name?.charAt(0)}</div>
-                                <div className="font-extrabold text-black text-base">{c.name}</div>
+                          <tr key={c.id} className="hover:bg-white/[0.05] transition-all group cursor-pointer" onClick={() => fetchOrgDetails(c)}>
+                            <td className="py-6 px-10">
+                              <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center font-black shadow-inner group-hover:scale-110 transition-transform duration-500 relative">
+                                  {c.name?.charAt(0)}
+                                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#030014] shadow-[0_0_10px_#10b981]"></div>
+                                </div>
+                                <div>
+                                  <div className="font-extrabold text-white text-lg group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{c.name}</div>
+                                  <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mt-1.5 flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-slate-700 rounded-full"></div> Node Active
+                                  </div>
+                                </div>
                               </div>
                             </td>
-                            <td className="py-5 px-6"><code className="text-xs bg-orange-100 px-2 py-1 rounded-lg text-slate-600 font-bold">{c.id}</code></td>
-                            <td className="py-5 px-6 text-sm font-medium text-slate-500 flex items-center gap-2"><Calendar size={14} /> {c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString() : 'Unknown'}</td>
-                            <td className="py-5 px-6"><code className="text-[10px] text-slate-400">{c.createdBy}</code></td>
-                            <td className="py-5 px-8 text-right">
-                              <button className="p-2 text-slate-400 hover:text-orange-600 bg-orange-50 hover:bg-orange-50 border border-transparent hover:border-orange-100 rounded-xl transition-all shadow-sm"><ArrowUpRight size={18} /></button>
+                            <td className="py-6 px-6"><code className="text-[10px] bg-white/5 border border-white/5 px-3 py-1.5 rounded-lg text-indigo-300 font-black tracking-widest">{c.id}</code></td>
+                            <td className="py-6 px-6 text-[10px] font-black text-slate-500 uppercase flex items-center gap-3 mt-4"><Calendar size={14} className="text-indigo-500/50" /> {c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString() : 'N/A'}</td>
+                            <td className="py-6 px-6"><code className="text-[10px] text-slate-600 font-bold tracking-tight">{c.createdBy}</code></td>
+                            <td className="py-6 px-10 text-right">
+                              <button className="p-3 text-slate-500 hover:text-white bg-white/5 hover:bg-indigo-600 border border-white/5 hover:border-indigo-400 rounded-xl transition-all shadow-xl active:scale-90"><ArrowUpRight size={20} /></button>
                             </td>
                           </tr>
                         ))}
@@ -327,41 +372,41 @@ export default function SuperAdmin() {
                   ) : activeTab === 'leads' ? (
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="border-b border-orange-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-orange-50/50">
-                          <th className="py-5 px-8">Lead Name</th>
-                          <th className="py-5 px-6">Company</th>
-                          <th className="py-5 px-6">Source</th>
-                          <th className="py-5 px-6">Status</th>
-                          <th className="py-5 px-6">Created On</th>
-                          <th className="py-5 px-8 text-right">Details</th>
+                        <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-white/[0.02]">
+                          <th className="py-6 px-10">Target Identification</th>
+                          <th className="py-6 px-6">Origin Node</th>
+                          <th className="py-6 px-6">Source</th>
+                          <th className="py-6 px-6">Vital Status</th>
+                          <th className="py-6 px-6">Epoch</th>
+                          <th className="py-6 px-10 text-right">Details</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
+                      <tbody className="divide-y divide-white/[0.03]">
                         {filteredLeads.map(l => {
                           const company = companies.find(c => c.id === l.companyId);
                           return (
-                            <tr key={l.id} className="hover:bg-orange-50/50 transition-all group">
-                              <td className="py-5 px-8">
-                                <div className="font-extrabold text-black">{l.name}</div>
-                                <div className="text-xs text-slate-500 font-medium">{l.email || l.phone}</div>
+                            <tr key={l.id} className="hover:bg-white/[0.05] transition-all group">
+                              <td className="py-6 px-10">
+                                <div className="font-extrabold text-white text-base group-hover:text-cyan-400 transition-colors">{l.name}</div>
+                                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">{l.email || l.phone}</div>
                               </td>
-                              <td className="py-5 px-6 text-sm font-bold text-slate-600">{company?.name || l.companyId}</td>
-                              <td className="py-5 px-6"><span className="text-[10px] bg-orange-100 px-2 py-1 rounded-lg text-slate-500 font-bold">{l.source || 'Direct'}</span></td>
-                              <td className="py-5 px-6">
-                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg border ${l.status === 'New' ? 'bg-blue-50 text-orange-600 border-blue-100' : 'bg-orange-50 text-slate-500 border-orange-100'}`}>{l.status || 'Unknown'}</span>
+                              <td className="py-6 px-6 text-[10px] font-black text-indigo-400 uppercase tracking-widest">{company?.name || l.companyId}</td>
+                              <td className="py-6 px-6"><span className="text-[10px] bg-white/5 px-3 py-1.5 rounded-lg text-slate-400 font-black border border-white/5">{l.source || 'Direct'}</span></td>
+                              <td className="py-6 px-6">
+                                <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${l.status === 'New' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-[0_0_10px_rgba(34,211,238,0.1)]' : 'bg-white/5 text-slate-500 border-white/5'}`}>{l.status || 'Unknown'}</span>
                               </td>
-                              <td className="py-5 px-6 text-xs font-semibold text-slate-400">{l.createdAt?.toDate ? l.createdAt.toDate().toLocaleDateString() : 'N/A'}</td>
-                              <td className="py-5 px-8 text-right">
-                                <div className="flex items-center justify-end gap-2">
+                              <td className="py-6 px-6 text-[10px] font-black text-slate-600">{l.createdAt?.toDate ? l.createdAt.toDate().toLocaleDateString() : 'N/A'}</td>
+                              <td className="py-6 px-10 text-right">
+                                <div className="flex items-center justify-end gap-3">
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); setSelectedLead(l); }}
-                                    className="p-2 text-slate-400 hover:text-orange-600 bg-orange-50 hover:bg-orange-50 rounded-xl transition-all"
+                                    className="p-3 text-slate-500 hover:text-cyan-400 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5"
                                   >
                                     <ExternalLink size={18} />
                                   </button>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); handleDeleteLead(l.id); }}
-                                    className="p-2 text-slate-300 hover:text-rose-600 bg-orange-50 hover:bg-orange-50 rounded-xl transition-all"
+                                    className="p-3 text-slate-700 hover:text-rose-500 bg-white/5 hover:bg-rose-500/10 rounded-xl transition-all border border-white/5"
                                   >
                                     <Trash2 size={18} />
                                   </button>
@@ -375,44 +420,47 @@ export default function SuperAdmin() {
                   ) : (
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="border-b border-orange-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-orange-50/50">
-                          <th className="py-5 px-8">User Profile</th>
-                          <th className="py-5 px-6">Organization ID</th>
-                          <th className="py-5 px-6">Role</th>
-                          <th className="py-5 px-6">Last Login</th>
-                          <th className="py-5 px-8 text-right">Operations</th>
+                        <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-white/[0.02]">
+                          <th className="py-6 px-10">Subject Profile</th>
+                          <th className="py-6 px-6">Domain ID</th>
+                          <th className="py-6 px-6">Role Protocol</th>
+                          <th className="py-6 px-6">Activity</th>
+                          <th className="py-6 px-10 text-right">Ops</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
+                      <tbody className="divide-y divide-white/[0.03]">
                         {filteredUsers.map(u => (
-                          <tr key={u.id} className="hover:bg-orange-50/50 transition-all group">
-                            <td className="py-5 px-8">
-                              <div className="flex items-center gap-4">
-                                <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=random`} className="w-10 h-10 rounded-full object-cover border-2 border-orange-50 shadow-sm" alt="" />
+                          <tr key={u.id} className="hover:bg-white/[0.05] transition-all group">
+                            <td className="py-6 px-10">
+                              <div className="flex items-center gap-5">
+                                <div className="relative">
+                                  <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=000&color=fff`} className="w-12 h-12 rounded-2xl object-cover border border-white/10 shadow-2xl group-hover:scale-105 transition-transform" alt="" />
+                                  <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#030014] ${u.active !== false ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-slate-700'}`}></div>
+                                </div>
                                 <div>
-                                  <div className="font-extrabold text-black">{u.displayName}</div>
-                                  <div className="text-xs text-slate-500 font-medium">{u.email}</div>
+                                  <div className="font-extrabold text-white text-base group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{u.displayName}</div>
+                                  <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{u.email}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-5 px-6 text-sm font-bold text-slate-600">{u.companyId || 'N/A'}</td>
-                            <td className="py-5 px-6">
-                              <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg border ${u.role === 'super_admin' ? 'bg-pink-50 text-pink-600 border-pink-100' : u.role === 'admin' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-orange-50 text-slate-500 border-orange-100'}`}>{u.role || 'user'}</span>
+                            <td className="py-6 px-6 text-[10px] font-black text-slate-400 tracking-widest uppercase">{u.companyId || 'N/A'}</td>
+                            <td className="py-6 px-6">
+                              <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${u.role === 'super_admin' ? 'bg-violet-500/20 text-violet-400 border-violet-500/30' : u.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 text-slate-500 border-white/5'}`}>{u.role || 'user'}</span>
                             </td>
-                            <td className="py-5 px-6 text-xs font-semibold text-slate-400">Not recorded</td>
-                            <td className="py-5 px-8 text-right">
-                              <div className="flex items-center justify-end gap-3">
+                            <td className="py-6 px-6 text-[10px] font-black text-slate-600">NULL_EPOCH</td>
+                            <td className="py-6 px-10 text-right">
+                              <div className="flex items-center justify-end gap-4">
                                 <button 
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     const newStatus = u.active !== false ? false : true;
                                     await setDoc(doc(db, 'users', u.id), { active: newStatus }, { merge: true });
                                   }}
-                                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${u.active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'}`}
+                                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border transition-all ${u.active !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'}`}
                                 >
-                                  {u.active !== false ? 'Active' : 'Inactive'}
+                                  {u.active !== false ? 'Sanctioned' : 'Restricted'}
                                 </button>
-                                <button className="p-2 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={18} /></button>
+                                <button className="p-2 text-slate-700 hover:text-white transition-colors"><Trash2 size={18} /></button>
                               </div>
                             </td>
                           </tr>
@@ -426,44 +474,47 @@ export default function SuperAdmin() {
           ) : (
             <motion.div 
               key="details"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4 }}
             >
-              <button onClick={() => setSelectedOrg(null)} className="flex items-center gap-2 text-slate-500 hover:text-black font-bold mb-8 transition-colors group">
-                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back to Admin Dashboard
+              <button onClick={() => setSelectedOrg(null)} className="flex items-center gap-3 text-slate-500 hover:text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] mb-12 transition-all group">
+                <ArrowLeft size={20} className="group-hover:-translate-x-2 transition-transform" /> Retract to Dashboard
               </button>
 
               <div className="flex flex-col lg:flex-row gap-10 items-start">
                 {/* Left Column: Stats & Meta */}
                 <div className="w-full lg:w-80 shrink-0 space-y-6">
-                  <div className="bg-orange-50 p-8 rounded-[2.5rem] border border-orange-100 shadow-sm text-center">
-                    <div className="w-20 h-20 bg-orange-100 rounded-[2rem] flex items-center justify-center shadow-inner">
-                      <Building2 className="text-slate-400" size={32} />
+                  <div className="glass-card !bg-white/[0.02] border-white/5 p-10 rounded-[3rem] shadow-3xl text-center relative overflow-hidden group/meta">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500 opacity-20 group-hover/meta:opacity-100 transition-opacity"></div>
+                    <div className="w-24 h-24 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center shadow-inner mx-auto mb-6 group-hover:scale-110 transition-transform duration-700">
+                      <Building2 className="text-indigo-400" size={40} />
                     </div>
-                    <h2 className="text-4xl font-black text-black tracking-tight">{selectedOrg.name}</h2>
-                    <p className="text-slate-500 font-bold text-sm">Company Details & History</p>
-                    <div className="mt-8 pt-8 border-t border-orange-50 space-y-4">
-                       <div className="flex justify-between items-center text-sm">
-                          <span className="text-slate-400 font-bold uppercase tracking-tight text-[10px]">Total Leads</span>
-                          <span className="text-black font-black">{orgData.leads.length}</span>
+                    <h2 className="text-4xl font-black text-white tracking-tightest mb-2">{selectedOrg.name}</h2>
+                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Entity Node Identification</p>
+                    
+                    <div className="mt-10 pt-10 border-t border-white/5 space-y-6">
+                       <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
+                          <span className="text-slate-500 font-black uppercase tracking-tight text-[10px]">Logic Nodes</span>
+                          <span className="text-indigo-400 font-black text-lg">{orgData.leads.length}</span>
                        </div>
-                       <div className="flex justify-between items-center text-sm">
-                          <span className="text-slate-400 font-bold uppercase tracking-tight text-[10px]">Active Users</span>
-                          <span className="text-black font-black">{orgData.users.length}</span>
+                       <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
+                          <span className="text-slate-500 font-black uppercase tracking-tight text-[10px]">Active Identities</span>
+                          <span className="text-cyan-400 font-black text-lg">{orgData.users.length}</span>
                        </div>
                     </div>
                   </div>
 
-                  <div className="bg-orange-50/50 p-6 rounded-3xl border border-orange-100 text-sm">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Metadata</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-slate-600 font-medium">
-                        <Calendar size={14} className="text-slate-400" />
+                  <div className="glass-card !bg-white/[0.01] border-white/5 p-8 rounded-3xl text-sm space-y-4">
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-6">System Metadata</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                        <Calendar size={16} className="text-indigo-500/50" />
                         Created: {selectedOrg.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
                       </div>
-                      <div className="flex items-center gap-3 text-slate-600 font-medium overflow-hidden">
-                        <ShieldCheck size={14} className="text-slate-400 shrink-0" />
+                      <div className="flex items-center gap-4 text-slate-400 font-bold text-xs uppercase tracking-wider overflow-hidden">
+                        <ShieldCheck size={16} className="text-cyan-500/50 shrink-0" />
                         <span className="truncate">Root: {selectedOrg.createdBy}</span>
                       </div>
                     </div>
@@ -480,87 +531,110 @@ export default function SuperAdmin() {
                   ) : (
                     <>
                       {/* Leads Section */}
-                      <section>
-                         <h3 className="text-xl font-black text-black mb-6 flex items-center gap-3"><Users className="text-orange-400" /> Organizational Leads</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <section className="space-y-8">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-2xl">
+                               <Users size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black text-white tracking-tight uppercase tracking-widest">Organizational Node Stream</h3>
+                         </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {orgData.leads.length > 0 ? orgData.leads.map(lead => (
-                              <div key={lead.id} className="bg-orange-50 p-5 rounded-3xl border border-orange-100 shadow-sm flex items-center justify-between group hover:border-orange-100 transition-all">
-                                 <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold ${lead.status === 'New' ? 'bg-blue-400' : 'bg-slate-400'}`}>
+                              <div key={lead.id} onClick={() => setSelectedLead(lead)} className="glass-card !bg-white/[0.02] p-6 rounded-3xl border-white/5 shadow-2xl flex items-center justify-between group cursor-pointer hover:border-indigo-500/30 hover:bg-white/[0.04] transition-all">
+                                 <div className="flex items-center gap-5">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg border ${lead.status === 'New' ? 'bg-indigo-600 border-indigo-400' : 'bg-slate-800 border-slate-700'} group-hover:scale-110 transition-transform`}>
                                        {lead.name.charAt(0)}
                                     </div>
-                                    <div className="cursor-pointer" onClick={() => setSelectedLead(lead)}>
-                                       <h4 className="font-extrabold text-black group-hover:text-orange-600 transition-colors">{lead.name}</h4>
-                                       <p className="text-xs text-slate-400 font-bold">{lead.email || lead.phone || 'No Contact Data'}</p>
+                                    <div>
+                                       <h4 className="font-extrabold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{lead.name}</h4>
+                                       <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none mt-1.5">{lead.email || 'LOGGED_ANONYMOUS'}</p>
                                     </div>
                                  </div>
-                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg ${lead.status === 'New' ? 'bg-blue-50 text-orange-600' : 'bg-orange-50 text-slate-400'}`}>
+                                <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${lead.status === 'New' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'bg-white/5 text-slate-600 border-white/5'}`}>
                                    {lead.status}
                                 </span>
                               </div>
                             )) : (
-                              <div className="col-span-full py-10 text-center text-slate-400 font-bold border-2 border-dashed border-orange-200 rounded-3xl uppercase tracking-widest text-xs">No Leads Recorded</div>
+                              <div className="col-span-full py-16 text-center text-slate-600 font-black border-2 border-dashed border-white/5 rounded-[3rem] uppercase tracking-[0.4em] text-[10px] italic">Zero Node Latency Detected</div>
                             )}
                          </div>
                       </section>
 
                       {/* User Accounts Section */}
-                      <section>
-                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-black text-black flex items-center gap-3"><ShieldCheck className="text-rose-400" /> Account Access</h3>
+                      <section className="space-y-8">
+                         <div className="flex items-center justify-between">
+                            <h3 className="text-2xl font-black text-white tracking-tight uppercase tracking-widest flex items-center gap-4">
+                               <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-400 border border-rose-500/20 shadow-2xl">
+                                  <ShieldCheck size={24} />
+                               </div>
+                               Account Provisioning
+                            </h3>
                             <button 
                               onClick={() => setIsAddingUser(!isAddingUser)}
-                              className="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-orange-600 transition-all shadow-sm"
+                              className="px-6 py-3 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-400 transition-all shadow-xl active:scale-95"
                             >
-                              {isAddingUser ? 'Cancel' : '+ Add User'}
+                              {isAddingUser ? 'Abort' : 'Initialize Identity'}
                             </button>
                          </div>
-
+ 
                          <AnimatePresence>
                             {isAddingUser && (
-                               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 bg-orange-100 rounded-2xl p-6 border border-orange-200 overflow-hidden">
-                                  <form onSubmit={handleAddUserToOrg} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <input type="text" placeholder="Full Name" required value={newUserDisplayName} onChange={e => setNewUserDisplayName(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-orange-200 text-sm font-bold" />
-                                     <input type="email" placeholder="Email Address" required value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-orange-200 text-sm font-bold" />
-                                     <input type="password" placeholder="Password" required minLength={6} value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-orange-200 text-sm font-bold" />
-                                     <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-orange-200 text-sm font-bold">
-                                        <option value="user">Standard User</option>
-                                        <option value="admin">Org Admin</option>
-                                     </select>
-                                     <button type="submit" disabled={actionLoading} className="md:col-span-2 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-orange-700 disabled:opacity-50">
-                                        {actionLoading ? 'Initializing...' : 'Confirm and Provision User'}
+                               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="mb-10 glass-card !bg-white/5 rounded-[2.5rem] p-10 border-white/10 overflow-hidden shadow-3xl">
+                                  <form onSubmit={handleAddUserToOrg} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                     <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Legal Identity</label>
+                                        <input type="text" placeholder="Full Name" required value={newUserDisplayName} onChange={e => setNewUserDisplayName(e.target.value)} className="w-full px-6 py-4 bg-black/40 border border-white/10 rounded-2xl text-white font-bold text-sm focus:border-cyan-500/50 outline-none transition-all" />
+                                     </div>
+                                     <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Encryption Hash (Email)</label>
+                                        <input type="email" placeholder="Email Address" required value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} className="w-full px-6 py-4 bg-black/40 border border-white/10 rounded-2xl text-white font-bold text-sm focus:border-cyan-500/50 outline-none transition-all" />
+                                     </div>
+                                     <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Access Barrier (Password)</label>
+                                        <input type="password" placeholder="Min 6 characters" required minLength={6} value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} className="w-full px-6 py-4 bg-black/40 border border-white/10 rounded-2xl text-white font-bold text-sm focus:border-cyan-500/50 outline-none transition-all" />
+                                     </div>
+                                     <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Privilege Level</label>
+                                        <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} className="w-full px-6 py-4 bg-black/40 border border-white/10 rounded-2xl text-white font-bold text-sm focus:border-cyan-500/50 outline-none transition-all appearance-none cursor-pointer">
+                                           <option value="user" className="bg-slate-900">Standard Operator</option>
+                                           <option value="admin" className="bg-slate-900">Org Supervisor</option>
+                                        </select>
+                                     </div>
+                                     <button type="submit" disabled={actionLoading} className="md:col-span-2 bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 disabled:opacity-50 mt-4 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none"></div>
+                                        {actionLoading ? <Loader2 className="animate-spin" size={20} /> : 'Execute Provisioning Protocol'}
                                      </button>
                                   </form>
                                </motion.div>
                             )}
                          </AnimatePresence>
-                         <div className="bg-orange-50 rounded-[2rem] border border-orange-100 overflow-hidden">
+                         <div className="glass-card !bg-white/[0.01] border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
                             <table className="w-full text-left">
-                               <thead className="bg-orange-50">
-                                  <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                     <th className="py-4 px-6">User</th>
-                                     <th className="py-4 px-6">Role</th>
-                                     <th className="py-4 px-6 text-right">Ops</th>
+                               <thead>
+                                  <tr className="bg-white/[0.03] text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                     <th className="py-6 px-10">Subject Identity</th>
+                                     <th className="py-6 px-6">Privilege Protocol</th>
+                                     <th className="py-6 px-10 text-right">Ops</th>
                                   </tr>
                                </thead>
-                               <tbody className="divide-y divide-slate-50">
+                               <tbody className="divide-y divide-white/[0.03]">
                                   {orgData.users.map(u => (
-                                     <tr key={u.id} className="text-sm">
-                                        <td className="py-4 px-6 font-bold">{u.displayName}</td>
-                                        <td className="py-4 px-6"><span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg text-[10px] uppercase font-black">{u.role}</span></td>
-                                        <td className="py-4 px-6 text-right">
-                                          <div className="flex items-center justify-end gap-3">
-                                            <button 
-                                              onClick={async () => {
-                                                const newStatus = u.active !== false ? false : true;
-                                                await setDoc(doc(db, 'users', u.id), { active: newStatus }, { merge: true });
-                                                fetchOrgDetails(selectedOrg);
-                                              }}
-                                              className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border transition-all ${u.active !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'}`}
-                                            >
-                                              {u.active !== false ? 'Active' : 'Inactive'}
-                                            </button>
-                                            <button className="text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16} /></button>
+                                     <tr key={u.id} className="text-sm group hover:bg-white/[0.02] transition-all">
+                                        <td className="py-6 px-10 font-bold text-white group-hover:text-cyan-400 transition-colors">{u.displayName}</td>
+                                        <td className="py-6 px-6"><span className="bg-white/5 border border-white/5 text-indigo-400 px-3 py-1.5 rounded-xl text-[10px] uppercase font-black shadow-inner">{u.role}</span></td>
+                                        <td className="py-6 px-10 text-right">
+                                          <div className="flex items-center justify-end gap-5">
+                                             <button 
+                                               onClick={async () => {
+                                                 const newStatus = u.active !== false ? false : true;
+                                                 await setDoc(doc(db, 'users', u.id), { active: newStatus }, { merge: true });
+                                                 fetchOrgDetails(selectedOrg);
+                                               }}
+                                               className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${u.active !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.1)]'}`}
+                                             >
+                                               {u.active !== false ? 'Authorized' : 'Blacklisted'}
+                                             </button>
+                                             <button className="text-slate-700 hover:text-white transition-colors p-2 bg-white/5 rounded-xl"><MoreVertical size={18} /></button>
                                           </div>
                                         </td>
                                      </tr>
@@ -569,29 +643,34 @@ export default function SuperAdmin() {
                             </table>
                          </div>
                       </section>
-
+ 
                       {/* Activity Feed Section */}
-                      <section>
-                         <h3 className="text-xl font-black text-black mb-6 flex items-center gap-3"><Clock className="text-emerald-400" /> Recent Intelligence Logs</h3>
+                      <section className="space-y-8">
+                         <h3 className="text-2xl font-black text-white tracking-tight uppercase tracking-widest flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-2xl">
+                               <Clock size={24} />
+                            </div>
+                            System Intelligence Stream
+                         </h3>
                          <div className="space-y-4">
                             {orgData.recentActivities.length > 0 ? orgData.recentActivities.map(rec => (
-                              <div key={rec.id} className="bg-orange-50 p-6 rounded-3xl border border-orange-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                   <div className="w-10 h-10 bg-orange-100 text-slate-400 rounded-full flex items-center justify-center font-bold">
-                                      <MessageSquare size={18} />
+                              <div key={rec.id} className="glass-card !bg-white/[0.02] p-8 rounded-[2rem] border-white/5 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:border-emerald-500/30 transition-all">
+                                <div className="flex items-center gap-6">
+                                   <div className="w-14 h-14 bg-white/5 text-slate-500 rounded-2xl flex items-center justify-center font-bold border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                      <MessageSquare size={22} className="group-hover:text-emerald-400 transition-colors" />
                                    </div>
                                    <div>
-                                      <div className="font-extrabold text-black flex items-center gap-2">
-                                         Audio Interaction
-                                         <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full">Transcribed</span>
+                                      <div className="font-extrabold text-white text-lg flex items-center gap-3">
+                                         Audio Interaction Captured
+                                         <span className="text-[9px] font-black uppercase px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]">Processed</span>
                                       </div>
-                                      <p className="text-xs text-slate-500 font-medium">{rec.createdAt?.toDate?.().toLocaleString() || 'N/A'}</p>
+                                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2">{rec.createdAt?.toDate?.().toLocaleString() || 'N/A'}</p>
                                    </div>
                                 </div>
-                                <code className="text-[10px] bg-orange-50 text-slate-400 px-3 py-1.5 rounded-xl font-bold">{rec.id}</code>
+                                <code className="text-[10px] bg-black/40 border border-white/5 text-indigo-400 px-4 py-2 rounded-2xl font-black tracking-widest uppercase shadow-inner group-hover:border-indigo-500/50 transition-all">{rec.id}</code>
                               </div>
                             )) : (
-                              <div className="py-10 text-center text-slate-400 font-bold border-2 border-dashed border-orange-200 rounded-3xl uppercase tracking-widest text-xs">No Recent Activity Found</div>
+                              <div className="py-16 text-center text-slate-600 font-black border-2 border-dashed border-white/5 rounded-[3.5rem] uppercase tracking-[0.4em] text-[10px] italic">No Interaction Metadata Available</div>
                             )}
                          </div>
                       </section>
@@ -606,86 +685,100 @@ export default function SuperAdmin() {
         {/* Lead Detail Modal */}
         <AnimatePresence>
           {selectedLead && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-12">
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setSelectedLead(null)}
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/80 backdrop-blur-xl"
               />
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.9, y: 40 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl bg-orange-50 rounded-[2.5rem] shadow-2xl overflow-hidden"
+                exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="relative w-full max-w-4xl glass-card !bg-slate-900/60 !backdrop-blur-3xl !border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden border border-white/10 group/modal"
               >
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-8">
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
+                {/* Decorative border glow */}
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 group-hover/modal:opacity-100 transition-opacity duration-1000"></div>
+
+                <div className="p-10 sm:p-16">
+                  <div className="flex flex-col md:flex-row justify-between items-start gap-10 mb-14">
+                    <div className="flex items-center gap-8">
+                      <div className="w-24 h-24 bg-white/5 border border-white/10 text-cyan-400 rounded-[2rem] flex items-center justify-center text-4xl font-black shadow-inner relative group-hover:scale-110 transition-transform duration-700">
                         {selectedLead.name?.charAt(0)}
+                        <div className="absolute inset-0 bg-cyan-400/20 blur-2xl rounded-full opacity-20"></div>
                       </div>
-                      <div>
-                        <h2 className="text-3xl font-black text-black leading-tight">{selectedLead.name}</h2>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="px-2.5 py-1 bg-orange-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest">{selectedLead.status || 'New'}</span>
-                          <span className="text-slate-400 text-xs font-bold">{selectedLead.id}</span>
+                      <div className="space-y-3">
+                        <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tightest leading-tight">{selectedLead.name}</h2>
+                        <div className="flex items-center gap-4">
+                          <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(99,102,241,0.1)]">{selectedLead.status || 'New Node'}</span>
+                          <code className="text-slate-600 text-[10px] font-black tracking-widest uppercase">{selectedLead.id}</code>
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-orange-50 rounded-xl transition-colors text-slate-400 hover:text-black">
-                      <ArrowLeft size={24} />
+                    <button onClick={() => setSelectedLead(null)} className="p-4 hover:bg-white/10 rounded-2xl transition-all text-slate-500 hover:text-white border border-transparent hover:border-white/10 active:scale-95">
+                      <ArrowLeft size={32} />
                     </button>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Contact Details</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3 text-slate-700 font-bold">
-                            <Mail size={16} className="text-orange-400" /> {selectedLead.email || 'N/A'}
+ 
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-14">
+                    <div className="space-y-10">
+                      <div className="space-y-4">
+                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-6 border-b border-white/5 pb-3">Operational Details</h3>
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-5 text-slate-300 font-bold text-sm bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all">
+                            <Mail size={20} className="text-cyan-400" /> {selectedLead.email || 'ENCRYPTED_FIELD'}
                           </div>
-                          <div className="flex items-center gap-3 text-slate-700 font-bold">
-                            <Globe size={16} className="text-orange-400" /> {selectedLead.phone || 'N/A'}
+                          <div className="flex items-center gap-5 text-slate-300 font-bold text-sm bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all">
+                            <Globe size={20} className="text-cyan-400" /> {selectedLead.phone || 'NO_SIGNAL_DEVICE'}
                           </div>
                         </div>
                       </div>
-                      <div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Details</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3 text-slate-600 font-bold text-xs">
-                            <Building2 size={16} className="text-slate-300" /> Company: {selectedLead.companyId}
+                      <div className="space-y-4">
+                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-6 border-b border-white/5 pb-3">Protocol Metadata</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                             <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Subject Origin</div>
+                             <div className="text-xs text-white font-black truncate">{selectedLead.companyId}</div>
                           </div>
-                          <div className="flex items-center gap-3 text-slate-600 font-bold text-xs">
-                            <Calendar size={16} className="text-slate-300" /> Created: {selectedLead.createdAt?.toDate?.().toLocaleString() || 'N/A'}
+                          <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                             <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Epoch Logged</div>
+                             <div className="text-xs text-white font-black truncate">{selectedLead.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}</div>
                           </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-orange-50 rounded-3xl p-6 border border-orange-100">
-                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Lead Summary</h3>
-                       <p className="text-slate-600 text-sm font-medium leading-relaxed italic">
-                         {selectedLead.summary || "No automated summary available for this lead yet. Intelligence engine is monitoring interactions."}
+                    <div className="glass-card !bg-white/[0.03] rounded-[2.5rem] p-10 border-white/10 shadow-2xl relative overflow-hidden flex flex-col justify-center">
+                       <div className="absolute top-4 left-6 flex items-center gap-2">
+                          <Sparkles size={14} className="text-indigo-400 animate-pulse" />
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Intelligence Insight v2</span>
+                       </div>
+                       <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-8 border-b border-white/5 pb-3 opacity-0">Hidden</h3>
+                       <p className="text-slate-300 text-lg font-medium leading-[1.8] italic relative">
+                         <span className="text-4xl text-indigo-500/30 absolute -top-4 -left-6 font-serif">"</span>
+                         {selectedLead.summary || "No automated intelligence profile has been generated for this subject yet. Internal systems are monitoring current data vectors for synthesis."}
+                         <span className="text-4xl text-indigo-500/30 absolute -bottom-10 -right-2 font-serif">"</span>
                        </p>
                     </div>
                   </div>
-
-                  <div className="flex gap-4">
-                    <button className="flex-1 bg-orange-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-orange-100 hover:bg-orange-700 transition-all flex items-center justify-center gap-2">
-                       <Mail size={18} /> Contact Lead
+ 
+                  <div className="flex flex-wrap gap-4">
+                    <button className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95 group relative overflow-hidden">
+                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none"></div>
+                       <Mail size={20} /> Establish Direct Link
                     </button>
-                    <button onClick={() => setSelectedLead(null)} className="px-8 bg-orange-100 text-slate-600 py-4 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">
-                       Close
+                    <button onClick={() => setSelectedLead(null)} className="px-12 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white py-5 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.2em] border border-white/10 transition-all active:scale-95">
+                       Close Node
                     </button>
                     <button 
-                      onClick={() => handleDeleteLead(selectedLead.id)}
-                      className="p-4 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 transition-all"
-                      title="Delete Lead"
+                      onClick={() => { if(confirm("Are you sure you want to delete this lead?")) handleDeleteLead(selectedLead.id); }}
+                      className="p-5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-[2rem] hover:bg-rose-500/20 transition-all active:scale-95"
+                      title="Terminate Node"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={24} />
                     </button>
                   </div>
                 </div>

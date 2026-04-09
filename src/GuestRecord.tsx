@@ -371,18 +371,18 @@ export default function GuestRecord() {
 
   /* ─── Loading ─── */
   if (loading) return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-[#08090e]">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[#0A0D14]">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-        <Loader2 className="text-violet-500" size={40} />
+        <Loader2 className="text-indigo-500" size={40} />
       </motion.div>
     </div>
   );
 
   /* ─── Invalid link ─── */
   if (error && !meeting) return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-[#08090e] p-6">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[#0A0D14] p-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-orange-50/5 border border-orange-50/10 rounded-[2.5rem] p-12 text-center max-w-sm w-full backdrop-blur-xl">
+        className="bg-white/5 border border-white/10 rounded-[2.5rem] p-12 text-center max-w-sm w-full backdrop-blur-xl">
         <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <AlertCircle className="text-red-400" size={32} />
         </div>
@@ -396,13 +396,13 @@ export default function GuestRecord() {
 
   /* ─── Main ─── */
   return (
-    <div className="min-h-[100dvh] bg-[#08090e] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#0A0D14] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
 
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-orange-50uchsia-600/8 rounded-full blur-[100px]" />
-        <div className="absolute top-0 left-0 w-64 h-64 bg-orange-600/8 rounded-full blur-[80px]" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px]" />
+        <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -414,7 +414,7 @@ export default function GuestRecord() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-orange-50/5 border border-orange-50/10 rounded-[2.5rem] p-10 sm:p-12 text-center backdrop-blur-xl"
+              className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 sm:p-12 text-center backdrop-blur-xl"
             >
               <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -431,7 +431,7 @@ export default function GuestRecord() {
               <p className="text-white/40 leading-relaxed mb-10 font-medium">{success}</p>
 
               <button onClick={resetAll}
-                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-orange-50/8 hover:bg-orange-50/12 border border-orange-50/10 text-white/60 hover:text-white font-bold text-sm transition-all active:scale-95">
+                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white font-bold text-sm transition-all active:scale-95">
                 <RotateCcw size={15} /> Record Another
               </button>
             </motion.div>
@@ -445,12 +445,12 @@ export default function GuestRecord() {
               className="flex flex-col items-center"
             >
               {/* Header card */}
-              <motion.div className="w-full bg-orange-50/5 border border-orange-50/8 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center">
+              <motion.div className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center shadow-xl">
 
                 {/* Brand pill */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/15 border border-violet-500/20 mb-7">
-                  <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-                  <span className="text-[10px] font-black text-violet-300 uppercase tracking-[0.2em]">AudioCRM · Secure Recording</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/15 border border-indigo-500/20 mb-7">
+                  <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                  <span className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em]">AudioCRM · Secure Recording</span>
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3 leading-tight">
@@ -459,24 +459,24 @@ export default function GuestRecord() {
                 <p className="text-white/35 text-sm font-medium leading-relaxed max-w-xs mx-auto">
                   Your response will be securely transcribed and attached to the client file.
                 </p>
-                <div className="mt-4 mb-2 flex items-center justify-center gap-2 text-xs text-white/75">
+                <div className="mt-4 mb-2 flex items-center justify-center gap-2 text-xs text-slate-300">
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={includeSystemAudio}
                       onChange={(e) => setIncludeSystemAudio(e.target.checked)}
-                      className="accent-orange-400"
+                      className="accent-indigo-500"
                     />
                     Include system audio (screen share)
                   </label>
                 </div>
                 {systemAudioStatus && (
-                  <div className="text-xs text-orange-200 mb-3">{systemAudioStatus}</div>
+                  <div className="text-xs text-slate-400 mb-3">{systemAudioStatus}</div>
                 )}
               </motion.div>
 
               {/* Recording card */}
-              <div className="w-full bg-orange-50/5 border border-orange-50/8 rounded-[2.5rem] p-8 sm:p-10 backdrop-blur-xl flex flex-col items-center">
+              <div className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 sm:p-10 backdrop-blur-xl flex flex-col items-center shadow-xl">
 
                 {/* Timer */}
                 <AnimatePresence>
@@ -505,7 +505,7 @@ export default function GuestRecord() {
                         <>
                           {[1, 2, 3].map(i => (
                             <motion.div key={i}
-                              className="absolute inset-0 rounded-full border border-violet-500/30"
+                              className="absolute inset-0 rounded-full border border-indigo-500/30"
                               initial={{ scale: 1, opacity: 0.6 }}
                               animate={{ scale: 1.6 + i * 0.4, opacity: 0 }}
                               transition={{ duration: 2, repeat: Infinity, delay: i * 0.5, ease: 'easeOut' }}
@@ -519,8 +519,8 @@ export default function GuestRecord() {
                       onClick={isPaused ? resumeRecording : isRecording ? stopRecording : startRecording}
                       whileTap={{ scale: 0.93 }}
                       className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all z-10 shadow-2xl ${isRecording
-                        ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-600/30'
-                        : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-violet-600/30 hover:shadow-violet-600/50'
+                        ? 'bg-gradient-to-br from-rose-500 to-rose-600 shadow-rose-500/30 hover:shadow-rose-500/50'
+                        : 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30 hover:shadow-indigo-500/50'
                         } ${isPaused ? 'opacity-70' : ''}`}
                     >
                       {isPaused
@@ -572,7 +572,7 @@ export default function GuestRecord() {
                     >
                       {/* Duration badge */}
                       <div className="flex items-center justify-center gap-2 mb-1">
-                        <Clock size={13} className="text-violet-400" />
+                        <Clock size={13} className="text-indigo-400" />
                         <span className="text-xs font-black text-white/50 uppercase tracking-widest">
                           Duration: {formatTime(recordingSeconds)}
                         </span>
@@ -589,7 +589,7 @@ export default function GuestRecord() {
                         onClick={transcribeAndSave}
                         disabled={isTranscribing}
                         whileTap={{ scale: 0.97 }}
-                        className="w-full py-4 rounded-2xl font-black text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 shadow-xl shadow-violet-600/25 flex items-center justify-center gap-2.5 transition-all disabled:opacity-50 text-sm tracking-wide"
+                        className="w-full py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2.5 transition-all disabled:opacity-50 text-sm tracking-wide"
                       >
                         {isTranscribing
                           ? <><Loader2 className="animate-spin" size={18} /> Transcribing…</>
@@ -638,7 +638,7 @@ export default function GuestRecord() {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 60, opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-              className="bg-[#12141f] border border-orange-50/10 rounded-[2rem] p-8 sm:p-10 w-full max-w-sm text-center shadow-2xl"
+              className="bg-slate-900 border border-white/10 rounded-[2rem] p-8 sm:p-10 w-full max-w-sm text-center shadow-2xl"
             >
               <motion.div
                 animate={{ rotate: [0, -8, 8, -8, 0] }}
@@ -659,13 +659,13 @@ export default function GuestRecord() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSafetyAlert(false)}
-                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-orange-50/8 hover:bg-orange-50/12 border border-orange-50/10 text-white transition-all active:scale-95"
+                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all active:scale-95"
                 >
                   Keep Going
                 </button>
                 <button
                   onClick={() => { stopRecording(); setShowSafetyAlert(false); }}
-                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all active:scale-95"
+                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/20 transition-all active:scale-95"
                 >
                   Stop Now
                 </button>
