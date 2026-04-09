@@ -155,7 +155,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                 className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 ${isAdding ? 'bg-white/5 text-white border border-white/10 hover:bg-white/10 shadow-black/20' : 'bg-indigo-600 text-white shadow-indigo-500/20 hover:bg-indigo-500'}`}
               >
                 {isAdding ? <ChevronLeft size={18} /> : <UserPlus size={18} />}
-                {isAdding ? 'Back to Inventory' : 'Add Member'}
+                {isAdding ? 'Back' : 'Add Member'}
               </button>
             )}
             {isDemoMode && (

@@ -37,7 +37,7 @@ export default function Settings({ user }: { user: any }) {
             onClick={() => setActiveTab('team')}
             className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
           >
-            <Users size={18} className="hidden sm:block" /> Team
+            <Users size={18} className="hidden sm:block" /> Users
           </button>
         </div>
 

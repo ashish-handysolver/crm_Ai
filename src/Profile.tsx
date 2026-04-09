@@ -130,7 +130,7 @@ export default function Profile() {
             <div className="p-2 bg-white/5 border border-white/10 rounded-xl group-hover:border-indigo-500/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-all text-white">
               <ArrowLeft size={14} />
             </div>
-            Back Protocol
+            Back
           </button>
 
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-10">

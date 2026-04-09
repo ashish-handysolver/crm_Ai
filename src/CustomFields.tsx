@@ -238,7 +238,7 @@ export default function CustomFields({ user }: { user: any }) {
               className="btn-primary w-full px-8 py-3.5  group/save flex items-center justify-center gap-3"
             >
               {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} className="group-hover/save:scale-110 transition-transform" />}
-              <span>{isDemoMode ? 'Deployment Locked' : 'Sync Schema'}</span>
+              <span>{isDemoMode ? 'Demo Mode' : 'Save'}</span>
             </button>
           </motion.div>
         </header>

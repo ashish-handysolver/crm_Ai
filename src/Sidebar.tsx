@@ -90,7 +90,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tighter text-white lowercase">handycrm.ai</span>
-              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">Next-Gen Intelligence</span>
+              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">{companyName || 'handycrm.ai'}</span>
             </div>
           </Link>
 
@@ -104,7 +104,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" />
           <NavItem onClick={onClose} to="/clients" icon={<Users />} label="All Leads" />
           {/* <NavItem onClick={onClose} to="/active-clients" icon={<Activity />} label="Active Leads" /> */}
-          <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Import" />
+          <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Import audio" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" />
           {/* <NavItem onClick={onClose} to="/history" icon={<History />} label="Logs" /> */}
 

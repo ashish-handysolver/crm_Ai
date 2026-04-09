@@ -153,7 +153,7 @@ export default function Dashboard({ user }: { user: any }) {
                 {[
                   { label: 'Total Clients', value: totalClients, icon: <Users size={24} />, color: 'bg-indigo-500' },
                   { label: 'Conversion', value: `${conversionRate}%`, icon: <Target size={24} />, color: 'bg-emerald-500' },
-                  { label: 'Pipeline Val', value: `$${estimatedValue}M`, icon: <Zap size={24} />, color: 'bg-purple-500' },
+                  { label: 'Turnover', value: `₹ ${estimatedValue}`, icon: <Zap size={24} />, color: 'bg-purple-500' },
                 ].map((kpi, i) => (
                   <motion.div key={i} variants={itemVariants} className="glass-card p-4 sm:p-8 group hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between min-h-[140px] sm:min-h-0">
                     <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" />
