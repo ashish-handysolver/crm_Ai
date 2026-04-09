@@ -16,7 +16,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [newUserRole, setNewUserRole] = useState('user');
+  const [newUserRole, setNewUserRole] = useState('team_member');
   const [isActiveStatus, setIsActiveStatus] = useState(true);
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -98,7 +98,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
       setEmail('');
       setPassword('');
       setDisplayName('');
-      setNewUserRole('user');
+      setNewUserRole('team_member');
       setIsActiveStatus(true);
 
       setTimeout(() => setSuccess(''), 5000);
@@ -148,7 +148,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                     setEmail('');
                     setPassword('');
                     setDisplayName('');
-                    setNewUserRole('user');
+                    setNewUserRole('team_member');
                     setIsActiveStatus(true);
                   }
                 }}
@@ -254,7 +254,8 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                     <div className="space-y-6">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Permissions</label>
                       {[
-                        { id: 'user', label: 'Operator', desc: 'Standard CRM data access' },
+                        { id: 'team_member', label: 'Team Member', desc: 'Standard CRM data access' },
+                        { id: 'management', label: 'Management', desc: 'Can see all leads & manage team' },
                         { id: 'admin', label: 'Admin', desc: 'System-wide override control' }
                       ].map(r => (
                         <label key={r.id} className={`block p-5 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden group ${newUserRole === r.id ? 'bg-indigo-500/20 border-indigo-500 shadow-lg shadow-indigo-500/10' : 'bg-black/20 border-white/10 hover:border-white/20'}`}>
@@ -368,9 +369,13 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-black uppercase tracking-widest rounded-lg shadow-sm">
                                   <Shield size={10} /> Admin
                                 </div>
+                              ) : member.role === 'management' ? (
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase tracking-widest rounded-lg shadow-sm">
+                                  <Briefcase size={10} /> Management
+                                </div>
                               ) : (
                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 text-slate-300 text-[9px] font-black uppercase tracking-widest rounded-lg shadow-sm">
-                                  Operator
+                                  Team Member
                                 </div>
                               )}
                             </td>
@@ -389,7 +394,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                                     setEditingUserId(member.id);
                                     setDisplayName(member.displayName || '');
                                     setEmail(member.email || '');
-                                    setNewUserRole(member.role || 'user');
+                                    setNewUserRole(member.role || 'team_member');
                                     setIsActiveStatus(member.active !== false);
                                     setIsAdding(true);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
