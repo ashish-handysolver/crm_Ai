@@ -518,18 +518,34 @@ const RecordingView = () => {
 
   const handleShareWhatsApp = () => {
     if (!recording) return;
-    let text = `*Meeting Analytics & Minutes*\n\n`;
+
+    let text = `🚀 *Meeting Intelligence Report* 🚀\n\n`;
+    
     const insights = recording.aiInsights;
     if (insights) {
-      text += `*Executive Summary:*\n${insights.overview || 'N/A'}\n\n`;
-      text += `*Key Points:*\n`;
-      (insights.meetingMinutes || []).forEach((p: string) => text += `• ${p}\n`);
-      text += `\n*Action Items:*\n`;
-      (insights.tasks || []).forEach((t: any) => text += `• [${t.completed ? 'DONE' : 'OPEN'}] ${t.title}\n`);
+      if (insights.overview) {
+        text += `📝 *Executive Summary:*\n${insights.overview}\n\n`;
+      }
+      
+      if (insights.meetingMinutes && insights.meetingMinutes.length > 0) {
+        text += `💡 *Key Discussion Points:*\n`;
+        insights.meetingMinutes.forEach((p: string) => text += `• ${p}\n`);
+        text += `\n`;
+      }
+      
+      if (insights.tasks && insights.tasks.length > 0) {
+        text += `✅ *Action Items:*\n`;
+        insights.tasks.forEach((t: any) => text += `• [${t.completed ? 'DONE' : 'OPEN'}] ${t.title} (${t.assignee || 'Unassigned'})\n`);
+        text += `\n`;
+      }
     } else {
-      text += `*Transcript:*\n${recording.transcript?.substring(0, 500)}...\n`;
+      text += `📄 *Transcript Snippet:*\n${recording.transcript?.substring(0, 500)}...\n\n`;
     }
-    text += `\nView full details: ${window.location.origin}/r/${recording.id}`;
+
+    text += `🔗 *Full Protocol & Audio:* ${window.location.origin}/r/${recording.id}\n\n`;
+    text += `--- \n`;
+    text += `Sent via *handycrm.ai* | Next-Gen Sales Intelligence`;
+
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }; if (loading) return (
     <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
@@ -858,7 +874,15 @@ const GlobalRecorder = () => {
       const audioUrl = await getDownloadURL(storageRef);
 
       setStatusText('Transcribing & Analyzing...');
-      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+      const apiKey = (process.env as any).GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+      
+      if (!apiKey) {
+        console.error("CRITICAL_ERROR: Gemini API Key is missing. Transcription aborted.");
+        alert("Transcription Failed: Gemini API Key is not configured. Please check your environment variables.");
+        setIsProcessing(false);
+        setStatusText('');
+        return;
+      }
       let transcript = "No transcript generated.";
       let transcriptData = null;
       let aiInsights = null;

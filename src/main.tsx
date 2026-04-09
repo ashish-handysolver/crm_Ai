@@ -3,13 +3,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Remove legacy service workers that might interfere with real-time updates
+// Register Service Worker for PWA Support
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      registration.unregister();
-      console.log('Legacy ServiceWorker unregistered to ensure real-time security synchronization.');
-    }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('ServiceWorker registered:', reg))
+      .catch(err => console.error('ServiceWorker registration failed:', err));
   });
 }
 
@@ -45,17 +44,5 @@ try {
   window.location.href = '/outage.html';
 }
 
-// Force Unregister all Service Workers to fix CORS and Stale Cache
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    if (registrations.length > 0) {
-      for (const registration of registrations) {
-        registration.unregister();
-      }
-      console.log('UNREGISTERED OLD SERVICE WORKERS - RELOADING FOR FIX...');
-      window.location.reload();
-    }
-  }).catch(console.error);
-}
 
-console.log("HANDYSOLVER_CORE_VERSION: CORS_BYPASS_V4");
+console.log("HANDYSOLVER_CORE_VERSION: PWA_STABLE_V1");
