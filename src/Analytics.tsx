@@ -8,7 +8,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 
 export default function Analytics({ user }: { user: any }) {
-  const { companyId } = useAuth();
+  const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(!isDemoMode);
@@ -29,7 +29,10 @@ export default function Analytics({ user }: { user: any }) {
     const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setLeads(data);
+      const filtered = role === 'team_member'
+        ? data.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid)
+        : data;
+      setLeads(filtered);
       setLoading(false);
     });
 

@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
-import { Loader2, Play, Search, Filter, Calendar, AudioWaveform, Clock, Sparkles, ShieldCheck, UserPlus } from 'lucide-react';
+import { Loader2, Play, Search, Filter, Calendar, AudioWaveform, Clock, Sparkles, ShieldCheck, UserPlus, X, Send, Building2, Mail, User as UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { v4 as uuidv4 } from 'uuid';
+import { logActivity } from './utils/activity';
 
 export default function Reports({ user }: { user: any }) {
-  const { companyId } = useAuth();
+  const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [leads, setLeads] = useState<any[]>([]);
   const [recordings, setRecordings] = useState<any[]>([]);
   const [loading, setLoading] = useState(!isDemoMode);
   const [searchTerm, setSearchTerm] = useState('');
   const [syncingRecordId, setSyncingRecordId] = useState<string | null>(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [isCreatingLead, setIsCreatingLead] = useState(false);
+  const [quickLeadData, setQuickLeadData] = useState({ name: '', company: '', email: '' });
 
   useEffect(() => {
     if (isDemoMode) {
@@ -37,7 +42,11 @@ export default function Reports({ user }: { user: any }) {
     const unsubLeads = onSnapshot(
       query(collection(db, 'leads'), where('companyId', '==', companyId)),
       (snap) => {
-        setLeads(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const allLeads = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const filtered = role === 'team_member'
+          ? allLeads.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid)
+          : allLeads;
+        setLeads(filtered);
       },
       (error) => console.error("Reports Leads Error:", error)
     );
@@ -46,7 +55,10 @@ export default function Reports({ user }: { user: any }) {
       query(collection(db, 'recordings'), where('companyId', '==', companyId)),
       (snap) => {
         let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setRecordings(data);
+        const filteredRecs = role === 'team_member'
+          ? data.filter((r: any) => r.authorUid === user.uid || leads.some(l => l.id === r.leadId))
+          : data;
+        setRecordings(filteredRecs);
         setLoading(false);
       },
       (error) => {
@@ -59,12 +71,60 @@ export default function Reports({ user }: { user: any }) {
   }, [companyId, isDemoMode, demoData]);
 
   const handleLinkRecordToLead = async (recordId: string, leadId: string) => {
+    if (leadId === 'ADD_NEW') {
+      setShowQuickAdd(true);
+      return;
+    }
     try {
       await updateDoc(doc(db, 'recordings', recordId), { leadId });
       setSyncingRecordId(null);
     } catch (err) {
       console.error("Error linking record to lead:", err);
       alert("Failed to link record.");
+    }
+  };
+
+  const handleQuickAddLead = async () => {
+    if (!quickLeadData.name || !quickLeadData.company || !companyId || !syncingRecordId) return;
+    setIsCreatingLead(true);
+    try {
+      const newLeadId = uuidv4();
+      const leadPayload = {
+        ...quickLeadData,
+        id: newLeadId,
+        companyId,
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        phase: 'DISCOVERY',
+        health: 'WARM',
+        isInterested: true,
+        score: 50,
+        source: 'MANUAL_SYNC'
+      };
+
+      await setDoc(doc(db, 'leads', newLeadId), leadPayload);
+      await updateDoc(doc(db, 'recordings', syncingRecordId), { leadId: newLeadId });
+      
+      await logActivity({
+        leadId: newLeadId,
+        companyId,
+        type: 'SYSTEM',
+        action: 'Lead Created via Session Sync',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { note: `Lead created while syncing recording ${syncingRecordId}` }
+      });
+
+      setSyncingRecordId(null);
+      setShowQuickAdd(false);
+      setQuickLeadData({ name: '', company: '', email: '' });
+    } catch (err) {
+      console.error("Error creating and linking lead:", err);
+      alert("Failed to create lead.");
+    } finally {
+      setIsCreatingLead(false);
     }
   };
 
@@ -205,9 +265,16 @@ export default function Reports({ user }: { user: any }) {
                               <div className="text-[10px] sm:text-xs font-bold text-slate-500 mt-0.5 sm:mt-1 uppercase tracking-widest">Isolated Discovery</div>
                             </div>
                             {syncingRecordId === rec.id ? (
-                              <select onChange={(e) => handleLinkRecordToLead(rec.id, e.target.value)} className="text-[10px] font-bold bg-slate-900 border border-white/10 text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 shadow-sm w-full max-w-[200px]" defaultValue="">
-                                <option value="" disabled>Assign to Lead...</option>
-                                {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                              <select 
+                                onChange={(e) => handleLinkRecordToLead(rec.id, e.target.value)} 
+                                className="text-[10px] font-bold bg-slate-900 border border-white/10 text-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 shadow-xl w-full max-w-[220px] cursor-pointer hover:bg-black transition-all appearance-none" 
+                                defaultValue=""
+                              >
+                                <option value="" disabled>Link to Client...</option>
+                                <option value="ADD_NEW" className="text-indigo-400 font-black">✨ Add New Lead...</option>
+                                <optgroup label="Select Existing">
+                                  {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </optgroup>
                               </select>
                             ) : (
                               <button onClick={() => setSyncingRecordId(rec.id)} className="px-4 py-2 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 hover:text-white border border-indigo-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-1.5 w-fit active:scale-95">
@@ -279,6 +346,104 @@ export default function Reports({ user }: { user: any }) {
             <ShieldCheck size={14} /> Enterprise Audit Protocol v4.0.2 - Standard Secured
           </p>
         </div>
+
+        {/* Quick Add Lead Modal */}
+        <AnimatePresence>
+          {showQuickAdd && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => !isCreatingLead && setShowQuickAdd(false)}
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
+                      <UserPlus size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Quick Sync Lead</h3>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Create & Link Session</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowQuickAdd(false)}
+                    className="p-2 text-slate-500 hover:text-white transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input
+                        type="text"
+                        value={quickLeadData.name}
+                        onChange={(e) => setQuickLeadData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="John Doe"
+                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-700 shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company</label>
+                    <div className="relative">
+                      <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input
+                        type="text"
+                        value={quickLeadData.company}
+                        onChange={(e) => setQuickLeadData(prev => ({ ...prev, company: e.target.value }))}
+                        placeholder="Acme Corp"
+                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-700 shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input
+                        type="email"
+                        value={quickLeadData.email}
+                        onChange={(e) => setQuickLeadData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="john@example.com"
+                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-700 shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    disabled={!quickLeadData.name || !quickLeadData.company || isCreatingLead}
+                    onClick={handleQuickAddLead}
+                    className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3 mt-4"
+                  >
+                    {isCreatingLead ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Sync Intelligence
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

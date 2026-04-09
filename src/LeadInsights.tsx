@@ -8,15 +8,19 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft,
   Briefcase, ChevronLeft, Calendar, Edit, Check, Plus, Trash2, ArrowUpRight,
-  CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2
+  CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2, ShieldAlert,
+  ThumbsUp, ThumbsDown, MessageSquare as MessageIcon, History
 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
 import { uploadFileToGemini } from './utils/gemini';
+import { logActivity } from './utils/activity';
 
 export default function LeadInsights({ user }: { user: any }) {
   const { id } = useParams();
+  const { role } = useAuth();
+
   const [lead, setLead] = useState<any>(null);
   const [recordings, setRecordings] = useState<any[]>([]);
   const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
@@ -34,13 +38,23 @@ export default function LeadInsights({ user }: { user: any }) {
   const [meetingForm, setMeetingForm] = useState({ title: '', date: '', time: '10:00', notes: '' });
   const [savingMeeting, setSavingMeeting] = useState(false);
 
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     const fetchLead = async () => {
       try {
         const docSnap = await getDoc(doc(db, 'leads', id));
         if (docSnap.exists()) {
-          setLead({ id: docSnap.id, ...docSnap.data() });
+          const data = docSnap.data();
+          // Access check
+          if (role === 'team_member' && data.assignedTo !== user.uid && data.authorUid !== user.uid) {
+            setLead('UNAUTHORIZED');
+            return;
+          }
+          setLead({ id: docSnap.id, ...data });
         }
       } catch (err) {
         console.error(err);
@@ -73,8 +87,16 @@ export default function LeadInsights({ user }: { user: any }) {
       setMeetings(data);
     });
 
-    return () => { unsub(); munsubMeetings(); };
-  }, [id, lead, selectedRecId]);
+    // Fetch Activity Logs
+    const aq = query(collection(db, 'activity_logs'), where('leadId', '==', id));
+    const unsubLogs = onSnapshot(aq, snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      setActivityLogs(data);
+    });
+
+    return () => { unsub(); munsubMeetings(); unsubLogs(); };
+  }, [id, lead, selectedRecId, role, user.uid]);
 
   useEffect(() => {
     if (lead !== null) setLoading(false);
@@ -284,6 +306,53 @@ export default function LeadInsights({ user }: { user: any }) {
     }
   };
 
+  const toggleInterest = async () => {
+    if (!lead) return;
+    const newStatus = !lead.isInterested;
+    try {
+      await updateDoc(doc(db, 'leads', lead.id), { isInterested: newStatus });
+      setLead({ ...lead, isInterested: newStatus });
+      
+      await logActivity({
+        leadId: lead.id,
+        companyId: lead.companyId,
+        type: 'INTEREST_CHANGE',
+        action: newStatus ? 'Marked as Interested' : 'Marked as Not Interested',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: {
+          field: 'isInterested',
+          oldValue: lead.isInterested ?? true,
+          newValue: newStatus
+        }
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim() || isSubmittingNote) return;
+    setIsSubmittingNote(true);
+    try {
+      await logActivity({
+        leadId: lead.id,
+        companyId: lead.companyId,
+        type: 'MANUAL_NOTE',
+        action: 'Added Manual Note',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { note: newNote }
+      });
+      setNewNote('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingNote(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
@@ -309,6 +378,15 @@ export default function LeadInsights({ user }: { user: any }) {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (lead === 'UNAUTHORIZED') {
+    return (
+      <div className="flex-1 bg-slate-50/50 flex flex-col items-center justify-center min-h-[100dvh] text-slate-400 font-black uppercase tracking-widest text-sm p-8 text-center">
+        <ShieldAlert size={48} className="text-rose-500 mb-4" />
+        Access Denied: Resource Isolated
       </div>
     );
   }
@@ -485,30 +563,6 @@ export default function LeadInsights({ user }: { user: any }) {
 
     y += 15;
 
-    // Actionable Items
-    // doc.setFontSize(14);
-    // doc.setFont("helvetica", "bold");
-    // doc.text("STRATEGIC ACTION ITEMS", margin, y);
-    // y += 10;
-    // doc.setFontSize(10);
-    // doc.setFont("helvetica", "normal");
-
-    // const tasks = Array.isArray(insights.tasks) ? insights.tasks : [];
-    // if (tasks.length === 0) {
-    //   doc.text("- No open tasks detected.", margin, y);
-    // } else {
-    //   tasks.forEach((t: any) => {
-    //     if (y > 270) { doc.addPage(); y = 20; }
-    //     const status = t.completed ? "[DONE] " : "[OPEN] ";
-    //     const tText = `${status}${t.title} (${t.assignee} / ${t.dueDate})`;
-    //     const tLines = doc.splitTextToSize(`• ${tText}`, 165);
-    //     doc.text(tLines, margin, y);
-    //     y += (tLines.length * 6) + 2;
-    //   });
-    // }
-
-    // y += 15;
-
     // Full Meeting Script
     if (selectedRec.transcript) {
       doc.addPage();
@@ -571,6 +625,17 @@ export default function LeadInsights({ user }: { user: any }) {
                   <div className={`w-2 h-2 rounded-full ${lead.status === 'Won' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : lead.status === 'Lost' ? 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.5)]' : 'bg-indigo-400 animate-pulse shadow-[0_0_8px_rgba(129,140,248,0.5)]'}`} />
                   {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Disqualified' : 'In Progress'}
                 </span>
+              </div>
+
+              <div className="glass-card !p-5 !rounded-2xl !bg-slate-900/40 border-white/5 shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Lead Interest</div>
+                <button
+                  onClick={toggleInterest}
+                  className={`w-full px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border shadow-lg transition-all ${lead.isInterested !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
+                >
+                  {lead.isInterested !== false ? <ThumbsUp size={12} /> : <ThumbsDown size={12} />}
+                  {lead.isInterested !== false ? 'Interested' : 'Not Interested'}
+                </button>
               </div>
 
               <div className="glass-card !p-5 !rounded-2xl !bg-slate-900/40 border-white/5 shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
@@ -1027,6 +1092,27 @@ export default function LeadInsights({ user }: { user: any }) {
             </div>
           </div>
         </div>
+
+        {/* Action Controls */}
+        {selectedRec && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-end gap-5">
+            <button
+              onClick={handleExportPDF}
+              className="px-8 py-4 rounded-[1.5rem] bg-white/5 text-slate-400 hover:text-white font-black text-[10px] uppercase tracking-widest shadow-2xl border border-white/10 hover:border-white/20 transition-all flex items-center gap-3 active:scale-95 backdrop-blur-md"
+            >
+              <Download size={14} /> Intelligence Payload (PDF)
+            </button>
+            <button
+              onClick={handleRegenerate}
+              disabled={generatingAI}
+              className="px-8 py-4 rounded-[1.5rem] btn-primary text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50"
+            >
+              {generatingAI ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+              {generatingAI ? 'Synchronizing Vectors...' : 'Regenerate Neural Insights'}
+            </button>
+          </motion.div>
+        )}
+
         <div className="bg-slate-900/60 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl border border-white/5 backdrop-blur-3xl">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
 
@@ -1051,7 +1137,112 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
         </div>
 
-        {/* Global Expanded Modal for Details */}
+        {/* Activity Timeline Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Quick Note Form */}
+          <div className="glass-card !bg-white/5 !rounded-[2.5rem] !p-10 border-white/10 shadow-2xl relative overflow-hidden group/note h-fit">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500"></div>
+            <div className="space-y-8 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-lg">
+                  <MessageIcon size={20} />
+                </div>
+                <h3 className="font-black text-white text-lg uppercase tracking-widest font-display">Append Intelligence</h3>
+              </div>
+              
+              <form onSubmit={handleAddNote} className="space-y-6">
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Record call summary, email outcome, or meeting notes..."
+                  className="w-full px-6 py-5 rounded-2xl bg-black/40 border border-white/10 text-white font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all min-h-[160px] resize-none text-sm placeholder:text-slate-600 shadow-inner"
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmittingNote || !newNote.trim()}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-3 font-display"
+                >
+                  {isSubmittingNote ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                  Capture Sync
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="lg:col-span-2 space-y-10">
+            <div className="flex items-center justify-between mb-2 px-2">
+              <h3 className="font-black text-white flex items-center gap-4 text-sm uppercase tracking-widest font-display">
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-lg"><History size={18} /></div> Interaction Archive
+              </h3>
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{activityLogs.length} Events Logged</div>
+            </div>
+
+            <div className="space-y-6 max-h-[700px] overflow-y-auto pr-4 scrollbar-hide">
+              {activityLogs.length === 0 ? (
+                <div className="glass-card !bg-white/5 !border-dashed !border-white/10 py-24 flex flex-col items-center justify-center text-center rounded-[2.5rem]">
+                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 opacity-40">
+                    <History size={32} className="text-slate-500" />
+                  </div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic opacity-60">Initial state established. No interactions found.</p>
+                </div>
+              ) : (
+                activityLogs.map((log, idx) => (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    key={log.id}
+                    className="relative pl-10 group/log"
+                  >
+                    {/* Continuous vertical line */}
+                    {idx !== activityLogs.length - 1 && (
+                      <div className="absolute top-10 left-3.5 w-[2px] h-[calc(100%+0.5rem)] bg-white/5 -translate-x-1/2"></div>
+                    )}
+                    
+                    {/* Log marker */}
+                    <div className={`absolute top-4 left-0 w-7 h-7 rounded-full flex items-center justify-center border shadow-xl z-20 ${
+                      log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-white' :
+                      log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-white' :
+                      'bg-slate-800 border-slate-700 text-slate-400'
+                    }`}>
+                      {log.type === 'MANUAL_NOTE' ? <MessageIcon size={12} /> :
+                       log.type === 'FIELD_CHANGE' ? <Edit size={12} /> :
+                       log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={12} /> :
+                       <Zap size={12} />}
+                    </div>
+
+                    <div className="glass-card !bg-slate-900/40 !p-6 !rounded-[2rem] border-white/5 hover:border-white/10 transition-all shadow-xl group-hover/log:bg-slate-900/60">
+                      <div className="flex justify-between items-start gap-4 mb-4">
+                        <div className="space-y-1">
+                          <div className="text-[9px] font-black text-cyan-400 uppercase tracking-[0.2em]">{log.action}</div>
+                          <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest">by {log.authorName}</div>
+                        </div>
+                        <div className="text-[9px] font-black text-slate-600 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 uppercase tracking-widest shrink-0 shadow-inner">
+                          {log.createdAt?.toDate ? log.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false }) : 'Legacy Core'}
+                        </div>
+                      </div>
+
+                      {log.type === 'MANUAL_NOTE' ? (
+                        <div className="p-4 bg-black/30 rounded-xl border border-white/5 text-sm text-slate-300 font-medium leading-relaxed italic border-l-4 border-l-indigo-500 shadow-inner">
+                          "{log.details?.note}"
+                        </div>
+                      ) : log.type === 'FIELD_CHANGE' || log.type === 'INTEREST_CHANGE' ? (
+                        <div className="flex items-center gap-4 text-xs font-bold text-slate-400 bg-white/[0.02] p-4 rounded-xl border border-white/5 shadow-inner">
+                           <span className="text-slate-500 uppercase text-[9px] tracking-widest">{log.details?.field}:</span>
+                           <span className="line-through opacity-40 px-2 py-1 bg-white/5 rounded-lg">{String(log.details?.oldValue)}</span>
+                           <ArrowUpRight size={14} className="text-cyan-500" />
+                           <span className="text-white px-3 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20 shadow-md">{String(log.details?.newValue)}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
         <AnimatePresence>
           {expandedSection && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-12 overflow-hidden">
@@ -1120,56 +1311,56 @@ export default function LeadInsights({ user }: { user: any }) {
             </div>
           )}
         </AnimatePresence>
-      </div>
 
-      {/* Create Meeting Modal */}
-      <AnimatePresence>
-        {showMeetingModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMeetingModal(false)} className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl" />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }}
-              className="bg-slate-900 border border-white/10 rounded-[3.5rem] shadow-[0_32px_120px_rgba(0,0,0,0.8)] w-full max-w-2xl relative z-10 overflow-hidden backdrop-blur-3xl"
-            >
-              <div className="p-12 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-white tracking-tight uppercase font-display">Schedule Session</h2>
-                  <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.4em]">Intelligence Deployment Parameters</p>
+        {/* Create Meeting Modal */}
+        <AnimatePresence>
+          {showMeetingModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMeetingModal(false)} className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl" />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }}
+                className="bg-slate-900 border border-white/10 rounded-[3.5rem] shadow-[0_32px_120px_rgba(0,0,0,0.8)] w-full max-w-2xl relative z-10 overflow-hidden backdrop-blur-3xl"
+              >
+                <div className="p-12 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-black text-white tracking-tight uppercase font-display">Schedule Session</h2>
+                    <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.4em]">Intelligence Deployment Parameters</p>
+                  </div>
+                  <button onClick={() => setShowMeetingModal(false)} className="p-4 bg-white/5 hover:bg-rose-500/10 hover:text-rose-500 border border-white/10 rounded-2xl transition-all shadow-xl active:scale-95 text-slate-400">
+                    <X size={24} />
+                  </button>
                 </div>
-                <button onClick={() => setShowMeetingModal(false)} className="p-4 bg-white/5 hover:bg-rose-500/10 hover:text-rose-500 border border-white/10 rounded-2xl transition-all shadow-xl active:scale-95 text-slate-400">
-                  <X size={24} />
-                </button>
-              </div>
-              <div className="p-12 space-y-10">
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Session Title</label>
-                  <input placeholder="e.g. Strategic Synergy Summit" type="text" value={meetingForm.title} onChange={e => setMeetingForm(f => ({ ...f, title: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all text-lg placeholder:text-slate-700" />
-                </div>
-                <div className="grid grid-cols-2 gap-10">
+                <div className="p-12 space-y-10">
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Temporal Date</label>
-                    <input type="date" value={meetingForm.date} onChange={e => setMeetingForm(f => ({ ...f, date: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all appearance-none" />
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Session Title</label>
+                    <input placeholder="e.g. Strategic Synergy Summit" type="text" value={meetingForm.title} onChange={e => setMeetingForm(f => ({ ...f, title: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all text-lg placeholder:text-slate-700" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-10">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Temporal Date</label>
+                      <input type="date" value={meetingForm.date} onChange={e => setMeetingForm(f => ({ ...f, date: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all appearance-none" />
+                    </div>
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Temporal Time</label>
+                      <input type="time" value={meetingForm.time} onChange={e => setMeetingForm(f => ({ ...f, time: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all appearance-none" />
+                    </div>
                   </div>
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Temporal Time</label>
-                    <input type="time" value={meetingForm.time} onChange={e => setMeetingForm(f => ({ ...f, time: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all appearance-none" />
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Strategic Briefing</label>
+                    <textarea placeholder="Define key objectives for this intelligence session..." value={meetingForm.notes} onChange={e => setMeetingForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all resize-none min-h-[150px] placeholder:text-slate-700" />
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block ml-2">Strategic Briefing</label>
-                  <textarea placeholder="Define key objectives for this intelligence session..." value={meetingForm.notes} onChange={e => setMeetingForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-8 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 font-bold text-white transition-all resize-none min-h-[150px] placeholder:text-slate-700" />
+                <div className="p-12 bg-black/40 flex gap-8 border-t border-white/5">
+                  <button onClick={() => setShowMeetingModal(false)} className="flex-1 py-6 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] text-slate-500 hover:text-white transition-all">Abort</button>
+                  <button onClick={handleSaveMeeting} disabled={savingMeeting} className="flex-1 py-6 rounded-[2rem] font-black bg-cyan-600 text-white hover:bg-white hover:text-slate-900 transition-all text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-[0_20px_40px_-12px_rgba(6,182,212,0.3)] active:scale-95 disabled:opacity-50 font-display">
+                    {savingMeeting ? <Loader2 size={18} className="animate-spin" /> : null} Commit Session
+                  </button>
                 </div>
-              </div>
-              <div className="p-12 bg-black/40 flex gap-8 border-t border-white/5">
-                <button onClick={() => setShowMeetingModal(false)} className="flex-1 py-6 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] text-slate-500 hover:text-white transition-all">Abort</button>
-                <button onClick={handleSaveMeeting} disabled={savingMeeting} className="flex-1 py-6 rounded-[2rem] font-black bg-cyan-600 text-white hover:bg-white hover:text-slate-900 transition-all text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-[0_20px_40px_-12px_rgba(6,182,212,0.3)] active:scale-95 disabled:opacity-50 font-display">
-                  {savingMeeting ? <Loader2 size={18} className="animate-spin" /> : null} Commit Session
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { useDemo } from './DemoContext';
 import { Eye } from 'lucide-react';
 
 export default function ManualUpload({ user }: { user: any }) {
-  const { companyId } = useAuth();
+  const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [leads, setLeads] = useState<any[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState('');
@@ -33,7 +33,13 @@ export default function ManualUpload({ user }: { user: any }) {
     if (!companyId) return;
     const unsub = onSnapshot(
       query(collection(db, 'leads'), where('companyId', '==', companyId)),
-      (snap) => setLeads(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
+      (snap) => {
+        const allLeads = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const filtered = role === 'team_member'
+          ? allLeads.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid)
+          : allLeads;
+        setLeads(filtered);
+      },
       (err) => console.error(err)
     );
     return () => unsub();

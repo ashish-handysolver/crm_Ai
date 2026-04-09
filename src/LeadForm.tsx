@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap, CalendarDays, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap, CalendarDays, ShieldAlert, UserCircle } from 'lucide-react';
 import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
+import { logActivity } from './utils/activity';
 import { motion } from 'motion/react';
 
 export default function LeadForm({ user }: { user: any }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  const { companyId } = useAuth();
+  const [originalLead, setOriginalLead] = useState<any>(null);
+  const { companyId, role, user: authUser } = useAuth();
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
@@ -21,6 +23,7 @@ export default function LeadForm({ user }: { user: any }) {
   const [customSources, setCustomSources] = useState<string[]>([]);
   const [customPhases, setCustomPhases] = useState<string[]>([]);
   const [customLeadTypes, setCustomLeadTypes] = useState<string[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<any>({
     name: '',
@@ -34,6 +37,7 @@ export default function LeadForm({ user }: { user: any }) {
     score: 50,
     phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim(),
     avatar: '',
+    assignedTo: user?.uid || '',
     createdAtStr: new Date().toISOString().split('T')[0]
   });
 
@@ -51,6 +55,7 @@ export default function LeadForm({ user }: { user: any }) {
               createdStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
             }
             setFormData({ avatar: '', ...data, createdAtStr: createdStr } as any);
+            setOriginalLead({ ...data });
           } else {
             // Mock data population if it's the dummy IDs, so edit works visually
             if (id === '1') setFormData({ name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', score: 85, phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' });
@@ -85,6 +90,11 @@ export default function LeadForm({ user }: { user: any }) {
         setCustomLeadTypes(snap.data().customLeadTypes || []);
       }
     }).catch(console.error);
+
+    const qUsers = query(collection(db, 'users'), where('companyId', '==', companyId));
+    getDocs(qUsers).then(snap => {
+      setTeamMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }).catch(console.error);
   }, [companyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,11 +116,45 @@ export default function LeadForm({ user }: { user: any }) {
       const payload = {
         ...formData,
         id: leadId,
+        isInterested: formData.isInterested ?? true,
         updatedAt: Timestamp.now(),
         createdAt: createdTimestamp,
         companyId: companyId
       };
       delete payload.createdAtStr;
+
+      // Log changes if editing
+      if (isEditing && originalLead) {
+        const trackedFields = ['phase', 'status', 'health', 'assignedTo', 'isInterested'];
+        for (const field of trackedFields) {
+          const oldVal = originalLead[field];
+          const newVal = payload[field];
+          if (oldVal !== newVal) {
+            await logActivity({
+              leadId: leadId as string,
+              companyId: companyId,
+              type: field === 'isInterested' ? 'INTEREST_CHANGE' : 'FIELD_CHANGE',
+              action: `Updated ${field.charAt(0).toUpperCase() + field.slice(1)}`,
+              authorUid: authUser.uid,
+              authorName: authUser.displayName || 'System',
+              details: {
+                field: field,
+                oldValue: oldVal ?? (field === 'isInterested' ? true : 'NONE'),
+                newValue: newVal ?? (field === 'isInterested' ? true : 'NONE')
+              }
+            });
+          }
+        }
+      } else if (!isEditing) {
+        await logActivity({
+          leadId: leadId as string,
+          companyId: companyId,
+          type: 'SYSTEM',
+          action: 'Lead Created',
+          authorUid: authUser.uid,
+          authorName: authUser.displayName || 'System'
+        });
+      }
 
       await setDoc(doc(db, 'leads', leadId as string), payload);
       navigate('/clients');
@@ -296,6 +340,36 @@ export default function LeadForm({ user }: { user: any }) {
                     </div>
                   </div>
                 </section>
+                
+                {/* Assignment Section */}
+                {(role !== 'team_member' || !isEditing) && (
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
+                        <UserCircle size={18} />
+                      </div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Owner & Assignment</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <label className={labelClasses}>Assigned Representative</label>
+                        <select 
+                          name="assignedTo" 
+                          value={formData.assignedTo || ''} 
+                          onChange={handleChange} 
+                          disabled={role === 'team_member'}
+                          className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}
+                        >
+                          <option value="">— Unassigned —</option>
+                          {teamMembers.map(m => (
+                            <option key={m.id} value={m.id}>{m.displayName || m.email} ({m.role})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </section>
+                )}
 
                 {/* Classification */}
                 <section className="space-y-8">

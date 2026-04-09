@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Copy, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Copy, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode, ThumbsUp, ThumbsDown, History, MessageSquare, X, Send
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -14,6 +14,8 @@ import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 import ImportModal from './ImportModal';
+import { logActivity } from './utils/activity';
+import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
@@ -59,11 +61,19 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const SAFETY_CHECK_SECONDS = (Number((import.meta as any).env.VITE_SAFETY_CHECK_DURATION_MINS) || 5) * 60;
   const [selectedPhase, setSelectedPhase] = useState((location.state as any)?.phase || 'All');
   const [healthFilter, setHealthFilter] = useState((location.state as any)?.health || 'ALL');
+  const [interestFilter, setInterestFilter] = useState<'ALL' | 'INTERESTED' | 'NOT_INTERESTED'>(
+    (location.state as any)?.isInterested === true ? 'INTERESTED' : 
+    (location.state as any)?.isInterested === false ? 'NOT_INTERESTED' : 'INTERESTED'
+  );
+  const [selectedLeadForHistory, setSelectedLeadForHistory] = useState<any | null>(null);
+  const [newActivityNote, setNewActivityNote] = useState('');
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [submittingNote, setSubmittingNote] = useState(false);
 
   // Reset page on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, leadTypeFilter, activityFilter, selectedPhase, healthFilter]);
+  }, [searchTerm, leadTypeFilter, activityFilter, selectedPhase, healthFilter, interestFilter]);
 
   // Keep filter in sync if route changes
   useEffect(() => {
@@ -95,7 +105,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     const unsubLeads = onSnapshot(qLeads, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as any);
       data.sort((a, b) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
-      setLeads(data.length > 0 ? data : demoData.leads);
+      
+      // Role-based filtering
+      const filtered = role === 'team_member' 
+        ? data.filter(l => l.assignedTo === user.uid || l.authorUid === user.uid)
+        : data;
+
+      setLeads(filtered.length > 0 ? filtered : (role === 'team_member' ? [] : demoData.leads));
       setLoadingLeads(false);
     }, (error) => {
       console.error("Leads Error:", error);
@@ -105,7 +121,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     const qRecs = query(collection(db, 'recordings'), where('companyId', '==', companyId));
     const unsubRecs = onSnapshot(qRecs, (snapshot) => {
       const allRecs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as any);
-      setRecordings(allRecs);
+      
+      // Role-based filtering for recordings
+      const filteredRecs = role === 'team_member'
+        ? allRecs.filter(r => r.authorUid === user.uid || leads.some(l => l.id === r.leadId))
+        : allRecs;
+
+      setRecordings(filteredRecs);
     });
 
     const qUsers = query(collection(db, 'users'), where('companyId', '==', companyId));
@@ -131,6 +153,46 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       }
     }).catch(console.error);
   }, [companyId]);
+
+  // Activity Logs Subscription
+  useEffect(() => {
+    if (!selectedLeadForHistory || isDemoMode) {
+      setActivityLogs([]);
+      return;
+    }
+    const q = query(
+      collection(db, 'activity_logs'),
+      where('leadId', '==', selectedLeadForHistory.id),
+      where('companyId', '==', companyId)
+    );
+    const unsub = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      logs.sort((a: any, b: any) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      setActivityLogs(logs);
+    });
+    return () => unsub();
+  }, [selectedLeadForHistory, companyId, isDemoMode]);
+
+  const handleAddActivityNote = async () => {
+    if (!newActivityNote.trim() || !selectedLeadForHistory || !companyId || isDemoMode) return;
+    setSubmittingNote(true);
+    try {
+      await logActivity({
+        leadId: selectedLeadForHistory.id,
+        companyId,
+        type: 'MANUAL_NOTE',
+        action: 'Manual Intelligence Entry',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { note: newActivityNote.trim() }
+      });
+      setNewActivityNote('');
+    } catch (err) {
+      console.error('Failed to add note', err);
+    } finally {
+      setSubmittingNote(false);
+    }
+  };
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -511,7 +573,20 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const handlePhaseChange = async (leadId: string, newPhase: string) => {
     if (isDemoMode) return;
     try {
+      if (!companyId) return;
+      const lead = leads.find(l => l.id === leadId);
+      const oldPhase = lead?.phase || 'DISCOVERY';
       await updateDoc(doc(db, 'leads', leadId), { phase: newPhase, updatedAt: Timestamp.now() });
+
+      await logActivity({
+        leadId,
+        companyId,
+        type: 'FIELD_CHANGE',
+        action: 'Pipeline Phase Transition',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { field: 'phase', oldValue: oldPhase, newValue: newPhase }
+      });
     } catch (e) {
       console.error('Failed to update phase', e);
     }
@@ -520,7 +595,20 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const handleHealthChange = async (leadId: string, newHealth: string) => {
     if (isDemoMode) return;
     try {
+      if (!companyId) return;
+      const lead = leads.find(l => l.id === leadId);
+      const oldHealth = lead?.health || 'WARM';
       await updateDoc(doc(db, 'leads', leadId), { health: newHealth, updatedAt: Timestamp.now() });
+
+      await logActivity({
+        leadId,
+        companyId,
+        type: 'FIELD_CHANGE',
+        action: 'Health Status Synchronization',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { field: 'health', oldValue: oldHealth, newValue: newHealth }
+      });
     } catch (e) {
       console.error('Failed to update health', e);
     }
@@ -532,6 +620,58 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       await updateDoc(doc(db, 'leads', leadId), { assignedTo, updatedAt: Timestamp.now() });
     } catch (e) {
       console.error('Failed to update assignment', e);
+    }
+  };
+
+  const handleInterestToggle = async (e: React.MouseEvent, leadId: string, currentInterest: boolean) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (isDemoMode) return;
+    try {
+      if (!companyId) return;
+      const newVal = !currentInterest;
+      await updateDoc(doc(db, 'leads', leadId), { isInterested: newVal, updatedAt: Timestamp.now() });
+
+      await logActivity({
+        leadId,
+        companyId,
+        type: 'INTEREST_CHANGE',
+        action: newVal ? 'Interest Synchronized' : 'Interest Deprioritized',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { field: 'isInterested', oldValue: currentInterest, newValue: newVal }
+      });
+    } catch (e) {
+      console.error('Failed to toggle interest', e);
+    }
+  };
+
+  const handleBulkInterestUpdate = async (newInterest: boolean) => {
+    if (isDemoMode) return;
+    setLoadingLeads(true);
+    try {
+      if (!companyId) return;
+      for (const leadId of selectedLeads) {
+        await updateDoc(doc(db, 'leads', leadId), { isInterested: newInterest, updatedAt: Timestamp.now() });
+        
+        await logActivity({
+          leadId,
+          companyId,
+          type: 'INTEREST_CHANGE',
+          action: newInterest ? 'Bulk Interest Recovery' : 'Bulk Interest Deprecation',
+          authorUid: user.uid,
+          authorName: user.displayName || 'System',
+          details: { field: 'isInterested', oldValue: !newInterest, newValue: newInterest, bulk: true }
+        });
+      }
+      setSuccess(`Successfully updated ${selectedLeads.length} leads.`);
+      setSelectedLeads([]);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update selected leads.");
+    } finally {
+      setLoadingLeads(false);
     }
   };
 
@@ -547,9 +687,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
 
   const filteredLeads = leads.filter(l => {
-    if (role === 'team_member' && l.assignedTo !== user.uid && l.authorUid !== user.uid) {
-      return false;
-    }
 
     const matchesSearch = !searchTerm || l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || l.company?.toLowerCase().includes(searchTerm.toLowerCase()) || l.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -560,8 +697,11 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
     const matchesPhase = selectedPhase === 'All' || (l.phase || 'DISCOVERY') === selectedPhase;
     const matchesHealth = healthFilter === 'ALL' || (l.health || 'WARM').toUpperCase() === healthFilter;
+    const matchesInterest = interestFilter === 'ALL' || 
+      (interestFilter === 'INTERESTED' && l.isInterested !== false) || 
+      (interestFilter === 'NOT_INTERESTED' && l.isInterested === false);
 
-    return matchesSearch && matchesType && matchesActivity && matchesPhase && matchesHealth;
+    return matchesSearch && matchesType && matchesActivity && matchesPhase && matchesHealth && matchesInterest;
   });
 
   // Pagination logic
@@ -686,7 +826,32 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                           <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 shadow-sm ${lead.health === 'HOT' ? 'bg-rose-500' : lead.health === 'WARM' ? 'bg-amber-400' : 'bg-slate-400'}`} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-black text-white text-sm break-words leading-tight">{lead.name}</div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <div className="font-black text-white text-sm break-words leading-tight">{lead.name}</div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedLeadForHistory(lead);
+                                }}
+                                className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
+                                title="Activity History"
+                              >
+                                <History size={12} />
+                              </button>
+                              <button
+                                onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                                className={`p-1.5 rounded-lg transition-all hover:bg-white/10 active:scale-95 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
+                                title={lead.isInterested === false ? "Mark as Interested" : "Mark as Not Interested"}
+                              >
+                                {lead.isInterested === false ? (
+                                  <ThumbsDown size={14} className="shrink-0" />
+                                ) : (
+                                  <ThumbsUp size={14} className="shrink-0" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
                           <div className="text-xs font-bold text-slate-400 break-words mt-0.5 leading-snug">{lead.company}</div>
                         </div>
                       </div>
@@ -700,6 +865,26 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         </div>
 
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedLeadForHistory(lead); }}
+                            className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
+                            title="Activity History"
+                          >
+                            <History size={16} />
+                          </button>
+                          {lead.phone && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const intro = WHATSAPP_TEMPLATES.find(t => t.id === 'intro-followup');
+                                if (intro) openWhatsApp(lead.phone, intro.generate({ leadName: lead.name, company: lead.company }));
+                              }}
+                              className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all"
+                              title="WhatsApp Intro"
+                            >
+                              <MessageSquare size={16} />
+                            </button>
+                          )}
                           <button onClick={(e) => { e.preventDefault(); onCopyLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-slate-400 hover:text-white hover:bg-white/10'}`} title="Copy Link">
                             {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
                           </button>
@@ -781,71 +966,121 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto">
-            <div className="hidden md:flex items-center gap-1.5 p-1.5 bg-black/20 rounded-2xl border border-white/10 shadow-inner">
-              <button onClick={() => setViewMode('list')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-slate-400 hover:text-white'}`}>LIST</button>
-              <button onClick={() => setViewMode('kanban')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-slate-400 hover:text-white'}`}>Card View</button>
-            </div>
-
-            <div className="h-8 w-[1px] bg-white/10 mx-1 hidden lg:block"></div>
-
-            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none">
-                <select
-                  value={leadTypeFilter}
-                  onChange={(e) => setLeadTypeFilter(e.target.value)}
-                  className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
+            <AnimatePresence mode="wait">
+              {selectedLeads.length === 0 ? (
+                <motion.div
+                  key="filters"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto"
                 >
-                  <option value="">All Types</option>
-                  {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
+                  <div className="hidden md:flex items-center gap-1.5 p-1.5 bg-black/20 rounded-2xl border border-white/10 shadow-inner">
+                    <button onClick={() => setViewMode('list')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-slate-400 hover:text-white'}`}>LIST</button>
+                    <button onClick={() => setViewMode('kanban')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-slate-400 hover:text-white'}`}>Card View</button>
+                  </div>
 
-              <div className="relative flex-1 sm:flex-none">
-                <select
-                  value={healthFilter}
-                  onChange={(e) => setHealthFilter(e.target.value)}
-                  className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
+                  <div className="h-8 w-[1px] bg-white/10 mx-1 hidden lg:block"></div>
+
+                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:flex-none">
+                      <select
+                        value={leadTypeFilter}
+                        onChange={(e) => setLeadTypeFilter(e.target.value)}
+                        className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
+                      >
+                        <option value="">All Types</option>
+                        {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    <div className="relative flex-1 sm:flex-none">
+                      <select
+                        value={healthFilter}
+                        onChange={(e) => setHealthFilter(e.target.value)}
+                        className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
+                      >
+                        <option value="ALL">All Status</option>
+                        <option value="HOT">Hot 🔥</option>
+                        <option value="WARM">Warm ☀️</option>
+                        <option value="COLD">Cold ❄️</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {!isActiveOnlyRoute && (
+                      <div className="relative flex-1 sm:flex-none">
+                        <select
+                          value={activityFilter}
+                          onChange={(e) => setActivityFilter(e.target.value as any)}
+                          className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
+                        >
+                          <option value="ALL">All Activity</option>
+                          <option value="ACTIVE">Active (Connected)</option>
+                          <option value="INACTIVE">No Activity</option>
+                        </select>
+                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
+                    )}
+
+                    <div className="relative flex-1 sm:flex-none">
+                      <select
+                        value={interestFilter}
+                        onChange={(e) => setInterestFilter(e.target.value as any)}
+                        className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
+                      >
+                        <option value="ALL">All Interest</option>
+                        <option value="INTERESTED">Interested 👍</option>
+                        <option value="NOT_INTERESTED">Not Interested 👎</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="actions"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto"
                 >
-                  <option value="ALL">All Status</option>
-                  <option value="HOT">Hot 🔥</option>
-                  <option value="WARM">Warm ☀️</option>
-                  <option value="COLD">Cold ❄️</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
+                  <div className="flex items-center gap-3 mr-2 sm:mr-4">
+                    <span className="text-[10px] sm:text-xs font-black text-indigo-400 uppercase tracking-tighter">
+                      {selectedLeads.length} Selected
+                    </span>
+                    <button
+                      onClick={() => setSelectedLeads([])}
+                      className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors underline underline-offset-4"
+                    >
+                      Clear
+                    </button>
+                  </div>
 
-              {!isActiveOnlyRoute && (
-                <div className="relative flex-1 sm:flex-none">
-                  <select
-                    value={activityFilter}
-                    onChange={(e) => setActivityFilter(e.target.value as any)}
-                    className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-white/10 bg-black/20 rounded-2xl text-[10px] sm:text-xs font-bold text-white outline-none hover:bg-white/5 transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-slate-900"
-                  >
-                    <option value="ALL">All Activity</option>
-                    <option value="ACTIVE">Active (Connected)</option>
-                    <option value="INACTIVE">Inactive (No Recs)</option>
-                  </select>
-                  <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleBulkInterestUpdate(true)}
+                      className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-cyan-500/10 text-cyan-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-cyan-500/20 transition-all border border-cyan-500/20 shadow-sm uppercase tracking-widest"
+                    >
+                      <ThumbsUp size={14} /> <span className="hidden xs:inline">Interested</span>
+                    </button>
+                    <button
+                      onClick={() => handleBulkInterestUpdate(false)}
+                      className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-rose-500/10 text-rose-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500/20 transition-all border border-rose-500/20 shadow-sm uppercase tracking-widest"
+                    >
+                      <ThumbsDown size={14} /> <span className="hidden xs:inline">Not Interested</span>
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 bg-rose-600 text-white rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500 transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest"
+                    >
+                      <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
+                    </button>
+                  </div>
+                </motion.div>
               )}
-
-              <AnimatePresence>
-                {selectedLeads.length > 0 && (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.9, x: 20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, x: 20 }}
-                    onClick={handleBulkDelete}
-                    className="flex items-center gap-2 px-5 py-3 bg-rose-500/10 text-rose-400 rounded-2xl text-xs font-black hover:bg-rose-500/20 transition-all border border-rose-500/20 shadow-sm uppercase tracking-widest"
-                  >
-                    <Trash2 size={14} /> Delete ({selectedLeads.length})
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+            </AnimatePresence>
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
@@ -905,7 +1140,30 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-extrabold text-sm sm:text-base text-white break-words leading-tight">{lead.name}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-extrabold text-sm sm:text-base text-white break-words leading-tight">{lead.name}</h3>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLeadForHistory(lead);
+                              }}
+                              className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
+                            >
+                              <History size={12} />
+                            </button>
+                            <button
+                              onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                              className={`p-1.5 rounded-xl transition-all hover:bg-white/10 active:scale-90 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
+                            >
+                              {lead.isInterested === false ? (
+                                <ThumbsDown size={14} className="shrink-0" />
+                              ) : (
+                                <ThumbsUp size={14} className="shrink-0" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
                         <div className="text-slate-400 text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
                           <span className="break-words">{lead.company}</span>
                           {lead.leadType && <span className="px-2 py-0.5 bg-white/10 text-slate-300 rounded text-[9px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
@@ -990,6 +1248,19 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                             </button>
                           )}
                           <div className="flex items-center gap-1">
+                            {lead.phone && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const intro = WHATSAPP_TEMPLATES.find(t => t.id === 'intro-followup');
+                                  if (intro) openWhatsApp(lead.phone, intro.generate({ leadName: lead.name, company: lead.company }));
+                                }}
+                                className="p-2 sm:p-3 bg-emerald-500/10 text-emerald-400 rounded-lg sm:rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/30"
+                                title="WhatsApp Intro"
+                              >
+                                <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" />
+                              </button>
+                            )}
                             <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-slate-400 hover:text-white hover:bg-white/10'}`} title="Copy Link">
                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button>
@@ -1106,7 +1377,44 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                   <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="font-extrabold text-white text-base break-words leading-tight">{lead.name}</div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="font-extrabold text-white text-base break-words leading-tight">{lead.name}</div>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedLeadForHistory(lead);
+                                        }}
+                                        className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
+                                      >
+                                        <History size={14} />
+                                      </button>
+                                      {lead.phone && (
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const intro = WHATSAPP_TEMPLATES.find(t => t.id === 'intro-followup');
+                                            if (intro) openWhatsApp(lead.phone, intro.generate({ leadName: lead.name, company: lead.company }));
+                                          }}
+                                          className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+                                          title="WhatsApp Intro"
+                                        >
+                                          <MessageSquare size={16} />
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                                        className={`p-2 rounded-xl transition-all hover:bg-white/10 active:scale-90 ${lead.isInterested === false ? 'text-rose-500 bg-rose-500/5' : 'text-cyan-500 bg-cyan-500/5'} border border-white/5 hover:border-white/10`}
+                                        title={lead.isInterested === false ? "Mark as Interested" : "Mark as Not Interested"}
+                                      >
+                                        {lead.isInterested === false ? (
+                                          <ThumbsDown size={16} className="shrink-0" />
+                                        ) : (
+                                          <ThumbsUp size={16} className="shrink-0" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
                                   <div className="text-slate-400 font-medium text-xs mt-1 break-all">{lead.email}</div>
                                 </div>
                               </div>
@@ -1373,6 +1681,155 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Lead History Sidebar ── */}
+      <AnimatePresence>
+        {selectedLeadForHistory && (
+          <div className="fixed inset-0 z-[200] flex justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedLeadForHistory(null)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="relative w-full max-w-xl h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col overflow-hidden"
+            >
+              {/* Drawer Header */}
+              <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl border border-white/10 overflow-hidden shadow-lg bg-white/5">
+                    <img src={selectedLeadForHistory.avatar || `https://ui-avatars.com/api/?name=${selectedLeadForHistory.name}&background=random`} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white leading-tight uppercase tracking-tight">{selectedLeadForHistory.name}</h3>
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{selectedLeadForHistory.company}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedLeadForHistory(null)}
+                  className="p-2.5 rounded-xl bg-white/5 text-slate-400 hover:text-white border border-white/10 transition-all active:scale-95"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto p-6 scrollbar-hide space-y-8">
+                {/* Manual Note Entry */}
+                <div className="glass-card !bg-white/5 !rounded-3xl p-5 border-white/10 shadow-lg">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                      <MessageSquare size={16} />
+                    </div>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Append Intelligence</span>
+                  </div>
+                  <div className="relative">
+                    <textarea
+                      value={newActivityNote}
+                      onChange={(e) => setNewActivityNote(e.target.value)}
+                      placeholder="Enter a manual note or update..."
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-medium text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 min-h-[100px] resize-none transition-all shadow-inner"
+                    />
+                    <button
+                      disabled={!newActivityNote.trim() || submittingNote}
+                      onClick={handleAddActivityNote}
+                      className="absolute bottom-4 right-4 p-2.5 bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/40 hover:bg-indigo-400 transition-all active:scale-90 disabled:opacity-50 disabled:grayscale"
+                    >
+                      {submittingNote ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <div className="space-y-6 relative">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                      <History size={16} />
+                    </div>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Activity Stream</span>
+                  </div>
+
+                  {activityLogs.length === 0 ? (
+                    <div className="py-20 text-center space-y-4 opacity-40">
+                      <div className="w-12 h-12 bg-white/5 rounded-2xl border border-white/10 mx-auto flex items-center justify-center">
+                        <History size={24} className="text-slate-500" />
+                      </div>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">No interactions detected.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 relative pl-4">
+                      {/* Vertical center line */}
+                      <div className="absolute left-7 top-4 bottom-4 w-[1px] bg-white/5" />
+
+                      {activityLogs.map((log, idx) => (
+                        <motion.div 
+                          key={log.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="relative pl-10"
+                        >
+                          {/* Marker */}
+                          <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border z-10 shadow-lg ${
+                            log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-white' :
+                            log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-white' :
+                            'bg-slate-800 border-slate-700 text-slate-400'
+                          }`}>
+                            {log.type === 'MANUAL_NOTE' ? <MessageSquare size={10} /> :
+                             log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={10} /> :
+                             <Edit2 size={10} />}
+                          </div>
+
+                          <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-3 hover:bg-white/[0.05] transition-all group">
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{log.action}</div>
+                                <div className="text-[10px] font-black text-white">{log.authorName}</div>
+                              </div>
+                              <div className="text-[8px] font-black text-slate-500 whitespace-nowrap bg-black/20 px-2 py-1 rounded-md border border-white/5">
+                                {log.createdAt?.toDate ? log.createdAt.toDate().toLocaleDateString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'Just now'}
+                              </div>
+                            </div>
+
+                            {log.type === 'MANUAL_NOTE' ? (
+                              <div className="text-[11px] text-slate-400 font-medium leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 italic">
+                                "{log.details?.note}"
+                              </div>
+                            ) : (
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-500">
+                                <span className="uppercase opacity-40">{log.details?.field}:</span>
+                                <span className="line-through">{String(log.details?.oldValue)}</span>
+                                <ArrowUpRight size={12} className="text-cyan-500" />
+                                <span className="text-white bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">{String(log.details?.newValue)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-6 border-t border-white/5 bg-white/[0.02] flex items-center gap-4">
+                <Link 
+                  to={`/clients/${selectedLeadForHistory.id}`}
+                  className="flex-1 py-4 bg-white text-slate-950 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-500 hover:text-white transition-all text-center shadow-xl shadow-white/5 active:scale-95"
+                >
+                  Full Intelligence View
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
