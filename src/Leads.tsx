@@ -18,12 +18,11 @@ import ImportModal from './ImportModal';
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
   { id: '2', name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', health: 'WARM', score: 62, lastPulse: 'Yesterday', phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e', phone: '+49 30 1234 5678' },
-  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', health: 'HOT', score: 92, lastPulse: '4 hours ago', phase: 'CONNECTED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
+  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', health: 'HOT', score: 92, lastPulse: '4 hours ago', phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
   { id: '4', name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', health: 'COLD', score: 15, lastPulse: 'Oct 12, 2023', phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g', phone: '+1 212-555-0199' },
 ];
 
-const DEFAULT_LEAD_TYPES = String((import.meta as any).env.VITE_LEAD_TYPES || 'B2B,B2C,ENTERPRISE').split(',').map(t => t.trim());
-const DEFAULT_PHASE = String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim();
+const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
 
 export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActiveOnlyRoute?: boolean }) {
   const location = useLocation();
@@ -31,6 +30,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const { isDemoMode, demoData } = useDemo();
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [leads, setLeads] = useState<any[]>(DUMMY_LEADS);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [recordings, setRecordings] = useState<any[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
@@ -108,7 +108,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       setRecordings(allRecs);
     });
 
-    return () => { unsubLeads(); unsubRecs(); };
+    const qUsers = query(collection(db, 'users'), where('companyId', '==', companyId));
+    const unsubUsers = onSnapshot(qUsers, (snapshot) => {
+      setTeamMembers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => { unsubLeads(); unsubRecs(); unsubUsers(); };
   }, [companyId, isDemoMode, demoData]);
 
   useEffect(() => {
@@ -497,7 +502,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       case 'LOST': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
       case 'QUALIFIED': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
       case 'NURTURING': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'CONNECTED': return 'bg-teal-500/10 text-teal-400 border-teal-500/20';
       case 'DISCOVERY': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'INACTIVE': return 'bg-slate-500/10 text-slate-400 border-white/10';
       default: return 'bg-white/5 text-slate-400 border-white/10';
@@ -513,11 +517,29 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     }
   };
 
-  const PHASES = String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => p.trim());
+  const handleHealthChange = async (leadId: string, newHealth: string) => {
+    if (isDemoMode) return;
+    try {
+      await updateDoc(doc(db, 'leads', leadId), { health: newHealth, updatedAt: Timestamp.now() });
+    } catch (e) {
+      console.error('Failed to update health', e);
+    }
+  };
+
+  const handleAssignChange = async (leadId: string, assignedTo: string) => {
+    if (isDemoMode) return;
+    try {
+      await updateDoc(doc(db, 'leads', leadId), { assignedTo, updatedAt: Timestamp.now() });
+    } catch (e) {
+      console.error('Failed to update assignment', e);
+    }
+  };
+
+  const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
   const availablePhases = Array.from(new Set([...PHASES, ...customPhases]));
 
   const phaseCounts = leads.reduce((acc: Record<string, number>, lead) => {
-    const phase = lead.phase || DEFAULT_PHASE;
+    const phase = lead.phase || 'DISCOVERY';
     acc[phase] = (acc[phase] || 0) + 1;
     return acc;
   }, { All: leads.length });
@@ -525,6 +547,10 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
 
   const filteredLeads = leads.filter(l => {
+    if (role === 'team_member' && l.assignedTo !== user.uid && l.authorUid !== user.uid) {
+      return false;
+    }
+
     const matchesSearch = !searchTerm || l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || l.company?.toLowerCase().includes(searchTerm.toLowerCase()) || l.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesType = !leadTypeFilter || l.leadType === leadTypeFilter;
@@ -532,7 +558,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     const hasActivity = recordings.some(r => r.leadId === l.id || r.meetingId === l.id);
     const matchesActivity = activityFilter === 'ALL' || (activityFilter === 'ACTIVE' && hasActivity) || (activityFilter === 'INACTIVE' && !hasActivity);
 
-    const matchesPhase = selectedPhase === 'All' || (l.phase || DEFAULT_PHASE) === selectedPhase;
+    const matchesPhase = selectedPhase === 'All' || (l.phase || 'DISCOVERY') === selectedPhase;
     const matchesHealth = healthFilter === 'ALL' || (l.health || 'WARM').toUpperCase() === healthFilter;
 
     return matchesSearch && matchesType && matchesActivity && matchesPhase && matchesHealth;
@@ -888,12 +914,14 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     </div>
                     <div className="relative shrink-0 mt-1 max-w-[120px]">
                       <select
-                        value={lead.phase || 'DISCOVERY'}
-                        onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                        value={lead.health || 'WARM'}
+                        onChange={(e) => handleHealthChange(lead.id, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                        className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
                       >
-                        {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                        <option value="HOT">Hot 🔥</option>
+                        <option value="WARM">Warm ☀️</option>
+                        <option value="COLD">Cold ❄️</option>
                       </select>
                       <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
                     </div>
@@ -905,9 +933,38 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                       <div className="font-extrabold text-white">{lead.score || 0}%</div>
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5">Pulse</div>
-                      <div className="text-sm font-medium text-slate-300 truncate">{lead.lastPulse}</div>
+                      <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5">Status</div>
+                      <div className="relative inline-block w-full max-w-[140px]">
+                        <select
+                          value={lead.phase || 'DISCOVERY'}
+                          onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                        >
+                          {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                      </div>
                     </div>
+                    {(role === 'admin' || role === 'management' || role === 'super_admin') && (
+                      <div className="col-span-2 border-t border-white/5 pt-3 mt-1">
+                        <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5 flex items-center justify-between">
+                          <span>Assigned To</span>
+                        </div>
+                        <div className="relative inline-block w-full">
+                          <select
+                            value={lead.assignedTo || ''}
+                            onChange={(e) => handleAssignChange(lead.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`w-full text-xs font-bold pl-2.5 pr-6 py-2 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 bg-white/5 text-slate-300 border-white/10`}
+                          >
+                            <option value="">Unassigned</option>
+                            {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
+                          </select>
+                          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-slate-400" />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between mt-2 pt-4 border-t border-white/10 gap-y-3">
@@ -985,6 +1042,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                       <th className="py-6 px-8 relative">Name <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
                       <th className="py-6 px-6 relative">Company <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
                       <th className="py-6 px-6 relative w-32">Status <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
+                      <th className="py-6 px-6 relative w-32">Health <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
+                      <th className="py-6 px-6 relative w-32">Assigned To <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
                       <th className="py-6 px-6 relative w-32">Lead Type <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
                       <th className="py-6 px-6 relative w-32">AI Score <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-white/10"></div></th>
                       <th className="py-6 px-8 text-right">Actions</th>
@@ -1010,6 +1069,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                               <div className="h-3 bg-white/10 rounded animate-pulse w-1/3"></div>
                             </div>
                           </td>
+                          <td className="py-5 px-6"><div className="h-8 bg-white/10 rounded-lg animate-pulse w-24"></div></td>
+                          <td className="py-5 px-6"><div className="h-8 bg-white/10 rounded-lg animate-pulse w-24"></div></td>
                           <td className="py-5 px-6"><div className="h-8 bg-white/10 rounded-lg animate-pulse w-24"></div></td>
                           <td className="py-5 px-6"><div className="h-6 bg-white/10 rounded-lg animate-pulse w-16"></div></td>
                           <td className="py-5 px-6"><div className="h-6 bg-white/10 rounded-full animate-pulse w-full"></div></td>
@@ -1066,6 +1127,41 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 </select>
                                 <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
                               </div>
+                            </td>
+                            <td className="py-5 px-6 whitespace-nowrap">
+                              <div className="relative inline-block w-full max-w-[140px]">
+                                <select
+                                  value={lead.health || 'WARM'}
+                                  onChange={(e) => handleHealthChange(lead.id, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
+                                >
+                                  <option value="HOT">HOT</option>
+                                  <option value="WARM">WARM</option>
+                                  <option value="COLD">COLD</option>
+                                </select>
+                                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                              </div>
+                            </td>
+                            <td className="py-5 px-6 whitespace-nowrap">
+                              {(role === 'admin' || role === 'management' || role === 'super_admin') ? (
+                                <div className="relative inline-block w-full max-w-[140px]">
+                                  <select
+                                    value={lead.assignedTo || ''}
+                                    onChange={(e) => handleAssignChange(lead.id, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 bg-white/5 border-white/10 hover:border-white/20`}
+                                  >
+                                    <option value="">Unassigned</option>
+                                    {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
+                                  </select>
+                                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                                </div>
+                              ) : (
+                                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-white/5 text-slate-300 border-transparent">
+                                  {teamMembers.find(m => m.uid === lead.assignedTo)?.displayName || 'Unassigned'}
+                                </span>
+                              )}
                             </td>
                             <td className="py-5 px-6 whitespace-nowrap">
                               {lead.leadType ? <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-white/5 text-slate-300 border-white/10">{lead.leadType}</span> : <span className="text-slate-500 text-xs font-bold">-</span>}
@@ -1134,7 +1230,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                           <AnimatePresence>
                             {isExp && (
                               <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-black/20 border-b border-white/5">
-                                <td colSpan={7} className="p-0">
+                                <td colSpan={9} className="p-0">
                                   <div className="p-8 px-12">
                                     {customFieldDefs.length > 0 && (
                                       <div className="mb-8 pb-8 border-b border-white/10 border-dashed">

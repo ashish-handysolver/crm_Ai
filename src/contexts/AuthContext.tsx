@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (currentUser.email === (import.meta as any).env.VITE_SUPER_ADMIN_EMAIL || userData.role === 'super_admin') {
               setRole('super_admin');
             } else {
-              setRole(userData.role || 'user');
+              setRole(userData.role || 'team_member');
             }
 
             setOnboardingComplete(userData.onboardingComplete === true);
