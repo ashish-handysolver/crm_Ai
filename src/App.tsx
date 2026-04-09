@@ -201,15 +201,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           <button onClick={onMenuClick} className="lg:hidden p-2.5 text-slate-400 hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 border border-white/10">
             <Menu size={20} />
           </button>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/10 rounded-lg sm:rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-white/10 overflow-hidden backdrop-blur-md">
-              <img src="/logo.png" className="w-full h-full object-contain" alt="logo" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] leading-none mb-1 shadow-sm">Protocol</span>
-              <span className="text-xs sm:text-sm font-black text-white tracking-tight uppercase tracking-[0.05em] truncate max-w-[100px] sm:max-w-none">{companyName || 'handycrm.ai'}</span>
-            </div>
-          </div>
+
         </div>
 
         <div className="flex items-center gap-3 sm:gap-6">
@@ -272,7 +264,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
                   document.body.appendChild(textArea);
                   textArea.focus();
                   textArea.select();
-                  try { document.execCommand('copy'); } catch (err) {}
+                  try { document.execCommand('copy'); } catch (err) { }
                   textArea.remove();
                 }
                 setSuccess("Capture link copied!");
@@ -364,7 +356,7 @@ const HistoryView = ({ user }: { user: User }) => {
                       document.body.appendChild(textArea);
                       textArea.focus();
                       textArea.select();
-                      try { document.execCommand('copy'); } catch (err) {}
+                      try { document.execCommand('copy'); } catch (err) { }
                       textArea.remove();
                     }
                   }}
@@ -526,20 +518,36 @@ const RecordingView = () => {
 
   const handleShareWhatsApp = () => {
     if (!recording) return;
-    let text = `*Meeting Analytics & Minutes*\n\n`;
+
+    let text = `🚀 *Meeting Intelligence Report* 🚀\n\n`;
+    
     const insights = recording.aiInsights;
     if (insights) {
-      text += `*Executive Summary:*\n${insights.overview || 'N/A'}\n\n`;
-      text += `*Key Points:*\n`;
-      (insights.meetingMinutes || []).forEach((p: string) => text += `• ${p}\n`);
-      text += `\n*Action Items:*\n`;
-      (insights.tasks || []).forEach((t: any) => text += `• [${t.completed ? 'DONE' : 'OPEN'}] ${t.title}\n`);
+      if (insights.overview) {
+        text += `📝 *Executive Summary:*\n${insights.overview}\n\n`;
+      }
+      
+      if (insights.meetingMinutes && insights.meetingMinutes.length > 0) {
+        text += `💡 *Key Discussion Points:*\n`;
+        insights.meetingMinutes.forEach((p: string) => text += `• ${p}\n`);
+        text += `\n`;
+      }
+      
+      if (insights.tasks && insights.tasks.length > 0) {
+        text += `✅ *Action Items:*\n`;
+        insights.tasks.forEach((t: any) => text += `• [${t.completed ? 'DONE' : 'OPEN'}] ${t.title} (${t.assignee || 'Unassigned'})\n`);
+        text += `\n`;
+      }
     } else {
-      text += `*Transcript:*\n${recording.transcript?.substring(0, 500)}...\n`;
+      text += `📄 *Transcript Snippet:*\n${recording.transcript?.substring(0, 500)}...\n\n`;
     }
-    text += `\nView full details: ${window.location.origin}/r/${recording.id}`;
+
+    text += `🔗 *Full Protocol & Audio:* ${window.location.origin}/r/${recording.id}\n\n`;
+    text += `--- \n`;
+    text += `Sent via *handycrm.ai* | Next-Gen Sales Intelligence`;
+
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };  if (loading) return (
+  }; if (loading) return (
     <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
       <div className="relative">
         <Loader2 className="animate-spin text-indigo-500 w-16 h-16" />
@@ -559,7 +567,7 @@ const RecordingView = () => {
   return (
     <div className="flex-1 bg-[#030014] min-h-screen overflow-y-auto selection:bg-indigo-500 selection:text-white font-sans">
       <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-600/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-      
+
       <div className="max-w-5xl mx-auto p-4 sm:p-12 lg:p-20 space-y-20 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -578,14 +586,14 @@ const RecordingView = () => {
                 Interaction <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Metadata</span>
               </h1>
               <div className="flex items-center gap-6">
-                 <div className="flex items-center gap-2 text-slate-500 font-black uppercase tracking-widest text-[10px]">
-                    <Calendar size={14} className="text-indigo-500/50" />
-                    {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false }) || 'RECENT'}
-                 </div>
-                 <div className="h-4 w-px bg-white/10"></div>
-                 <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <Activity size={14} className="text-cyan-500/50" /> Sync Active
-                 </div>
+                <div className="flex items-center gap-2 text-slate-500 font-black uppercase tracking-widest text-[10px]">
+                  <Calendar size={14} className="text-indigo-500/50" />
+                  {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false }) || 'RECENT'}
+                </div>
+                <div className="h-4 w-px bg-white/10"></div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Activity size={14} className="text-cyan-500/50" /> Sync Active
+                </div>
               </div>
             </div>
 
@@ -594,8 +602,8 @@ const RecordingView = () => {
                 onClick={handleShareWhatsApp}
                 className="px-8 py-5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-3 group"
               >
-                <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div> 
-                WhatsApp Protocol
+                <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div>
+                WhatsApp
               </button>
               <button
                 onClick={handleSync}
@@ -620,8 +628,8 @@ const RecordingView = () => {
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/20 shadow-2xl"><Languages size={24} /></div>
                 <div>
-                   <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Dialect Decomposition</h2>
-                   <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Multi-vector neural transcript</p>
+                  <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Dialect Decomposition</h2>
+                  <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Multi-vector neural transcript</p>
                 </div>
               </div>
               <div className="bg-black/40 p-1 bg-gradient-to-b from-white/5 to-transparent rounded-[3.5rem] border border-white/5 shadow-inner">
@@ -634,8 +642,8 @@ const RecordingView = () => {
                     />
                   ) : (
                     <div className="text-center py-20">
-                       <Loader2 className="animate-spin text-slate-800 mx-auto mb-6" size={40} />
-                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] animate-pulse">Retrieving logic stream...</p>
+                      <Loader2 className="animate-spin text-slate-800 mx-auto mb-6" size={40} />
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] animate-pulse">Retrieving logic stream...</p>
                     </div>
                   )}
                 </div>
@@ -645,32 +653,32 @@ const RecordingView = () => {
             {/* AI Insights Area */}
             {recording.aiInsights ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="lg:col-span-2 bg-gradient-to-br from-indigo-500/10 to-transparent p-12 rounded-[3.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden group/insight"
                 >
-                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-400/5 rounded-full blur-[40px] group-hover/insight:scale-150 transition-transform duration-1000"></div>
-                   <div className="flex items-center gap-3 mb-8">
-                      <Sparkles size={18} className="text-indigo-400" />
-                      <h4 className="font-black text-white uppercase tracking-[0.4em] text-[11px]">Executive Matrix Summary</h4>
-                   </div>
-                   <p className="text-slate-300 text-xl leading-[1.8] font-medium tracking-tight italic">
-                     <span className="text-4xl text-indigo-500/30">"</span>
-                     {recording.aiInsights.overview}
-                     <span className="text-4xl text-indigo-500/30">"</span>
-                   </p>
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-400/5 rounded-full blur-[40px] group-hover/insight:scale-150 transition-transform duration-1000"></div>
+                  <div className="flex items-center gap-3 mb-8">
+                    <Sparkles size={18} className="text-indigo-400" />
+                    <h4 className="font-black text-white uppercase tracking-[0.4em] text-[11px]">Executive Matrix Summary</h4>
+                  </div>
+                  <p className="text-slate-300 text-xl leading-[1.8] font-medium tracking-tight italic">
+                    <span className="text-4xl text-indigo-500/30">"</span>
+                    {recording.aiInsights.overview}
+                    <span className="text-4xl text-indigo-500/30">"</span>
+                  </p>
                 </motion.div>
 
                 <div className="bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
                   <h4 className="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
-                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
-                     Meeting Minutes Protocol
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
+                    Meeting Minutes Protocol
                   </h4>
                   <ul className="space-y-6">
                     {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
                       <li key={i} className="flex items-start gap-5 text-base text-slate-400 font-medium group/item">
-                        <div className="p-1 px-2.5 bg-white/5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-tighter mt-1 group-hover/item:text-indigo-400 transition-colors">0{i+1}</div>
+                        <div className="p-1 px-2.5 bg-white/5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-tighter mt-1 group-hover/item:text-indigo-400 transition-colors">0{i + 1}</div>
                         <span className="group-hover/item:text-slate-200 transition-colors">{pt}</span>
                       </li>
                     ))}
@@ -679,18 +687,18 @@ const RecordingView = () => {
 
                 <div className="bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
                   <h4 className="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
-                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
-                     Action Item Vectors
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
+                    Action Item Vectors
                   </h4>
                   <ul className="space-y-6">
                     {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
                       <li key={i} className="flex items-start gap-5 text-base text-slate-400 font-medium group/task">
                         <div className={`p-2 rounded-xl transition-all ${t.completed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-white/5 text-slate-700 border border-white/5"}`}>
-                           <CheckCircle2 size={18} />
+                          <CheckCircle2 size={18} />
                         </div>
                         <div className="space-y-1">
-                           <span className={t.completed ? "line-through text-slate-600" : "group-hover/task:text-slate-200 transition-colors"}>{t.title}</span>
-                           <div className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em]">{t.assignee}</div>
+                          <span className={t.completed ? "line-through text-slate-600" : "group-hover/task:text-slate-200 transition-colors"}>{t.title}</span>
+                          <div className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em]">{t.assignee}</div>
                         </div>
                       </li>
                     ))}
@@ -866,7 +874,15 @@ const GlobalRecorder = () => {
       const audioUrl = await getDownloadURL(storageRef);
 
       setStatusText('Transcribing & Analyzing...');
-      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+      const apiKey = (process.env as any).GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+      
+      if (!apiKey) {
+        console.error("CRITICAL_ERROR: Gemini API Key is missing. Transcription aborted.");
+        alert("Transcription Failed: Gemini API Key is not configured. Please check your environment variables.");
+        setIsProcessing(false);
+        setStatusText('');
+        return;
+      }
       let transcript = "No transcript generated.";
       let transcriptData = null;
       let aiInsights = null;

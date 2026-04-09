@@ -225,7 +225,7 @@ export default function ManualUpload({ user }: { user: any }) {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm mb-2">
             <UploadCloud size={14} className="animate-pulse" /> Data Integration
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase tracking-tight">Add Intelligence</h1>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase tracking-tight">Add Audio / Docs / Text</h1>
           <p className="text-slate-400 font-medium max-w-2xl text-lg italic">
             Upload recordings, documents, or manual context for your leads.
           </p>
@@ -361,7 +361,7 @@ export default function ManualUpload({ user }: { user: any }) {
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
                   <span>
-                    {isSubmitting ? 'Integrating...' : isDemoMode ? 'Readonly Node' : 'Commit Intelligence'}
+                    {isSubmitting ? 'Saving...' : isDemoMode ? 'Demo Mode ' : 'Save'}
                   </span>
                 </button>
               </div>
