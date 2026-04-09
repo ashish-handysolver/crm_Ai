@@ -67,40 +67,40 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] bg-slate-50/50 font-sans selection:bg-indigo-500 selection:text-white overflow-hidden" style={{ width: '100%' }}>
+    <div className="flex min-h-[100dvh] bg-[#0A0D14] font-sans selection:bg-indigo-500 selection:text-white overflow-hidden" style={{ width: '100%' }}>
       {/* Left Area - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-white border-r border-slate-100 z-10 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-[#0A0D14] border-r border-white/10 z-10 relative overflow-hidden">
 
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-indigo-50/50 blur-3xl"></div>
-          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-slate-50/50 blur-3xl"></div>
+          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-indigo-500/10 blur-3xl"></div>
+          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-purple-500/10 blur-3xl"></div>
         </div>
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
 
           <div className="flex items-center gap-3 mb-12 group/logo cursor-default">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/5 border border-slate-100 p-2.5 transition-all duration-500 group-hover/logo:rotate-12 group-hover/logo:scale-110 overflow-hidden">
+            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shadow-xl shadow-black/20 border border-white/10 p-2.5 transition-all duration-500 group-hover/logo:rotate-12 group-hover/logo:scale-110 overflow-hidden">
               <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tighter text-slate-900 leading-none mb-1 lowercase">handycrm.ai</span>
+              <span className="text-2xl font-black tracking-tighter text-white leading-none mb-1 lowercase">handycrm.ai</span>
               <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">Next-Gen Intelligence</span>
             </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-black mb-3">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
             Welcome back
           </h1>
-          <p className="text-slate-500 font-medium text-lg mb-8">
+          <p className="text-slate-400 font-medium text-lg mb-8">
             Please enter your credentials to access your workspace.
           </p>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label>
+              <label className="block text-sm font-bold text-slate-300 mb-2">Work Email</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors">
                   <Mail size={20} />
                 </div>
                 <input
@@ -109,15 +109,15 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="john@company.com"
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-semibold text-white placeholder:text-slate-500 placeholder:font-medium shadow-sm"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+              <label className="block text-sm font-bold text-slate-300 mb-2">Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors">
                   <Lock size={20} />
                 </div>
                 <input
@@ -126,13 +126,13 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-black placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-semibold text-white placeholder:text-slate-500 placeholder:font-medium shadow-sm"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="flex items-start gap-3 p-4 bg-red-50/80 backdrop-blur text-red-600 rounded-2xl text-sm font-semibold border border-red-100">
+              <div className="flex items-start gap-3 p-4 bg-rose-500/10 backdrop-blur text-rose-400 rounded-2xl text-sm font-semibold border border-rose-500/20">
                 <AlertCircle size={18} className="shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -142,7 +142,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full btn-primary !py-5 shadow-2xl shadow-indigo-200"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-5 font-black text-base transition-all active:scale-95 shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50 group"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : <Lock size={18} />}
                 <span className="text-base">{loading ? 'Authenticating...' : 'Secure Access'}</span>
@@ -151,15 +151,15 @@ export default function Login() {
             </div>
           </form>
 
-          <p className="mt-12 text-center text-sm font-black text-slate-400 uppercase tracking-widest">
+          <p className="mt-12 text-center text-sm font-black text-slate-500 uppercase tracking-widest">
             Don't have a secure workspace yet?{' '}
-            <Link to="/register-company" className="text-indigo-600 hover:text-indigo-500 transition-colors ml-1 decoration-skip-ink decoration-2 underline">
+            <Link to="/register-company" className="text-indigo-400 hover:text-indigo-300 transition-colors ml-1 decoration-skip-ink decoration-2 underline">
               Create Organization
             </Link>
           </p>
 
         </motion.div>
-        <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 mb-8 cursor-default">
+        <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2 mb-8 cursor-default relative z-10">
           Made with <span className="text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
         </p>
       </div>

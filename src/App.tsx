@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles, Activity } from 'lucide-react';
+import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles, Activity, ScanQrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -119,9 +119,10 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
+
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${showDropdown ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}
+        className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${showDropdown ? 'bg-indigo-900 text-indigo-400' : 'text-slate-300 hover:bg-slate-800'}`}
       >
         <Bell size={20} />
         {hasNotifications && (
@@ -135,42 +136,42 @@ const NotificationBell = () => {
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute right-0 mt-4 w-80 glass-card !p-0 border-slate-200 shadow-2xl shadow-slate-400/20 z-[100] overflow-hidden"
+            className="absolute right-0 mt-4 w-80 bg-slate-900 rounded-2xl !p-0 border border-slate-800 shadow-2xl shadow-black/50 z-[100] overflow-hidden"
           >
-            <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">Notifications</h3>
-              <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase tracking-widest">{meetings.length} Upcoming</span>
+            <div className="p-5 border-b border-slate-800 bg-slate-800 flex justify-between items-center">
+              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Notifications</h3>
+              <span className="px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[8px] font-black uppercase tracking-widest">{meetings.length} Upcoming</span>
             </div>
 
             <div className="max-h-[400px] overflow-y-auto scrollbar-hide py-2">
               {!pushEnabled && (
-                <div className="p-4 mx-2 mb-2 rounded-2xl bg-rose-50/50 border border-rose-100 hover:bg-rose-50 transition-all cursor-pointer group" onClick={handleRequestPush}>
+                <div className="p-4 mx-2 mb-2 rounded-2xl bg-rose-950 border border-rose-900 hover:bg-rose-900 transition-all cursor-pointer group" onClick={handleRequestPush}>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-white text-rose-500 shadow-sm border border-rose-100"><Bell size={14} /></div>
+                    <div className="p-2 rounded-xl bg-rose-900 text-rose-400 shadow-sm"><Bell size={14} /></div>
                     <div className="flex-1">
-                      <div className="font-black text-slate-900 text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
-                      <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight opacity-70">Get alerted for upcoming meetings</div>
+                      <div className="font-black text-white text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
+                      <div className="text-[10px] text-slate-300 font-bold uppercase tracking-tight opacity-70">Get alerted for upcoming meetings</div>
                     </div>
                   </div>
                 </div>
               )}
 
               {meetings.length > 0 ? meetings.map((m, idx) => (
-                <div key={m.id} className="px-4 py-4 hover:bg-slate-50 transition-all cursor-pointer border-b border-slate-50 last:border-0 group">
-                  <div className="font-bold text-slate-900 text-sm mb-1 group-hover:text-indigo-600 transition-colors">{m.title}</div>
+                <div key={m.id} className="px-4 py-4 hover:bg-slate-800 transition-all cursor-pointer border-b border-slate-800 last:border-0 group">
+                  <div className="font-bold text-white text-sm mb-1 group-hover:text-indigo-400 transition-colors">{m.title}</div>
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-wider">
                     <Clock size={10} className="text-indigo-500/50" />
                     {m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false })}
                   </div>
                   {m.leadName && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest">
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[9px] font-black uppercase tracking-widest">
                       <Users size={10} /> {m.leadName}
                     </div>
                   )}
                 </div>
               )) : (
                 <div className="p-12 text-center space-y-4">
-                  <div className="p-4 bg-slate-50 rounded-full w-fit mx-auto text-slate-200">
+                  <div className="p-4 bg-slate-800 rounded-full w-fit mx-auto text-slate-400">
                     <History size={32} />
                   </div>
                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic">No notifications yet.</p>
@@ -178,8 +179,8 @@ const NotificationBell = () => {
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 text-center">
-              <Link to="/calendar" className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-all">View Calendar &rarr;</Link>
+            <div className="p-4 border-t border-slate-800 bg-slate-800 text-center">
+              <Link to="/calendar" className="text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-all">View Calendar &rarr;</Link>
             </div>
           </motion.div>
         )}
@@ -189,50 +190,102 @@ const NotificationBell = () => {
 };
 
 const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: User, onMenuClick: () => void, onInstall: () => void, showInstallButton: boolean }) => {
-  const { companyName } = useAuth();
+  const { companyName, companyId } = useAuth();
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [success, setSuccess] = useState('');
 
   return (
-    <nav className="glass-nav z-[90] px-4 sm:px-12 py-3.5 sm:py-4 flex items-center justify-between border-b border-slate-200/50">
-      <div className="flex items-center gap-3 sm:gap-6">
-        <button onClick={onMenuClick} className="lg:hidden p-2.5 text-slate-500 hover:bg-slate-100 rounded-xl transition-all shadow-sm active:scale-95 border border-slate-100">
-          <Menu size={20} />
-        </button>
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-100 overflow-hidden">
-            <img src="/logo.png" className="w-full h-full object-contain" alt="logo" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] leading-none mb-1 shadow-sm">Protocol</span>
-            <span className="text-xs sm:text-sm font-black text-slate-900 tracking-tight uppercase tracking-[0.05em] truncate max-w-[100px] sm:max-w-none">{companyName || 'handycrm.ai'}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 sm:gap-6">
-        {showInstallButton && (
-          <button
-            onClick={onInstall}
-            className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-200 hover:text-indigo-600 transition-all shadow-xl shadow-slate-200/50 active:scale-95"
-          >
-            <Download size={14} /> Install
+    <>
+      <nav className="glass-nav z-[90] px-4 sm:px-12 py-3.5 sm:py-4 flex items-center justify-between border-b border-white/10">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <button onClick={onMenuClick} className="lg:hidden p-2.5 text-slate-400 hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 border border-white/10">
+            <Menu size={20} />
           </button>
-        )}
-        <NotificationBell />
-        <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
-        <div className="hidden md:flex flex-col items-end">
-          <span className="text-xs font-black text-slate-900 leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/10 rounded-lg sm:rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-white/10 overflow-hidden backdrop-blur-md">
+              <img src="/logo.png" className="w-full h-full object-contain" alt="logo" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] leading-none mb-1 shadow-sm">Protocol</span>
+              <span className="text-xs sm:text-sm font-black text-white tracking-tight uppercase tracking-[0.05em] truncate max-w-[100px] sm:max-w-none">{companyName || 'handycrm.ai'}</span>
+            </div>
+          </div>
         </div>
-        <Link to="/profile" className="relative group p-1 bg-white border border-slate-100 rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-slate-200/50 hover:border-indigo-200 transition-all">
-          <img
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=6366f1&color=fff`}
-            alt="Profile"
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover border border-white group-hover:scale-105 transition-all group-active:scale-95"
-          />
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-[3px] border-white shadow-sm ring-1 ring-emerald-500/20"></div>
-        </Link>
-      </div>
-    </nav>
+
+        <div className="flex items-center gap-3 sm:gap-6">
+          {showInstallButton && (
+            <button
+              onClick={onInstall}
+              className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-400 transition-all shadow-xl shadow-black/20 active:scale-95"
+            >
+              <Download size={14} /> Install
+            </button>
+          )}
+          <button
+            onClick={() => setShowQrModal(true)}
+            title="Lead Capture QR"
+            className="relative p-2.5 rounded-xl transition-all active:scale-95 text-slate-300 hover:bg-slate-800"
+          >
+            <ScanQrCode size={20} />
+          </button>
+          <NotificationBell />
+          <div className="h-8 w-[1px] bg-white/10 mx-1 hidden md:block"></div>
+          <div className="hidden md:flex flex-col items-end">
+            <span className="text-xs font-black text-white leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
+          </div>
+          <Link to="/profile" className="relative group p-1 bg-white/5 border border-white/10 rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-black/20 hover:border-indigo-400 transition-all">
+            <img
+              src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=6366f1&color=fff`}
+              alt="Profile"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover border border-white group-hover:scale-105 transition-all group-active:scale-95"
+            />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-[3px] border-white shadow-sm ring-1 ring-emerald-500/20"></div>
+          </Link>
+        </div>
+      </nav>
+
+      <AnimatePresence>
+        {showQrModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-[#0f111a]/80 backdrop-blur-xl rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-white/10 text-center relative overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-500"></div>
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <div className="w-8 h-8 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center shadow-lg"><Sparkles size={16} className="text-indigo-400" /></div>
+                <span className="text-lg font-black tracking-tight text-white">Handysolver<span className="text-indigo-400">.AI</span></span>
+              </div>
+              <h2 className="text-2xl font-black mb-2 text-white tracking-tight">Lead Capture QR</h2>
+              <p className="text-sm text-slate-400 mb-6 font-medium">Prospects can scan this to automatically join your pipeline.</p>
+              <div className="bg-white p-4 rounded-[2rem] border border-white/10 inline-block mb-6 shadow-inner">
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/capture/${companyId}`)}`} alt="QR Code" className="w-48 h-48 rounded-xl mix-blend-multiply" />
+              </div>
+              <button onClick={() => {
+                const url = `${window.location.origin}/capture/${companyId}`;
+                if (navigator.clipboard && window.isSecureContext) {
+                  navigator.clipboard.writeText(url);
+                } else {
+                  const textArea = document.createElement("textarea");
+                  textArea.value = url;
+                  textArea.style.position = "fixed";
+                  textArea.style.left = "-999999px";
+                  textArea.style.top = "-999999px";
+                  document.body.appendChild(textArea);
+                  textArea.focus();
+                  textArea.select();
+                  try { document.execCommand('copy'); } catch (err) {}
+                  textArea.remove();
+                }
+                setSuccess("Capture link copied!");
+                setTimeout(() => setSuccess(''), 3000);
+              }} className="w-full py-3.5 bg-white/5 border border-white/10 text-indigo-300 font-black text-xs uppercase tracking-widest rounded-xl mb-3 hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2">
+                {success ? <><CheckCircle2 size={16} /> Copied!</> : 'Copy Direct Link'}
+              </button>
+              <button onClick={() => setShowQrModal(false)} className="w-full py-3.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-indigo-500 transition-all shadow-md shadow-indigo-500/20 active:scale-95">Close Window</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
@@ -299,8 +352,21 @@ const HistoryView = ({ user }: { user: User }) => {
                 </Link>
                 <button
                   onClick={() => {
-                    const origin = window.location.hostname === 'localhost' ? 'https://handydashcrmai.vercel.app' : window.location.origin;
-                    navigator.clipboard.writeText(`${origin}/r/${rec.id}`);
+                    const url = `${window.location.hostname === 'localhost' ? 'https://handydashcrmai.vercel.app' : window.location.origin}/r/${rec.id}`;
+                    if (navigator.clipboard && window.isSecureContext) {
+                      navigator.clipboard.writeText(url);
+                    } else {
+                      const textArea = document.createElement("textarea");
+                      textArea.value = url;
+                      textArea.style.position = "fixed";
+                      textArea.style.left = "-999999px";
+                      textArea.style.top = "-999999px";
+                      document.body.appendChild(textArea);
+                      textArea.focus();
+                      textArea.select();
+                      try { document.execCommand('copy'); } catch (err) {}
+                      textArea.remove();
+                    }
                   }}
                   className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                 >
@@ -415,7 +481,7 @@ const RecordingView = () => {
         }
       }
       if (!success) throw new Error("Intelligence services temporarily unavailable or quota exceeded.");
-      
+
       let aiInsights = null;
       for (const modelName of validModels) {
         try {
@@ -429,7 +495,7 @@ const RecordingView = () => {
           const jsonStr2 = rawText2.replace(/```json/g, '').replace(/```/g, '').trim();
           aiInsights = JSON.parse(jsonStr2);
           break;
-        } catch(e: any) {
+        } catch (e: any) {
           if (e?.status === 429) {
             await new Promise(resolve => setTimeout(resolve, 3000));
             continue;
@@ -660,12 +726,12 @@ const GlobalRecorder = () => {
         }
       }
 
-      const micStream = await navigator.mediaDevices.getUserMedia({ 
+      const micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
-        } 
+        }
       });
       streams.push(micStream);
       let finalStream = micStream;
@@ -678,10 +744,10 @@ const GlobalRecorder = () => {
         if (ctx.state === 'suspended') await ctx.resume();
         const dest = ctx.createMediaStreamDestination();
         ctx.createMediaStreamSource(micStream).connect(dest);
-        
+
         const sysAudioStream = new MediaStream(sysStream.getAudioTracks());
         ctx.createMediaStreamSource(sysAudioStream).connect(dest);
-        
+
         finalStream = dest.stream;
       } else if (sysStream) {
         alert("System Audio Missing: You didn't check the 'Also share tab audio' box. Only your microphone will be recorded.\n\nTip for YouTube/Music: Select 'Chrome Tab' in the popup and ensure 'Share tab audio' is toggled ON.");
@@ -766,7 +832,7 @@ const GlobalRecorder = () => {
 
         // 1. Transcribe
         const prompt1 = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
-        
+
         let text1 = "{}";
         for (const model of validModels) {
           try {
@@ -797,7 +863,7 @@ const GlobalRecorder = () => {
         // 2. Analytics
         setStatusText('Generating Analytics Report...');
         const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${transcript}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
-        
+
         for (const model of validModels) {
           try {
             const res2 = await ai.models.generateContent({
@@ -965,7 +1031,7 @@ const AppContent = () => {
 
   if (isGuestRoute) {
     return (
-      <div className="flex min-h-screen bg-zinc-50 text-zinc-900 font-sans w-full">
+      <div className="flex min-h-screen bg-[#0A0D14] text-white font-sans w-full">
         <Routes>
           <Route path="/m/:meetingId" element={<GuestRecord />} />
           <Route path="/capture/:companyId" element={<LeadCapture />} />
@@ -991,7 +1057,7 @@ const AppContent = () => {
   if (!user || !companyId) return null;
 
   return (
-    <div className="flex min-h-[100dvh] bg-slate-50/50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex-row w-full overflow-hidden">
+    <div className="flex min-h-[100dvh] bg-transparent text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex-row w-full overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 relative h-[100dvh] overflow-hidden w-full">
         <Navbar

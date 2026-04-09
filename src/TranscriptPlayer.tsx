@@ -78,8 +78,8 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
     return (
       <div className="flex flex-col gap-4">
         {audioUrl && (
-          <div className="bg-black rounded-2xl p-4 flex items-center gap-4 border border-orange-800 shadow-xl">
-             <audio 
+          <div className="bg-black/40 rounded-2xl p-4 flex items-center gap-4 border border-white/10 shadow-xl">
+            <audio
               ref={audioRef}
               src={audioUrl}
               onTimeUpdate={handleTimeUpdate}
@@ -87,21 +87,21 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
               onEnded={() => setIsPlaying(false)}
               className="hidden"
             />
-            <button 
+            <button
               onClick={togglePlay}
-              className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+              className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
             >
               {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
             </button>
             <div className="flex-1 flex flex-col gap-1">
-              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden relative group cursor-pointer" 
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    seekTo((x / rect.width) * duration);
-                  }}>
-                <div 
-                  className="absolute inset-0 bg-orange-500 transition-all ease-linear"
+              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden relative group cursor-pointer"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  seekTo((x / rect.width) * duration);
+                }}>
+                <div
+                  className="absolute inset-0 bg-indigo-500 transition-all ease-linear"
                   style={{ width: `${(currentTime / duration) * 100}%` }}
                 />
               </div>
@@ -112,7 +112,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
             </div>
           </div>
         )}
-        <p className="text-[14px] text-slate-600 font-medium leading-[1.8] italic select-text">
+        <p className="text-[14px] text-slate-300 font-medium leading-[1.8] italic select-text">
           "{fallbackText}"
         </p>
       </div>
@@ -122,10 +122,10 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
   return (
     <div className="flex flex-col gap-6">
       {/* Audio Control Bar */}
-      <div className="bg-black rounded-3xl p-4 sm:p-5 flex items-center gap-5 border border-orange-800 shadow-2xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-orange-500/10 to-transparent pointer-events-none"></div>
-        
-        <audio 
+      <div className="bg-black/40 rounded-3xl p-4 sm:p-5 flex items-center gap-5 border border-white/10 shadow-2xl relative overflow-hidden group backdrop-blur-md">
+        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none"></div>
+
+        <audio
           ref={audioRef}
           src={audioUrl}
           onTimeUpdate={handleTimeUpdate}
@@ -135,9 +135,9 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
         />
 
         <div className="relative shrink-0">
-          <button 
+          <button
             onClick={togglePlay}
-            className="w-12 h-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-xl shadow-orange-600/40"
+            className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-95 shadow-xl shadow-indigo-500/40"
           >
             {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
           </button>
@@ -145,7 +145,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
 
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
               <Volume2 size={12} /> Live Sync Active
             </span>
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest tabular-nums">
@@ -153,7 +153,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
             </span>
           </div>
 
-          <div 
+          <div
             className="h-2 bg-slate-800 rounded-full overflow-hidden relative group cursor-pointer shadow-inner"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -161,20 +161,20 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
               seekTo((x / rect.width) * duration);
             }}
           >
-            <div 
-              className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-500 transition-all duration-100 ease-linear rounded-full"
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-100 ease-linear rounded-full"
               style={{ width: `${(currentTime / duration) * 100}%` }}
             />
             {/* Hover seek point */}
-            <div className="absolute top-0 bottom-0 w-0.5 bg-orange-50/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ left: 'var(--mouse-x, 0%)' }} />
+            <div className="absolute top-0 bottom-0 w-0.5 bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ left: 'var(--mouse-x, 0%)' }} />
           </div>
         </div>
       </div>
 
       {/* Interactive Transcript */}
-      <div 
+      <div
         ref={transcriptRef}
-        className="flex flex-wrap gap-x-1.5 gap-y-1 text-base leading-relaxed select-text"
+        className="flex flex-wrap gap-x-1.5 gap-y-1 text-base leading-relaxed select-text text-slate-300"
       >
         {transcriptData.map((segment, idx) => {
           const isActive = currentTime >= segment.startTime && currentTime <= segment.endTime;
@@ -183,13 +183,12 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
               key={idx}
               onClick={() => seekTo(segment.startTime)}
               animate={isActive ? { scale: 1.05, y: -2 } : { scale: 1, y: 0 }}
-              className={`cursor-pointer px-1.5 py-0.5 rounded-lg transition-all duration-200 font-medium ${
-                isActive 
-                  ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/30' 
-                  : currentTime > segment.endTime 
-                    ? 'text-slate-400 font-normal grayscale' 
-                    : 'text-slate-700 hover:bg-orange-100 hover:text-black border border-transparent hover:border-orange-200'
-              }`}
+              className={`cursor-pointer px-1.5 py-0.5 rounded-lg transition-all duration-200 font-medium ${isActive
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                  : currentTime > segment.endTime
+                    ? 'text-slate-500 font-normal grayscale'
+                    : 'text-slate-300 hover:bg-indigo-500/20 hover:text-white border border-transparent hover:border-indigo-500/30'
+                }`}
             >
               {segment.text}
             </motion.span>

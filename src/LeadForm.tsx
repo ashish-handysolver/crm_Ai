@@ -157,261 +157,257 @@ export default function LeadForm({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+      <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12 space-y-8 animate-pulse">
-          <div className="w-32 h-6 bg-slate-200 rounded"></div>
+          <div className="w-32 h-6 bg-white/10 rounded"></div>
           <div className="space-y-4">
-            <div className="w-48 h-6 bg-slate-200 rounded-full"></div>
-            <div className="w-64 sm:w-96 h-10 sm:h-12 bg-slate-200 rounded-xl"></div>
-            <div className="w-full max-w-2xl h-4 bg-slate-200 rounded"></div>
+            <div className="w-48 h-6 bg-white/10 rounded-full"></div>
+            <div className="w-64 sm:w-96 h-10 sm:h-12 bg-white/10 rounded-xl"></div>
+            <div className="w-full max-w-2xl h-4 bg-white/10 rounded"></div>
           </div>
-          <div className="h-[800px] bg-slate-200/50 rounded-[2.5rem]"></div>
+          <div className="h-[800px] bg-white/5 rounded-[2.5rem] border border-white/10"></div>
         </div>
       </div>
     );
   }
 
-  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-slate-200 bg-white focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-slate-700 shadow-sm placeholder:text-slate-400 placeholder:font-medium";
+  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-white/10 bg-black/20 focus:bg-black/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-white shadow-inner placeholder:text-slate-500 placeholder:font-medium";
   const labelClasses = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5 block px-1";
 
   return (
     <>
-      <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
+      <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12 space-y-8">
 
-        {/* Back Link */}
-        <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-all group">
-          <div className="p-2 bg-white border border-slate-200 rounded-xl group-hover:border-indigo-100 group-hover:bg-indigo-50/50 shadow-sm transition-all">
-            <ChevronLeft size={16} />
-          </div>
-          Return to Leads
-        </Link>
-
-        {/* Header */}
-        <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em]">
-            <Sparkles size={14} className="animate-pulse" /> Client Profile
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-            {isEditing ? 'Edit Existing Lead' : 'Add New Lead'}
-          </h1>
-          <p className="text-slate-500 font-medium max-w-2xl">
-            {isEditing ? 'Modify the information for this lead to maintain an accurate business pipeline.' : 'Enter the details for your new lead to begin tracking their progress through the sales funnel.'}
-          </p>
-        </motion.header>
-
-        {error && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 bg-rose-50 text-rose-600 rounded-2xl flex items-center gap-4 text-sm font-bold border border-rose-100 shadow-xl shadow-rose-500/5">
-            <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
-              <AlertCircle size={20} />
+          {/* Back Link */}
+          <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-400 transition-all group w-fit">
+            <div className="p-2 bg-white/5 border border-white/10 rounded-xl group-hover:border-indigo-500/30 group-hover:bg-indigo-500/20 shadow-sm transition-all text-white">
+              <ChevronLeft size={16} />
             </div>
-            {error}
-          </motion.div>
-        )}
+            Return to Leads
+          </Link>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !rounded-[2.5rem] overflow-hidden relative">
-          <form onSubmit={handleSubmit} className="p-8 sm:p-12 space-y-12">
+          {/* Header */}
+          <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+              <Sparkles size={14} className="animate-pulse" /> Client Profile
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+              {isEditing ? 'Edit Existing Lead' : 'Add New Lead'}
+            </h1>
+            <p className="text-slate-400 font-medium max-w-2xl">
+              {isEditing ? 'Modify the information for this lead to maintain an accurate business pipeline.' : 'Enter the details for your new lead to begin tracking their progress through the sales funnel.'}
+            </p>
+          </motion.header>
 
-            {/* Avatar Section */}
-            <div className="flex flex-col items-center pb-12 border-b border-slate-100">
-              <div className="relative group cursor-pointer mb-5">
-                <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                <div className="w-32 h-32 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden group-hover:border-indigo-400 group-hover:bg-indigo-50/50 transition-all duration-300 relative">
-                  {formData.avatar ? (
-                    <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 text-slate-300 group-hover:text-indigo-300 transition-colors">
-                      <User size={40} />
-                      <span className="text-[10px] font-black uppercase tracking-tighter">Add Photo</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors flex items-center justify-center pointer-events-none">
-                    <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
-                  </div>
-                </div>
+          {error && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center gap-4 text-sm font-bold border border-rose-500/20 shadow-xl shadow-rose-500/10">
+              <div className="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
+                <AlertCircle size={20} />
               </div>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Identity</h3>
-            </div>
+              {error}
+            </motion.div>
+          )}
 
-            <div className="space-y-14">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !bg-slate-900/40 !border-white/10 !rounded-[2.5rem] overflow-hidden relative shadow-2xl">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+            <form onSubmit={handleSubmit} className="p-8 sm:p-12 space-y-12 relative z-10">
 
-              {/* Personal Information */}
-              <section className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
-                    <User size={18} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Core Information</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Full Name</label>
-                    <div className="relative group">
-                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                      <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. John Smith" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Email Address</label>
-                    <div className="relative group">
-                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                      <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="john.s@example.com" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Phone Number</label>
-                    <div className="relative group">
-                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                      <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 890" />
+              {/* Avatar Section */}
+              <div className="flex flex-col items-center pb-12 border-b border-white/10">
+                <div className="relative group cursor-pointer mb-5">
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <div className="w-32 h-32 rounded-[2.5rem] border-2 border-dashed border-white/20 flex items-center justify-center bg-black/20 overflow-hidden group-hover:border-indigo-500 group-hover:bg-indigo-500/10 transition-all duration-300 relative shadow-inner">
+                    {formData.avatar ? (
+                      <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-indigo-300 transition-colors">
+                        <User size={40} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">Add Photo</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/20 transition-colors flex items-center justify-center pointer-events-none">
+                      <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300" size={28} />
                     </div>
                   </div>
                 </div>
-              </section>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Identity</h3>
+              </div>
 
-              {/* Company Information */}
-              <section className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
-                    <Building2 size={18} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Company Details</h3>
-                </div>
+              <div className="space-y-14">
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Company Name</label>
-                    <div className="relative group">
-                      <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                      <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Acme Inc." />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Office Location</label>
-                    <div className="relative group">
-                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                      <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="San Francisco, CA" />
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Classification */}
-              <section className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
-                    <Zap size={18} />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Pipeline & Classification</h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Lead Source</label>
-                    <div className="relative group">
-                      <input name="source" value={formData.source} onChange={handleChange} list="sources" className={inputClasses} placeholder="Select or type..." />
-                      <datalist id="sources">
-                        <option value="LINKEDIN">LinkedIn</option>
-                        <option value="REFERRAL">Referral</option>
-                        <option value="DIRECT">Direct</option>
-                        {customSources.map(s => <option key={s} value={s}>{s}</option>)}
-                      </datalist>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Lead Type</label>
-                    <select name="leadType" value={formData.leadType || 'B2B'} onChange={handleChange} className={inputClasses}>
-                      <option value="B2B">B2B</option>
-                      <option value="B2C">B2C</option>
-                      <option value="ENTERPRISE">Enterprise</option>
-                      {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Pipeline Phase</label>
-                    <select name="phase" value={formData.phase} onChange={handleChange} className={inputClasses}>
-                      <option value="DISCOVERY">Discovery</option>
-                      <option value="NURTURING">Nurturing</option>
-                      <option value="QUALIFIED">Qualified</option>
-                      <option value="WON">Closed - Won</option>
-                      <option value="LOST">Closed - Lost</option>
-                      <option value="INACTIVE">Archived</option>
-                      {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={`${labelClasses} flex justify-between`}>
-                      AI Confidence Score
-                      <span className="text-indigo-600 font-black">{formData.score}% Match</span>
-                    </label>
-                    <div className="pt-2">
-                      <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-indigo-50 rounded-full appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500 transition-all shadow-inner" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Capture Date</label>
-                    <div className="relative group">
-                      <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                      <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-14`} />
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Custom Fields */}
-              {customFieldDefs.length > 0 && (
-                 <section className="space-y-8">
+                {/* Personal Information */}
+                <section className="space-y-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm border border-indigo-100">
-                      <Globe size={18} />
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
+                      <User size={18} />
                     </div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.1em]">Extended Fields</h3>
+                    <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Core Information</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {customFieldDefs.map(field => (
-                      <div key={field.id} className="space-y-2">
-                        <label className={labelClasses}>{field.name}</label>
-                        {field.type === 'DROPDOWN' ? (
-                          <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses}>
-                            <option value="">Select Option</option>
-                            {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                          </select>
-                        ) : field.type === 'DATE' ? (
-                          <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} />
-                        ) : (
-                          <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name}...`} />
-                        )}
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Full Name</label>
+                      <div className="relative group">
+                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. John Smith" />
                       </div>
-                    ))}
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Email Address</label>
+                      <div className="relative group">
+                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="john.s@example.com" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Phone Number</label>
+                      <div className="relative group">
+                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 890" />
+                      </div>
+                    </div>
                   </div>
                 </section>
-              )}
-            </div>
 
-            {/* Footer */}
-            <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4">
-              <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                Cancel
-              </Link>
-              <button type="submit" disabled={saving} className="btn-primary min-w-[180px] shadow-xl shadow-indigo-200">
-                {saving ? (
-                  <Loader2 size={20} className="animate-spin" />
-                ) : (
-                  <Save size={20} />
+                {/* Company Information */}
+                <section className="space-y-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
+                      <Building2 size={18} />
+                    </div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Company Details</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Company Name</label>
+                      <div className="relative group">
+                        <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Acme Inc." />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Office Location</label>
+                      <div className="relative group">
+                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="San Francisco, CA" />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Classification */}
+                <section className="space-y-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
+                      <Zap size={18} />
+                    </div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Pipeline & Classification</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Lead Source</label>
+                      <div className="relative group">
+                        <input name="source" value={formData.source} onChange={handleChange} list="sources" className={inputClasses} placeholder="Select or type..." />
+                        <datalist id="sources">
+                          <option value="LINKEDIN">LinkedIn</option>
+                          <option value="REFERRAL">Referral</option>
+                          <option value="DIRECT">Direct</option>
+                          {customSources.map(s => <option key={s} value={s}>{s}</option>)}
+                        </datalist>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Lead Type</label>
+                      <select name="leadType" value={formData.leadType || 'B2B'} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                        <option value="B2B">B2B</option>
+                        <option value="B2C">B2C</option>
+                        <option value="ENTERPRISE">Enterprise</option>
+                        {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Pipeline Phase</label>
+                      <select name="phase" value={formData.phase} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                        <option value="DISCOVERY">Discovery</option>
+                        <option value="NURTURING">Nurturing</option>
+                        <option value="QUALIFIED">Qualified</option>
+                        <option value="WON">Closed - Won</option>
+                        <option value="LOST">Closed - Lost</option>
+                        <option value="INACTIVE">Archived</option>
+                        {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={`${labelClasses} flex justify-between`}>
+                        AI Confidence Score
+                        <span className="text-indigo-400 font-black">{formData.score}% Match</span>
+                      </label>
+                      <div className="pt-2">
+                        <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-black/40 border border-white/10 rounded-full appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all shadow-inner" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Capture Date</label>
+                      <div className="relative group">
+                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-14 [color-scheme:dark]`} />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Custom Fields */}
+                {customFieldDefs.length > 0 && (
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
+                        <Globe size={18} />
+                      </div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Extended Fields</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {customFieldDefs.map(field => (
+                        <div key={field.id} className="space-y-2">
+                          <label className={labelClasses}>{field.name}</label>
+                          {field.type === 'DROPDOWN' ? (
+                            <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                              <option value="">Select Option</option>
+                              {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                          ) : field.type === 'DATE' ? (
+                            <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses} [color-scheme:dark]`} />
+                          ) : (
+                            <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name}...`} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 )}
-                <span>{isEditing ? 'Update Lead' : 'Create Lead'}</span>
-              </button>
-            </div>
-          </form>
-        </motion.div>
+              </div>
 
-        {/* Security Info */}
-        <div className="text-center">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-            <ShieldAlert size={12} /> Securely encrypted via enterprise protocol
-          </p>
-        </div>
+              {/* Footer */}
+              <div className="mt-16 pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-end gap-4 relative z-10">
+                <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-300 hover:text-white bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-2 active:scale-95">
+                  Cancel
+                </Link>
+                <button type="submit" disabled={saving} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 min-w-[180px] shadow-xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50">
+                  {saving ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Save size={20} />
+                  )}
+                  <span>{isEditing ? 'Update Lead' : 'Create Lead'}</span>
+                </button>
+              </div>
+            </form>
+          </motion.div>
+
+
 
         </div>
       </div>
