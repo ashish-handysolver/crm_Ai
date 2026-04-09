@@ -73,7 +73,11 @@ export default function ManualUpload({ user }: { user: any }) {
 
       let transcriptData = null;
       if (uploadFile && !finalTranscript) {
-        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+        const apiKey = [
+          (process.env as any).GEMINI_API_KEY,
+          (import.meta as any).env.VITE_GEMINI_API_KEY,
+          (import.meta as any).env.GEMINI_API_KEY
+        ].find(k => k && k !== 'undefined' && k !== 'null') || '';
         if (apiKey) {
           const fileUri = await uploadFileToGemini(uploadFile, apiKey);
           const ai = new GoogleGenAI({ apiKey });

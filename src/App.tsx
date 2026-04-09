@@ -422,7 +422,11 @@ const RecordingView = () => {
     if (!recording || !recording.audioUrl || isSyncing || !id) return;
     setIsSyncing(true);
     try {
-      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+      const apiKey = [
+        (process.env as any).GEMINI_API_KEY,
+        (import.meta as any).env.VITE_GEMINI_API_KEY,
+        (import.meta as any).env.GEMINI_API_KEY
+      ].find(k => k && k !== 'undefined' && k !== 'null') || '';
       if (!apiKey) throw new Error("Gemini API Key is missing (VITE_GEMINI_API_KEY).");
       let audioBlob: Blob | null = null;
       try {
@@ -874,7 +878,11 @@ const GlobalRecorder = () => {
       const audioUrl = await getDownloadURL(storageRef);
 
       setStatusText('Transcribing & Analyzing...');
-      const apiKey = (process.env as any).GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+      const apiKey = [
+        (process.env as any).GEMINI_API_KEY,
+        (import.meta as any).env.VITE_GEMINI_API_KEY,
+        (import.meta as any).env.GEMINI_API_KEY
+      ].find(k => k && k !== 'undefined' && k !== 'null') || '';
       
       if (!apiKey) {
         console.error("CRITICAL_ERROR: Gemini API Key is missing. Transcription aborted.");
