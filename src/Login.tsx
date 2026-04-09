@@ -99,15 +99,13 @@ export default function Login() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white mb-4 leading-tight">
-            Authentication
+            Login
           </h1>
-          <p className="text-slate-400 font-medium text-lg mb-10 leading-relaxed">
-            Initialize secure link to your enterprise <span className="text-indigo-400">intelligence node</span>.
-          </p>
+
 
           <form onSubmit={handleLogin} className="space-y-8">
             <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Work Gateway</label>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                   <Mail size={18} />
@@ -124,7 +122,7 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Security Key</label>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                   <Lock size={18} />
@@ -155,7 +153,7 @@ export default function Login() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none"></div>
                 {loading ? <Loader2 className="animate-spin" size={22} /> : <div className="p-1.5 bg-white/10 rounded-lg group-hover:scale-110 transition-transform"><Sparkles size={18} className="text-indigo-200" /></div>}
-                <span>{loading ? 'Decrypting...' : 'Establish Connection'}</span>
+                <span>{loading ? 'Login...' : 'Login'}</span>
                 {!loading && <ArrowRight className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1.5 transition-all" size={20} />}
               </button>
             </div>
@@ -163,10 +161,10 @@ export default function Login() {
 
           <div className="mt-14 pt-10 border-t border-white/5 flex flex-col items-center gap-6">
             <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">
-              New Node Required?
+              Create New Orgnization?
             </p>
-            <Link 
-              to="/register-company" 
+            <Link
+              to="/register-company"
               className="group flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-95"
             >
               <Building2 size={18} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
@@ -176,7 +174,7 @@ export default function Login() {
           </div>
 
         </motion.div>
-        
+
         <div className="mt-auto py-10 flex flex-col items-center gap-4 relative z-10">
           <div className="flex items-center gap-6 opacity-40">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-white"></div>
@@ -185,65 +183,63 @@ export default function Login() {
             </p>
             <div className="h-px w-8 bg-gradient-to-l from-transparent to-white"></div>
           </div>
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-            Handysolver Cybernetics © {new Date().getFullYear()}
-          </p>
+          <p className="text-white text-[10px]   tracking-[0.2em]">HandyCRM.AI Powered By Handysolver.com</p>
         </div>
       </div>
 
       {/* Right Area - Hero & Neural Visualization */}
       <div className="hidden lg:flex flex-1 relative bg-[#030014] overflow-hidden items-center justify-center border-l border-white/5">
-        
+
         {/* Animated Grid / Pattern - Ported from Analytics style */}
         <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
 
         {/* Abstract Glowing Background Elements */}
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
-          <motion.div 
-            animate={{ 
+          <motion.div
+            animate={{
               scale: [1, 1.2, 1],
               opacity: [0.1, 0.2, 0.1]
             }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-1/4 left-1/4 w-[50rem] h-[50rem] bg-indigo-600/20 rounded-full blur-[140px] mix-blend-screen"
           ></motion.div>
-          <motion.div 
-            animate={{ 
+          <motion.div
+            animate={{
               scale: [1.2, 1, 1.2],
               opacity: [0.1, 0.15, 0.1]
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             className="absolute bottom-1/4 right-1/4 w-[40rem] h-[40rem] bg-purple-600/20 rounded-full blur-[120px] mix-blend-screen"
           ></motion.div>
-          
+
           <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
         </div>
 
         {/* Neural Network SVG Decor */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
-           <svg width="100%" height="100%" className="absolute inset-0">
-              <defs>
-                 <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4f46e5" stopOpacity="0" />
-                    <stop offset="50%" stopColor="#4f46e5" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
-                 </linearGradient>
-              </defs>
-              <motion.path 
-                d="M-100,200 Q400,100 900,400 T1500,200" 
-                stroke="url(#lineGrad)" 
-                strokeWidth="2" 
-                fill="none"
-                animate={{ d: ["M-100,200 Q400,100 900,400 T1500,200", "M-100,300 Q400,200 900,500 T1500,300", "M-100,200 Q400,100 900,400 T1500,200"] }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              />
-           </svg>
+          <svg width="100%" height="100%" className="absolute inset-0">
+            <defs>
+              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#4f46e5" stopOpacity="0" />
+                <stop offset="50%" stopColor="#4f46e5" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <motion.path
+              d="M-100,200 Q400,100 900,400 T1500,200"
+              stroke="url(#lineGrad)"
+              strokeWidth="2"
+              fill="none"
+              animate={{ d: ["M-100,200 Q400,100 900,400 T1500,200", "M-100,300 Q400,200 900,500 T1500,300", "M-100,200 Q400,100 900,400 T1500,200"] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            />
+          </svg>
         </div>
 
         {/* Hero Content Layer */}
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: "easeOut" }} className="relative z-10 w-full max-w-2xl px-16 text-center">
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -267,10 +263,10 @@ export default function Login() {
           <div className="glass-card !bg-black/30 !border-white/10 !rounded-[2rem] p-10 shadow-3xl relative overflow-hidden group/graph pt-16">
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"></div>
             <div className="absolute top-4 left-6 flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Analysis active</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Analysis active</span>
             </div>
-            
+
             <div className="flex items-end gap-4 h-48 relative z-10">
               {[45, 75, 55, 95, 70, 85, 100].map((height, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar">
@@ -281,7 +277,7 @@ export default function Login() {
                     className="w-full bg-gradient-to-t from-indigo-600/40 via-indigo-500/80 to-indigo-400 rounded-t-xl relative border-t border-white/20 shadow-[0_-10px_30px_rgba(99,102,241,0.2)] group-hover/bar:brightness-125 transition-all"
                   >
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-all text-[10px] font-black text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-md backdrop-blur-md border border-indigo-500/20">
-                       {height}%
+                      {height}%
                     </div>
                   </motion.div>
                 </div>

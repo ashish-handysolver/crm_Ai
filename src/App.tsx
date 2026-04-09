@@ -1036,7 +1036,7 @@ const AppContent = () => {
   useEffect(() => {
     if (!loading) {
       const isAuthPath = location.pathname === '/login' || location.pathname === '/register-company' || location.pathname === '/super-login';
-      const isSuperPath = location.pathname.startsWith('/super-admin-console');
+      const isSuperPath = location.pathname.startsWith('/super-admin');
       const isOnboardingPath = location.pathname === '/onboarding';
       const isGuestPath = location.pathname.startsWith('/m/') || location.pathname.startsWith('/capture/');
 
@@ -1071,7 +1071,7 @@ const AppContent = () => {
   }
 
   const isGuestRoute = location.pathname.startsWith('/m/') || location.pathname.startsWith('/capture/');
-  const isSuperRoute = location.pathname.startsWith('/super-admin-console');
+  const isSuperRoute = location.pathname.startsWith('/super-admin');
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register-company' || location.pathname === '/super-login';
   const isOnboardingRoute = location.pathname === '/onboarding';
 
@@ -1094,7 +1094,7 @@ const AppContent = () => {
           <Route path="/register-company" element={<RegisterCompany />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/super-login" element={<SuperLogin />} />
-          <Route path="/super-admin-console" element={<SuperAdmin />} />
+          <Route path="/super-admin" element={<SuperAdmin />} />
         </Routes>
       </div>
     );
