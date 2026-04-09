@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* <NavItem onClick={onClose} to="/history" icon={<History />} label="Logs" /> */}
 
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4 mt-8">System</div>
-          <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Settings" />
+          {role !== 'team_member' && <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Settings" />}
           <NavItem onClick={onClose} to="/download-app" icon={<Download />} label="App" />
         </nav>
 

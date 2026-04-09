@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
 import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, Share2 as ShareIcon, LayoutDashboard, ScanQrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
@@ -57,6 +57,7 @@ import DownloadApp from './DownloadApp';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
+import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 
 
 // --- Error Handling ---
@@ -390,6 +391,7 @@ const HistoryView = ({ user }: { user: User }) => {
 
 const RecordingView = () => {
   const { id } = useParams();
+  const { role, user } = useAuth();
   const [recording, setRecording] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -514,48 +516,74 @@ const RecordingView = () => {
       if (!id) return;
       try {
         const snap = await getDoc(doc(db, 'recordings', id));
-        if (snap.exists()) setRecording(snap.data());
+        if (snap.exists()) {
+          const data = snap.data();
+          // Role-based check
+          if (role === 'team_member' && data.authorUid !== user?.uid) {
+            // Check if lead is assigned to user
+            if (data.leadId) {
+              const leadSnap = await getDoc(doc(db, 'leads', data.leadId));
+              if (leadSnap.exists()) {
+                const leadData = leadSnap.data();
+                if (leadData.assignedTo !== user?.uid && leadData.authorUid !== user?.uid) {
+                  setRecording('UNAUTHORIZED');
+                  return;
+                }
+              } else {
+                setRecording('UNAUTHORIZED');
+                return;
+              }
+            } else {
+              setRecording('UNAUTHORIZED');
+              return;
+            }
+          }
+          setRecording({ ...data, id: snap.id });
+        }
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };
     fetchRec();
-  }, [id]);
+  }, [id, role, user?.uid]);
 
-  const handleShareWhatsApp = () => {
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleShareWhatsApp = (templateId?: string) => {
     if (!recording) return;
 
-    let text = `🚀 *Meeting Intelligence Report* 🚀\n\n`;
-    
-    const insights = recording.aiInsights;
-    if (insights) {
-      if (insights.overview) {
-        text += `📝 *Executive Summary:*\n${insights.overview}\n\n`;
-      }
-      
-      if (insights.meetingMinutes && insights.meetingMinutes.length > 0) {
-        text += `💡 *Key Discussion Points:*\n`;
-        insights.meetingMinutes.forEach((p: string) => text += `• ${p}\n`);
-        text += `\n`;
-      }
-      
-      if (insights.tasks && insights.tasks.length > 0) {
-        text += `✅ *Action Items:*\n`;
-        insights.tasks.forEach((t: any) => text += `• [${t.completed ? 'DONE' : 'OPEN'}] ${t.title} (${t.assignee || 'Unassigned'})\n`);
-        text += `\n`;
-      }
-    } else {
-      text += `📄 *Transcript Snippet:*\n${recording.transcript?.substring(0, 500)}...\n\n`;
-    }
+    const template = templateId 
+      ? WHATSAPP_TEMPLATES.find(t => t.id === templateId) 
+      : WHATSAPP_TEMPLATES[0];
 
-    text += `🔗 *Full Protocol & Audio:* ${window.location.origin}/r/${recording.id}\n\n`;
-    text += `--- \n`;
-    text += `Sent via *handycrm.ai* | Next-Gen Sales Intelligence`;
+    if (!template) return;
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  }; if (loading) return (
+    const text = template.generate({
+      leadName: recording.leadName || recording.lead?.name,
+      company: recording.company || recording.lead?.company,
+      aiInsights: recording.aiInsights,
+      meetingUrl: `${window.location.origin}/r/${recording.id}`
+    });
+
+    // We don't have the phone here directly usually, but we can try to find it from the lead if linked
+    // For now, open empty contact picker if no phone
+    const phone = recording.lead?.phone || '';
+    openWhatsApp(phone, text);
+    setShowTemplates(false);
+  };
+
+  if (loading) return (
     <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
       <div className="relative">
         <Loader2 className="animate-spin text-indigo-500 w-16 h-16" />
         <div className="absolute inset-0 bg-indigo-500/20 blur-3xl animate-pulse"></div>
+      </div>
+    </div>
+  );
+
+  if (recording === 'UNAUTHORIZED') return (
+    <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
+      <div className="text-rose-500 font-black uppercase tracking-[0.4em] text-xs flex flex-col items-center gap-6">
+        <ShieldCheck size={48} className="text-rose-600" />
+        Transmission Intercepted: Access Forbidden
       </div>
     </div>
   );
@@ -601,14 +629,48 @@ const RecordingView = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full xl:w-auto">
-              <button
-                onClick={handleShareWhatsApp}
-                className="px-8 py-5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-3 group"
-              >
-                <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div>
-                WhatsApp
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full xl:w-auto overflow-visible">
+              <div className="relative group/wa">
+                <button
+                  onClick={() => setShowTemplates(!showTemplates)}
+                  className="w-full px-8 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-900/40 active:scale-95 flex items-center justify-center gap-3 group"
+                >
+                  <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div>
+                  WhatsApp Share
+                </button>
+
+                <AnimatePresence>
+                  {showTemplates && (
+                    <>
+                      <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        onClick={() => setShowTemplates(false)}
+                        className="fixed inset-0 z-[110]"
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute bottom-full left-0 mb-4 w-72 bg-slate-900 border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[120] overflow-hidden p-2"
+                      >
+                        <div className="px-5 py-3 border-b border-white/5 bg-white/5 mb-2">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Select Narrative</span>
+                        </div>
+                        {WHATSAPP_TEMPLATES.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => handleShareWhatsApp(t.id)}
+                            className="w-full text-left px-5 py-3.5 rounded-xl hover:bg-white/5 transition-all flex flex-col gap-1 group/item"
+                          >
+                            <span className="text-xs font-black text-white group-hover/item:text-emerald-400 transition-colors uppercase tracking-tight">{t.name}</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Context: {t.category}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
@@ -1148,7 +1210,7 @@ const AppContent = () => {
             <Route path="/clients/:id/edit" element={<LeadForm user={user} />} />
             <Route path="/upload" element={<ManualUpload user={user} />} />
             <Route path="/analytics/:id" element={<LeadInsights user={user} />} />
-            <Route path="/settings" element={<Settings user={user} />} />
+            <Route path="/settings" element={role === 'team_member' ? <Navigate to="/" replace /> : <Settings user={user} />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/download-app" element={<DownloadApp />} />

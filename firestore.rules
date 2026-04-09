@@ -131,5 +131,12 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.createdBy || isSuperAdmin());
       allow write: if isAuthenticated();
     }
+
+    match /activity_logs/{logId} {
+      // Only Admins/SuperAdmins can see the global history stream
+      allow read: if isAuthenticated() && (isSuperAdmin() || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow create: if isAuthenticated();
+      allow delete: if isSuperAdmin();
+    }
   }
 }

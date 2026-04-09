@@ -10,9 +10,11 @@ import { db } from './firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
+import { logActivity } from './utils/activity';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 
 export default function Dashboard({ user }: { user: any }) {
-  const { companyId } = useAuth();
+  const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [activeTab, setActiveTab] = React.useState<'overview' | 'reports' | 'analytics'>('overview');
   const [leads, setLeads] = React.useState<any[]>([]);
@@ -38,7 +40,12 @@ export default function Dashboard({ user }: { user: any }) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a: any, b: any) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
-      setLeads(data);
+
+      const filtered = role === 'team_member'
+        ? data.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid)
+        : data;
+
+      setLeads(filtered);
       setLoading(false);
     });
 
@@ -54,7 +61,25 @@ export default function Dashboard({ user }: { user: any }) {
   const handleHealthChange = async (leadId: string, newHealth: string) => {
     if (isDemoMode) return;
     try {
-      await updateDoc(doc(db, 'leads', leadId), { health: newHealth });
+      if (!isDemoMode) {
+        const lead = leads.find(l => l.id === leadId);
+        const oldHealth = lead?.health || 'WARM';
+        await updateDoc(doc(db, 'leads', leadId), { health: newHealth });
+
+        await logActivity({
+          leadId,
+          companyId,
+          type: 'FIELD_CHANGE',
+          action: 'Health Status Synchronization',
+          authorUid: user.uid,
+          authorName: user.displayName || 'System',
+          details: {
+            field: 'health',
+            oldValue: oldHealth,
+            newValue: newHealth
+          }
+        });
+      }
     } catch (e) {
       console.error('Failed to update health', e);
     }
@@ -73,6 +98,9 @@ export default function Dashboard({ user }: { user: any }) {
 
   const conversionRate = totalClients > 0 ? ((getPhaseCount('QUALIFIED') / totalClients) * 100).toFixed(1) : '0';
   const estimatedValue = 0.0;
+
+  const interestedCount = leads.filter(l => l.isInterested !== false).length;
+  const notInterestedCount = leads.filter(l => l.isInterested === false).length;
 
   const healthCategories = ['HOT', 'WARM', 'COLD'];
   const healthData = healthCategories.map(health => ({
@@ -151,11 +179,18 @@ export default function Dashboard({ user }: { user: any }) {
               {/* KPI Section */}
               <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-8">
                 {[
-                  { label: 'Total Clients', value: totalClients, icon: <Users size={24} />, color: 'bg-indigo-500' },
-                  { label: 'Conversion', value: `${conversionRate}%`, icon: <Target size={24} />, color: 'bg-emerald-500' },
+                  { label: 'Total Clients', value: interestedCount, icon: <Users size={24} />, color: 'bg-indigo-500', link: '/clients' },
+                  { label: 'Conversion', value: `${conversionRate}%`, icon: <Target size={24} />, color: 'bg-emerald-500', link: '/clients' },
+                  // { label: 'Interested', value: totalClients, icon: <ThumbsUp size={24} />, color: 'bg-cyan-500', link: '/clients', filter: { isInterested: true } },
+                  // { label: 'Not Interested', value: notInterestedCount, icon: <ThumbsDown size={24} />, color: 'bg-rose-500', link: '/clients', filter: { isInterested: false } },
                   { label: 'Turnover', value: `₹ ${estimatedValue}`, icon: <Zap size={24} />, color: 'bg-purple-500' },
                 ].map((kpi, i) => (
-                  <motion.div key={i} variants={itemVariants} className="glass-card p-4 sm:p-8 group hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between min-h-[140px] sm:min-h-0">
+                  <motion.div
+                    key={i}
+                    variants={itemVariants}
+                    onClick={() => kpi.link && navigate(kpi.link, { state: kpi.filter })}
+                    className={`glass-card p-4 sm:p-8 group hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between min-h-[140px] sm:min-h-0 ${kpi.link ? 'cursor-pointer' : ''}`}
+                  >
                     <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="flex flex-col sm:flex-row justify-between items-start mb-2 sm:mb-6 gap-2 relative z-10 w-full">
                       <div className={`w-8 h-8 sm:w-14 sm:h-14 ${kpi.color} text-white rounded-xl sm:rounded-2xl flex items-center justify-center  shadow-${kpi.color.split('-')[1]}-200`}>

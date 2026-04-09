@@ -26,7 +26,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function CalendarPage({ user }: { user: any }) {
-  const { companyId } = useAuth();
+  const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -103,7 +103,10 @@ export default function CalendarPage({ user }: { user: any }) {
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Meeting));
-      setMeetings(data);
+      const filtered = role === 'team_member'
+        ? data.filter((m: any) => m.ownerUid === user.uid || leads.some(l => l.id === m.leadId))
+        : data;
+      setMeetings(filtered);
       setLoading(false);
     }, (err) => {
       console.error(err);
@@ -121,7 +124,11 @@ export default function CalendarPage({ user }: { user: any }) {
     if (!companyId) return;
     const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, snap => {
-      setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const allLeads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const filtered = role === 'team_member'
+        ? allLeads.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid)
+        : allLeads;
+      setLeads(filtered);
     });
     return () => unsub();
   }, [companyId, isDemoMode, demoData]);
