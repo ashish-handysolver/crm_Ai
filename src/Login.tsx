@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, AudioLines, Flame, Sparkles } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, AudioLines, Flame, Sparkles, Building2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
   signInWithEmailAndPassword,
@@ -67,58 +67,67 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] bg-[#0A0D14] font-sans selection:bg-indigo-500 selection:text-white overflow-hidden" style={{ width: '100%' }}>
+    <div className="flex min-h-[100dvh] bg-[#030014] font-sans selection:bg-indigo-500 selection:text-white overflow-hidden relative" style={{ width: '100%' }}>
+      {/* Neural Background for the whole page */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#4f46e510_0%,transparent_50%)]"></div>
+      </div>
+
       {/* Left Area - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-[#0A0D14] border-r border-white/10 z-10 relative overflow-hidden">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-black/40 backdrop-blur-2xl border-r border-white/5 z-10 relative overflow-hidden shadow-2xl">
 
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-indigo-500/10 blur-3xl"></div>
-          <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[30%] rounded-full bg-purple-500/10 blur-3xl"></div>
+          <div className="absolute top-[10%] -left-[10%] w-[50%] h-[30%] rounded-full bg-indigo-500/10 blur-[100px] animate-pulse"></div>
+          <div className="absolute bottom-[10%] -right-[10%] w-[40%] h-[30%] rounded-full bg-purple-500/10 blur-[100px] animate-pulse delay-1000"></div>
         </div>
 
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-md relative z-10 py-12">
+        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: "easeOut" }} className="mx-auto w-full max-w-md relative z-10 py-12">
 
-          <div className="flex items-center gap-3 mb-12 group/logo cursor-default">
-            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shadow-xl shadow-black/20 border border-white/10 p-2.5 transition-all duration-500 group-hover/logo:rotate-12 group-hover/logo:scale-110 overflow-hidden">
-              <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
+          <div className="flex items-center gap-4 mb-14 group/logo cursor-default">
+            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center shadow-2xl shadow-black/40 border border-white/10 p-3 transition-all duration-700 group-hover/logo:rotate-[15deg] group-hover/logo:scale-110 overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover/logo:opacity-100 transition-opacity"></div>
+              <img src="/logo.png" className="w-full h-full object-contain relative z-10" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tighter text-white leading-none mb-1 lowercase">handycrm.ai</span>
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">Next-Gen Intelligence</span>
+              <span className="text-3xl font-black tracking-tightest text-white leading-none mb-1 lowercase">handycrm.ai</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] leading-none">Neural Hub</span>
+                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+              </div>
             </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
-            Welcome back
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white mb-4 leading-tight">
+            Authentication
           </h1>
-          <p className="text-slate-400 font-medium text-lg mb-8">
-            Please enter your credentials to access your workspace.
+          <p className="text-slate-400 font-medium text-lg mb-10 leading-relaxed">
+            Initialize secure link to your enterprise <span className="text-indigo-400">intelligence node</span>.
           </p>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">Work Email</label>
+          <form onSubmit={handleLogin} className="space-y-8">
+            <div className="space-y-2">
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Work Gateway</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-                  <Mail size={20} />
+                <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                  <Mail size={18} />
                 </div>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john@company.com"
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-semibold text-white placeholder:text-slate-500 placeholder:font-medium shadow-sm"
+                  placeholder="identity@company.com"
+                  className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-white placeholder:text-slate-600 shadow-inner"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">Password</label>
+            <div className="space-y-2">
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Security Key</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-                  <Lock size={20} />
+                <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                  <Lock size={18} />
                 </div>
                 <input
                   type="password"
@@ -126,7 +135,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-semibold text-white placeholder:text-slate-500 placeholder:font-medium shadow-sm"
+                  className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-white placeholder:text-slate-600 shadow-inner"
                 />
               </div>
             </div>
@@ -138,96 +147,147 @@ export default function Login() {
               </div>
             )}
 
-            <div className="pt-2">
+            <div className="pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-5 font-black text-base transition-all active:scale-95 shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50 group"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-5 font-black text-lg transition-all active:scale-[0.98] shadow-2xl shadow-indigo-500/30 flex items-center justify-center gap-3 disabled:opacity-50 group relative overflow-hidden"
               >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <Lock size={18} />}
-                <span className="text-base">{loading ? 'Authenticating...' : 'Secure Access'}</span>
-                {!loading && <ArrowRight className="opacity-70 group-hover:translate-x-1 transition-transform" size={18} />}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none"></div>
+                {loading ? <Loader2 className="animate-spin" size={22} /> : <div className="p-1.5 bg-white/10 rounded-lg group-hover:scale-110 transition-transform"><Sparkles size={18} className="text-indigo-200" /></div>}
+                <span>{loading ? 'Decrypting...' : 'Establish Connection'}</span>
+                {!loading && <ArrowRight className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1.5 transition-all" size={20} />}
               </button>
             </div>
           </form>
 
-          <p className="mt-12 text-center text-sm font-black text-slate-500 uppercase tracking-widest">
-            Don't have a secure workspace yet?{' '}
-            <Link to="/register-company" className="text-indigo-400 hover:text-indigo-300 transition-colors ml-1 decoration-skip-ink decoration-2 underline">
-              Create Organization
+          <div className="mt-14 pt-10 border-t border-white/5 flex flex-col items-center gap-6">
+            <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">
+              New Node Required?
+            </p>
+            <Link 
+              to="/register-company" 
+              className="group flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-95"
+            >
+              <Building2 size={18} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
+              <span className="text-sm font-black text-white uppercase tracking-widest">Create Organization</span>
+              <ArrowRight size={16} className="text-slate-500 group-hover:translate-x-1 transition-transform" />
             </Link>
-          </p>
+          </div>
 
         </motion.div>
-        <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2 mb-8 cursor-default relative z-10">
-          Made with <span className="text-[12px] animate-pulse">🧡</span> by Handysolver &copy; {new Date().getFullYear()}
-        </p>
+        
+        <div className="mt-auto py-10 flex flex-col items-center gap-4 relative z-10">
+          <div className="flex items-center gap-6 opacity-40">
+            <div className="h-px w-8 bg-gradient-to-r from-transparent to-white"></div>
+            <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] whitespace-nowrap">
+              Secure Intelligence Protocol v2.4
+            </p>
+            <div className="h-px w-8 bg-gradient-to-l from-transparent to-white"></div>
+          </div>
+          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            Handysolver Cybernetics © {new Date().getFullYear()}
+          </p>
+        </div>
       </div>
 
-      {/* Right Area - Hero & Demo Showcase */}
-      <div className="hidden lg:flex flex-1 relative bg-[#0A0D14] overflow-hidden items-center justify-center">
-        {/* Abstract Glowing Background Elements - Ported from RegisterCompany */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-1000"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse delay-700"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-blue-500/10 rounded-full blur-[150px] mix-blend-screen"></div>
+      {/* Right Area - Hero & Neural Visualization */}
+      <div className="hidden lg:flex flex-1 relative bg-[#030014] overflow-hidden items-center justify-center border-l border-white/5">
+        
+        {/* Animated Grid / Pattern - Ported from Analytics style */}
+        <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
 
-          {/* Noise overlay */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+        {/* Abstract Glowing Background Elements */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.2, 0.1]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/4 left-1/4 w-[50rem] h-[50rem] bg-indigo-600/20 rounded-full blur-[140px] mix-blend-screen"
+          ></motion.div>
+          <motion.div 
+            animate={{ 
+              scale: [1.2, 1, 1.2],
+              opacity: [0.1, 0.15, 0.1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-1/4 right-1/4 w-[40rem] h-[40rem] bg-purple-600/20 rounded-full blur-[120px] mix-blend-screen"
+          ></motion.div>
+          
+          <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+        </div>
+
+        {/* Neural Network SVG Decor */}
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+           <svg width="100%" height="100%" className="absolute inset-0">
+              <defs>
+                 <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#4f46e5" stopOpacity="0" />
+                    <stop offset="50%" stopColor="#4f46e5" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
+                 </linearGradient>
+              </defs>
+              <motion.path 
+                d="M-100,200 Q400,100 900,400 T1500,200" 
+                stroke="url(#lineGrad)" 
+                strokeWidth="2" 
+                fill="none"
+                animate={{ d: ["M-100,200 Q400,100 900,400 T1500,200", "M-100,300 Q400,200 900,500 T1500,300", "M-100,200 Q400,100 900,400 T1500,200"] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              />
+           </svg>
         </div>
 
         {/* Hero Content Layer */}
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative z-10 w-full max-w-2xl px-12">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: "easeOut" }} className="relative z-10 w-full max-w-2xl px-16 text-center">
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-            <Flame className="text-indigo-400 w-4 h-4" />
-            <span className="text-indigo-200 text-sm font-semibold tracking-wide uppercase">Multi-Tenant Intelligence</span>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-2xl mb-12 shadow-2xl"
+          >
+            <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
+            <span className="text-indigo-200 text-[10px] font-black tracking-[0.3em] uppercase">Enterprise Cognitive Layer</span>
+          </motion.div>
 
-          <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tightest">
-            Streamline.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-indigo-400 to-cyan-400">
-              Manage. Connect.
+          <h2 className="text-6xl xl:text-7xl font-black text-white leading-[1] mb-8 tracking-tightest">
+            Cognitive<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 animate-gradient-x">
+              Sales Logic.
             </span>
           </h2>
-
-          <p className="text-lg lg:text-xl text-slate-400 font-medium leading-relaxed mb-10 max-w-xl">
-            Access your secure workspace instantly. Experience the next generation of sales intelligence. Summarize meetings, track lead progress, and boost productivity with AI.
+          <p className="text-xl text-slate-400 font-medium leading-relaxed mb-14 max-w-xl mx-auto opacity-80">
+            Secure multi-tenant gateway to your augmented sales intelligence. Synced, summarized, and optimized in real-time.
           </p>
 
-          {/* Floating UI Mockup element - Interactive Bar Graph from RegisterCompany */}
-          <div className="bg-[#1E293B]/20 border border-white/10 backdrop-blur-3xl rounded-2xl p-8 shadow-2xl relative overflow-hidden flex items-end gap-3 h-56 group/graph">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>
-            {[35, 65, 40, 85, 60, 80, 100].map((height, i) => (
-              <motion.div
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${height}%` }}
-                transition={{ duration: 1.2, delay: 0.5 + i * 0.1, type: "spring" }}
-                className="flex-1 bg-gradient-to-t from-indigo-500/80 to-indigo-400/80 rounded-t-md relative group/bar hover:from-indigo-500 hover:to-indigo-300 transition-all border-t border-white/10"
-              >
-                <div className="absolute inset-0 bg-blue-400/10 blur-sm opacity-0 group-hover/bar:opacity-100 transition-opacity"></div>
-              </motion.div>
-            ))}
+          {/* Floating UI Mockup element - High Fidelity Bar Graph */}
+          <div className="glass-card !bg-black/30 !border-white/10 !rounded-[2rem] p-10 shadow-3xl relative overflow-hidden group/graph pt-16">
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"></div>
+            <div className="absolute top-4 left-6 flex items-center gap-2">
+               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Analysis active</span>
+            </div>
+            
+            <div className="flex items-end gap-4 h-48 relative z-10">
+              {[45, 75, 55, 95, 70, 85, 100].map((height, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${height}%` }}
+                    transition={{ duration: 1.5, delay: 0.6 + i * 0.1, ease: [0.33, 1, 0.68, 1] }}
+                    className="w-full bg-gradient-to-t from-indigo-600/40 via-indigo-500/80 to-indigo-400 rounded-t-xl relative border-t border-white/20 shadow-[0_-10px_30px_rgba(99,102,241,0.2)] group-hover/bar:brightness-125 transition-all"
+                  >
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-all text-[10px] font-black text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-md backdrop-blur-md border border-indigo-500/20">
+                       {height}%
+                    </div>
+                  </motion.div>
+                </div>
+              ))}
+            </div>
           </div>
-          {/* 
-          <div className="grid grid-cols-2 gap-12 pt-12 mt-4 border-t border-white/5">
-             <div className="space-y-2">
-                <div className="text-2xl font-black text-white">99.8%</div>
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Transcription Accuracy</div>
-             </div>
-             <div className="space-y-2 text-right">
-                <button
-                   onClick={() => {
-                     setDemoMode(true);
-                     navigate('/');
-                   }}
-                   className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 ml-auto"
-                >
-                  <Flame size={14} /> Launch Demo
-                </button>
-             </div>
-          </div> */}
 
         </motion.div>
       </div>

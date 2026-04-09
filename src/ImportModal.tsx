@@ -125,9 +125,9 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
       if (f.id === 'name') return 'John Doe';
       if (f.id === 'email') return 'john@example.com';
       if (f.id === 'score') return '85';
-      if (f.id === 'phase') return 'DISCOVERY';
-      if (f.id === 'leadType') return 'B2B';
-      if (f.id === 'health') return 'WARM';
+      if (f.id === 'phase') return String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim();
+      if (f.id === 'leadType') return String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim();
+      if (f.id === 'health') return String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim();
       return f.label;
     }).join(',');
     const csvContent = `${headers}\n${sampleRow}`;
@@ -176,10 +176,10 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
           companyId: companyId,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
-          score: 0, // default
-          phase: 'DISCOVERY', // default
-          leadType: 'B2B', // default
-          health: 'WARM', // default
+          score: 0,
+          phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim(),
+          leadType: String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim(),
+          health: String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim(),
         };
 
         // Apply mappings

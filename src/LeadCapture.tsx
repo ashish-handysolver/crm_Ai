@@ -29,7 +29,9 @@ export default function LeadCapture() {
                 companyId,
                 ...formData,
                 score: 0,
-                phase: 'DISCOVERY',
+                phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim(),
+                leadType: String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim(),
+                health: String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim(),
                 createdAt: Timestamp.now(),
                 updatedAt: Timestamp.now()
             });

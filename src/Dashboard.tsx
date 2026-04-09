@@ -64,7 +64,7 @@ export default function Dashboard({ user }: { user: any }) {
   const recentLeads = leads.slice(0, 5);
   const getPhaseCount = (phase: string) => leads.filter(l => l.phase?.toUpperCase() === phase.toUpperCase()).length;
 
-  const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
+  const DEFAULT_PHASES = String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => p.trim());
   const availablePhases = Array.from(new Set([...DEFAULT_PHASES, ...customPhases]));
   const pipelineData = availablePhases.map(phase => ({
     name: phase,
@@ -186,6 +186,7 @@ export default function Dashboard({ user }: { user: any }) {
                     {pipelineData.map((item) => {
                       const phaseColors: Record<string, string> = {
                         'DISCOVERY': 'from-blue-500/10 to-cyan-500/10 text-blue-400 border-blue-500/20',
+                        'CONNECTED': 'from-teal-500/10 to-emerald-500/10 text-teal-400 border-teal-500/20',
                         'NURTURING': 'from-purple-500/10 to-fuchsia-500/10 text-purple-400 border-purple-500/20',
                         'QUALIFIED': 'from-indigo-500/10 to-violet-500/10 text-indigo-400 border-indigo-500/20',
                         'WON': 'from-emerald-500/10 to-teal-500/10 text-emerald-400 border-emerald-500/20',

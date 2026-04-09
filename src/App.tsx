@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, LayoutDashboard, Calendar, Share2 as ShareIcon, Download, RotateCcw, Bell, Clock, Menu, Sparkles, Activity, ScanQrCode } from 'lucide-react';
+import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, Share2 as ShareIcon, LayoutDashboard, ScanQrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -539,126 +539,172 @@ const RecordingView = () => {
     }
     text += `\nView full details: ${window.location.origin}/r/${recording.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  if (loading) return (
-    <div className="flex-1 bg-slate-50 min-h-screen flex items-center justify-center">
-      <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
+  };  if (loading) return (
+    <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
+      <div className="relative">
+        <Loader2 className="animate-spin text-indigo-500 w-16 h-16" />
+        <div className="absolute inset-0 bg-indigo-500/20 blur-3xl animate-pulse"></div>
+      </div>
     </div>
   );
 
   if (!recording) return (
-    <div className="flex-1 bg-slate-50 min-h-screen flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-sm">
-      Logic Payload Missing
+    <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
+      <div className="text-slate-500 font-black uppercase tracking-[0.4em] text-xs flex items-center gap-4">
+        <Sparkles size={20} className="text-slate-700" /> Logic Vector Depleted
+      </div>
     </div>
   );
 
   return (
-    <div className="flex-1 bg-slate-50/50 min-h-screen overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-4 sm:p-12 space-y-12">
+    <div className="flex-1 bg-[#030014] min-h-screen overflow-y-auto selection:bg-indigo-500 selection:text-white font-sans">
+      <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-600/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      
+      <div className="max-w-5xl mx-auto p-4 sm:p-12 lg:p-20 space-y-20 relative z-10">
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-card !p-10 sm:!p-16 border-slate-200 shadow-[0_32px_120px_rgba(0,0,0,0.06)] relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card !bg-white/[0.02] !backdrop-blur-3xl !border-white/5 !p-12 sm:!p-20 !rounded-[4rem] relative overflow-hidden shadow-3xl"
         >
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-50 rounded-full blur-[100px] pointer-events-none translate-x-1/2 -translate-y-1/2 opacity-60"></div>
+          {/* Top Decorative bar */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
 
-          <header className="mb-16 border-b border-slate-100 pb-10 flex flex-col md:flex-row justify-between items-start gap-10 relative z-10">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-                <FileText size={14} /> Transcript
+          <header className="mb-20 pb-12 border-b border-white/5 flex flex-col xl:flex-row justify-between items-start gap-12">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] shadow-lg">
+                <Sparkles size={14} className="animate-pulse" /> Intelligence Hub
               </div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none uppercase tracking-[0.05em]">Recording Details</h1>
-              <div className="flex items-center gap-2 text-slate-400 font-black uppercase tracking-widest text-[9px]">
-                <Calendar size={12} className="text-indigo-500/50" />
-                {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false }) || 'RECENT'}
+              <h1 className="text-5xl sm:text-7xl font-black text-white tracking-tightest leading-[0.9] uppercase">
+                Interaction <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Metadata</span>
+              </h1>
+              <div className="flex items-center gap-6">
+                 <div className="flex items-center gap-2 text-slate-500 font-black uppercase tracking-widest text-[10px]">
+                    <Calendar size={14} className="text-indigo-500/50" />
+                    {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false }) || 'RECENT'}
+                 </div>
+                 <div className="h-4 w-px bg-white/10"></div>
+                 <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Activity size={14} className="text-cyan-500/50" /> Sync Active
+                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 shrink-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full xl:w-auto">
               <button
                 onClick={handleShareWhatsApp}
-                className="px-6 py-3.5 bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-200/50 active:scale-95 flex items-center gap-2"
+                className="px-8 py-5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-3 group"
               >
-                <MessageSquare size={16} /> WhatsApp Report
+                <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div> 
+                WhatsApp Protocol
               </button>
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="px-6 py-3.5 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-slate-200/50 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                className="px-8 py-5 bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-indigo-400 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
               >
-                {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
-                {isSyncing ? 'Synchronizing' : 'Recalibrate'}
+                {isSyncing ? <Loader2 size={16} className="animate-spin text-cyan-400" /> : <RotateCcw size={16} className="text-indigo-400" />}
+                {isSyncing ? 'Synchronizing' : 'Recalibrate Logic'}
               </button>
               <button
                 onClick={() => window.print()}
-                className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-400/20 active:scale-95 flex items-center gap-2"
+                className="col-span-1 sm:col-span-2 px-8 py-5 bg-white text-black rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-cyan-400 transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3"
               >
-                <Download size={16} /> Export Core
+                <Download size={16} /> Export Core Signal
               </button>
             </div>
           </header>
 
-          <section className="space-y-12 relative z-10">
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 shadow-sm"><Languages size={14} /></div>
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dialect Decoding</h2>
+          <section className="space-y-20">
+            {/* Transcript Area */}
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/20 shadow-2xl"><Languages size={24} /></div>
+                <div>
+                   <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Dialect Decomposition</h2>
+                   <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Multi-vector neural transcript</p>
+                </div>
               </div>
-              <div className="bg-slate-50/50 p-10 rounded-[2.5rem] border border-slate-200/50 shadow-inner group-hover:bg-white transition-all duration-700">
-                {recording.transcript ? (
-                  <TranscriptPlayer
-                    audioUrl={recording.audioUrl}
-                    transcriptData={recording.transcriptData}
-                    fallbackText={recording.transcript}
-                  />
-                ) : (
-                  <div className="text-center py-12 text-slate-400 italic">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">Initializing logic stream retrieval...</p>
-                  </div>
-                )}
+              <div className="bg-black/40 p-1 bg-gradient-to-b from-white/5 to-transparent rounded-[3.5rem] border border-white/5 shadow-inner">
+                <div className="bg-transparent p-10 sm:p-14">
+                  {recording.transcript ? (
+                    <TranscriptPlayer
+                      audioUrl={recording.audioUrl}
+                      transcriptData={recording.transcriptData}
+                      fallbackText={recording.transcript}
+                    />
+                  ) : (
+                    <div className="text-center py-20">
+                       <Loader2 className="animate-spin text-slate-800 mx-auto mb-6" size={40} />
+                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] animate-pulse">Retrieving logic stream...</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
+            {/* AI Insights Area */}
             {recording.aiInsights ? (
-              <div className="space-y-6 relative z-10 w-full mb-12">
-                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                  <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-xs">Executive Summary</h4>
-                  <p className="text-slate-600 leading-relaxed font-medium">{recording.aiInsights.overview}</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="lg:col-span-2 bg-gradient-to-br from-indigo-500/10 to-transparent p-12 rounded-[3.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden group/insight"
+                >
+                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-400/5 rounded-full blur-[40px] group-hover/insight:scale-150 transition-transform duration-1000"></div>
+                   <div className="flex items-center gap-3 mb-8">
+                      <Sparkles size={18} className="text-indigo-400" />
+                      <h4 className="font-black text-white uppercase tracking-[0.4em] text-[11px]">Executive Matrix Summary</h4>
+                   </div>
+                   <p className="text-slate-300 text-xl leading-[1.8] font-medium tracking-tight italic">
+                     <span className="text-4xl text-indigo-500/30">"</span>
+                     {recording.aiInsights.overview}
+                     <span className="text-4xl text-indigo-500/30">"</span>
+                   </p>
+                </motion.div>
+
+                <div className="bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
+                  <h4 className="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
+                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
+                     Meeting Minutes Protocol
+                  </h4>
+                  <ul className="space-y-6">
+                    {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
+                      <li key={i} className="flex items-start gap-5 text-base text-slate-400 font-medium group/item">
+                        <div className="p-1 px-2.5 bg-white/5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-tighter mt-1 group-hover/item:text-indigo-400 transition-colors">0{i+1}</div>
+                        <span className="group-hover/item:text-slate-200 transition-colors">{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                    <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-xs">Meeting Minutes</h4>
-                    <ul className="space-y-3">
-                      {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2.5 shrink-0" />
-                          {pt}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                    <h4 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-xs">Action Items</h4>
-                    <ul className="space-y-3">
-                      {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
-                          <CheckCircle2 size={18} className={t.completed ? "text-emerald-500 shrink-0" : "text-slate-300 shrink-0"} />
-                          <span className={t.completed ? "line-through text-slate-400" : ""}>{t.title} <span className="text-[10px] font-black uppercase text-slate-400 ml-2">({t.assignee})</span></span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+
+                <div className="bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
+                  <h4 className="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
+                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
+                     Action Item Vectors
+                  </h4>
+                  <ul className="space-y-6">
+                    {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
+                      <li key={i} className="flex items-start gap-5 text-base text-slate-400 font-medium group/task">
+                        <div className={`p-2 rounded-xl transition-all ${t.completed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-white/5 text-slate-700 border border-white/5"}`}>
+                           <CheckCircle2 size={18} />
+                        </div>
+                        <div className="space-y-1">
+                           <span className={t.completed ? "line-through text-slate-600" : "group-hover/task:text-slate-200 transition-colors"}>{t.title}</span>
+                           <div className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em]">{t.assignee}</div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             ) : (
-              <div className="p-10 bg-indigo-50/30 rounded-[2.5rem] border border-indigo-100 border-dashed relative group/ai overflow-hidden mb-12">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[40px] opacity-20 group-hover/ai:opacity-40 transition-all duration-1000"></div>
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="p-4 bg-white rounded-2xl text-indigo-600 shadow-xl shadow-indigo-200/50 border border-indigo-100"><Sparkles size={24} className="animate-pulse" /></div>
-                  <div className="space-y-1">
-                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest">AI Analysis Missing</h3>
-                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] opacity-80">Click 'Recalibrate' to generate intelligent analytics.</p>
+              <div className="p-16 bg-indigo-500/5 rounded-[4rem] border border-indigo-500/10 border-dashed relative group/ai overflow-hidden">
+                <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/5 rounded-full blur-[60px] group-hover/ai:scale-110 transition-transform duration-1000"></div>
+                <div className="flex flex-col md:flex-row items-center gap-10 relative z-10 text-center md:text-left">
+                  <div className="p-8 bg-black/40 rounded-[2.5rem] text-indigo-400 shadow-3xl border border-white/5"><Sparkles size={48} className="animate-pulse" /></div>
+                  <div className="space-y-4">
+                    <h3 className="font-black text-white text-2xl uppercase tracking-[0.3em]">AI Synthesis Pending</h3>
+                    <p className="text-[11px] font-black text-indigo-500/70 uppercase tracking-[0.4em] leading-relaxed max-w-lg">Initiate the 'Recalibrate Logic' protocol to synthesize interaction intelligence and behavioral metrics.</p>
                   </div>
                 </div>
               </div>
@@ -666,9 +712,9 @@ const RecordingView = () => {
           </section>
         </motion.div>
 
-        <div className="text-center">
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Handydash CRM AI &bull; Handysolver Systems</p>
-        </div>
+        <footer className="text-center py-10 opacity-20 hover:opacity-100 transition-opacity duration-1000">
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.8em]">Handydash CRM AI &bull; Intelligence Framework v9.4</p>
+        </footer>
       </div>
     </div>
   );
@@ -718,7 +764,7 @@ const GlobalRecorder = () => {
                 noiseSuppression: false,
                 autoGainControl: false,
                 systemAudio: 'include',
-              } : true,
+              } as any : true,
             });
           }
         } catch (e) {

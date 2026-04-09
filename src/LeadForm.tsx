@@ -29,10 +29,10 @@ export default function LeadForm({ user }: { user: any }) {
     location: '',
     phone: '',
     source: 'DIRECT',
-    leadType: 'B2B',
-    health: 'WARM',
+    leadType: String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim(),
+    health: String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim(),
     score: 50,
-    phase: 'DISCOVERY',
+    phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim(),
     avatar: '',
     createdAtStr: new Date().toISOString().split('T')[0]
   });
@@ -321,23 +321,31 @@ export default function LeadForm({ user }: { user: any }) {
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Lead Type</label>
-                      <select name="leadType" value={formData.leadType || 'B2B'} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
-                        <option value="B2B">B2B</option>
-                        <option value="B2C">B2C</option>
-                        <option value="ENTERPRISE">Enterprise</option>
+                      <select name="leadType" value={formData.leadType || String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim()} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                        {String((import.meta as any).env.VITE_LEAD_TYPES || 'B2B,B2C,ENTERPRISE').split(',').map(t => {
+                          const val = t.trim();
+                          return <option key={val} value={val}>{val}</option>;
+                        })}
                         {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Pipeline Phase</label>
                       <select name="phase" value={formData.phase} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
-                        <option value="DISCOVERY">Discovery</option>
-                        <option value="NURTURING">Nurturing</option>
-                        <option value="QUALIFIED">Qualified</option>
-                        <option value="WON">Closed - Won</option>
-                        <option value="LOST">Closed - Lost</option>
-                        <option value="INACTIVE">Archived</option>
+                        {String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => {
+                          const val = p.trim();
+                          return <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>;
+                        })}
                         {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={labelClasses}>Health Status</label>
+                      <select name="health" value={formData.health} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                        {String((import.meta as any).env.VITE_HEALTH_STATUSES || 'HOT,WARM,COLD').split(',').map(h => {
+                          const val = h.trim();
+                          return <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>;
+                        })}
                       </select>
                     </div>
                     <div className="space-y-2">

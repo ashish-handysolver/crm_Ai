@@ -18,11 +18,12 @@ import ImportModal from './ImportModal';
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
   { id: '2', name: 'Elena Thorne', email: 'elena.t@atlas.corp', company: 'Atlas Global', location: 'Berlin, DE', source: 'REFERRAL', health: 'WARM', score: 62, lastPulse: 'Yesterday', phase: 'NURTURING', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e', phone: '+49 30 1234 5678' },
-  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', health: 'HOT', score: 92, lastPulse: '4 hours ago', phase: 'DISCOVERY', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
+  { id: '3', name: 'Julian Rossi', email: 'julian@horizon.com', company: 'Horizon Digital', location: 'Milan, IT', source: 'DIRECT', health: 'HOT', score: 92, lastPulse: '4 hours ago', phase: 'CONNECTED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f', phone: '+39 02 1234 5678' },
   { id: '4', name: 'Sarah Wick', email: 's.wick@continental.dev', company: 'Continental Dev', location: 'New York, US', source: 'LINKEDIN', health: 'COLD', score: 15, lastPulse: 'Oct 12, 2023', phase: 'INACTIVE', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704g', phone: '+1 212-555-0199' },
 ];
 
-const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
+const DEFAULT_LEAD_TYPES = String((import.meta as any).env.VITE_LEAD_TYPES || 'B2B,B2C,ENTERPRISE').split(',').map(t => t.trim());
+const DEFAULT_PHASE = String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim();
 
 export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActiveOnlyRoute?: boolean }) {
   const location = useLocation();
@@ -496,6 +497,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       case 'LOST': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
       case 'QUALIFIED': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
       case 'NURTURING': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'CONNECTED': return 'bg-teal-500/10 text-teal-400 border-teal-500/20';
       case 'DISCOVERY': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'INACTIVE': return 'bg-slate-500/10 text-slate-400 border-white/10';
       default: return 'bg-white/5 text-slate-400 border-white/10';
@@ -511,11 +513,11 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     }
   };
 
-  const PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
+  const PHASES = String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => p.trim());
   const availablePhases = Array.from(new Set([...PHASES, ...customPhases]));
 
   const phaseCounts = leads.reduce((acc: Record<string, number>, lead) => {
-    const phase = lead.phase || 'DISCOVERY';
+    const phase = lead.phase || DEFAULT_PHASE;
     acc[phase] = (acc[phase] || 0) + 1;
     return acc;
   }, { All: leads.length });
@@ -530,7 +532,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     const hasActivity = recordings.some(r => r.leadId === l.id || r.meetingId === l.id);
     const matchesActivity = activityFilter === 'ALL' || (activityFilter === 'ACTIVE' && hasActivity) || (activityFilter === 'INACTIVE' && !hasActivity);
 
-    const matchesPhase = selectedPhase === 'All' || (l.phase || 'DISCOVERY') === selectedPhase;
+    const matchesPhase = selectedPhase === 'All' || (l.phase || DEFAULT_PHASE) === selectedPhase;
     const matchesHealth = healthFilter === 'ALL' || (l.health || 'WARM').toUpperCase() === healthFilter;
 
     return matchesSearch && matchesType && matchesActivity && matchesPhase && matchesHealth;
