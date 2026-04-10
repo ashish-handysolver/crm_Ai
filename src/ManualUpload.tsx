@@ -87,7 +87,7 @@ export default function ManualUpload({ user }: { user: any }) {
 
         if (apiKey) {
           const fileUri = await uploadFileToGemini(uploadFile, apiKey);
-          const genAI = new GoogleGenAI(apiKey);
+          const genAI = new GoogleGenAI({ apiKey });
           let promptText = 'Transcribe this recording. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY JSON.';
           if (isDoc) {
             promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps. Return a JSON object with a 'fullText' string (the summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;

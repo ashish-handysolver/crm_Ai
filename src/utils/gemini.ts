@@ -11,10 +11,17 @@ export const getGeminiApiKey = (): string => {
     (import.meta as any).env.GEMINI_API_KEY,
     (process.env as any)?.GEMINI_API_KEY,
     (process.env as any)?.VITE_GEMINI_API_KEY,
-  ].find(k => k && k !== 'undefined' && k !== 'null' && k !== '') || '';
+  ].find(k => {
+    if (!k || typeof k !== 'string') return false;
+    const clean = k.trim().replace(/^["']|["']$/g, '');
+    return clean.length > 5 && clean !== 'undefined' && clean !== 'null';
+  }) || '';
 
-  // Strip surrounding quotes (common mistake in .env files and CI/CD dashboards)
-  return raw.replace(/^["']|["']$/g, '').trim();
+  const finalKey = raw.replace(/^["']|["']$/g, '').trim();
+  if (!finalKey) {
+    console.warn("Gemini API Key Lookup: No valid key found in environment.");
+  }
+  return finalKey;
 };
 
 /**

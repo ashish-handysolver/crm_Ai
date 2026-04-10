@@ -115,7 +115,7 @@ export default function LeadInsights({ user }: { user: any }) {
         const apiKey = getGeminiApiKey();
         if (!apiKey) return;
 
-        const ai = new GoogleGenAI(apiKey);
+        const ai = new GoogleGenAI({ apiKey });
         const prompt = `
           Analyze this sales call transcript and extract actionable intelligence. 
           Respond ONLY in strict JSON format. 
@@ -239,7 +239,7 @@ export default function LeadInsights({ user }: { user: any }) {
       const blob = new Blob([buffer], { type: 'audio/webm' });
 
       const fileUri = await uploadFileToGemini(blob, apiKey);
-      const genAI = new GoogleGenAI(apiKey);
+      const genAI = new GoogleGenAI({ apiKey });
       const model = genAI.getGenerativeModel({ 
         model: "gemini-2.0-flash",
         generationConfig: {
