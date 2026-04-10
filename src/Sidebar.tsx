@@ -29,7 +29,7 @@ function NavItem({ to, icon, label, onClick }: { to: string, icon: React.ReactEl
       <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
         {React.cloneElement(icon, { size: 20, strokeWidth: isActive ? 2.5 : 2 })}
       </div>
-      <span className={`relative z-10 font-bold transition-all ${isActive ? 'text-white' : ''}`}>{label}</span>
+      <span className={`relative z-10 font-bold transition-all ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`}>{label}</span>
       {isActive && (
         <motion.div
           layoutId="sidebar-active"
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] lg:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[90] lg:hidden"
         />
       )}
     </AnimatePresence>
@@ -82,8 +82,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         className={`fixed lg:sticky top-0 left-0 h-[100dvh] w-[280px] bg-[var(--crm-sidebar-bg)] border-r border-[var(--crm-border)] shadow-2xl lg:shadow-none flex flex-col z-[100] transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {/* Glow Effects */}
-        <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none"></div>
-        <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-purple-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-500 blur-[60px] rounded-full pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }}></div>
+        <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-purple-500 blur-[60px] rounded-full pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }}></div>
 
         <div className="px-6 py-8 flex items-center justify-between relative z-10">
           <Link to="/" onClick={onClose} className="flex items-center gap-3">
@@ -91,8 +91,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter text-white lowercase">handycrm.ai</span>
-              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] leading-none opacity-80">{companyName || 'handycrm.ai'}</span>
+              <span className="text-xl font-black tracking-tighter text-[var(--crm-text)] lowercase">handycrm.ai</span>
+              <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.3em] leading-none opacity-80">{companyName || 'handycrm.ai'}</span>
             </div>
           </Link>
 
