@@ -235,7 +235,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         const apiKey = getGeminiApiKey();
         if (apiKey) {
           const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-          const genAI = new GoogleGenAI(apiKey);
+          const genAI = new GoogleGenAI({ apiKey });
           
           const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
           let success = false;

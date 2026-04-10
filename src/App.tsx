@@ -498,7 +498,7 @@ const RecordingView = () => {
       }
       if (!audioBlob) throw new Error("Unable to retrieve audio stream.");
       const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-      const ai = new GoogleGenAI(apiKey);
+      const ai = new GoogleGenAI({ apiKey });
       const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
       let success = false;
       let finalTranscriptData = null;
@@ -1016,7 +1016,7 @@ const GlobalRecorder = () => {
       let aiInsights = null;
 
       if (apiKey) {
-        const genAI = new GoogleGenAI(apiKey);
+        const genAI = new GoogleGenAI({ apiKey });
         const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
         const fileUri = await uploadFileToGemini(blob, apiKey);
 
