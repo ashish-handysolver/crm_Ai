@@ -65,12 +65,11 @@ export default function ManualUpload({ user }: { user: any }) {
       let finalTranscript = manualText.trim();
       const generatedId = uuidv4().slice(0, 8);
 
-      // Upload to Storage if provided (Audio Only for now for playback, Docs just for AI)
-
-
-
-
-
+      const isAudio = uploadFile?.type.startsWith('audio/') || uploadFile?.name.match(/\.(mp3|wav|m4a|webm|ogg)$/i);
+      const isPdf = uploadFile?.type === 'application/pdf' || uploadFile?.name.endsWith('.pdf');
+      const isWord = uploadFile?.type.includes('word') || uploadFile?.name.match(/\.(doc|docx)$/i);
+      const isTxt = uploadFile?.type === 'text/plain' || uploadFile?.name.endsWith('.txt');
+      const isDoc = isPdf || isWord || isTxt;
 
       if (uploadFile && isAudio) {
         const storageRef = ref(storage, `recordings/${generatedId}/audio.webm`);
@@ -81,106 +80,66 @@ export default function ManualUpload({ user }: { user: any }) {
       let transcriptData = null;
       if (uploadFile && !finalTranscript) {
         const apiKey = [
-          (process.env as any).GEMINI_API_KEY,
           (import.meta as any).env.VITE_GEMINI_API_KEY,
+          (process.env as any).GEMINI_API_KEY,
           (import.meta as any).env.GEMINI_API_KEY
-        ].find(k => k && k !== 'undefined' && k !== 'null') || '';
+        ].find(k => k && k !== 'undefined' && k !== 'null' && k !== '') || '';
+
+        if (!apiKey) {
+          throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your .env file.");
+        }
+
         if (apiKey) {
           const fileUri = await uploadFileToGemini(uploadFile, apiKey);
-          const ai = new GoogleGenAI({ apiKey });
+          const genAI = new GoogleGenAI(apiKey);
           let promptText = 'Transcribe this recording. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY JSON.';
           if (isDoc) {
             promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps. Return a JSON object with a 'fullText' string (the summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
           }
 
-          const availableModelCandidates = [
-            'gemini-2.0-mini',
-            'gemini-2.0-flash',
-            'gemini-2.0-flash-lite',
-            'gemini-1.5-turbo',
-            'gemini-1.5-flash',
-            'gemini-1.0'
-          ];
+          const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
 
-          const envModel = (import.meta as any).env.VITE_GEMINI_MODEL || (process.env as any).GEMINI_MODEL;
-          const userModelList = envModel ? [envModel] : [];
+          let success = false;
+          let rawText = "{}";
 
-          let listingModels: string[] = [];
-          try {
-            const listResult = await ai.models.list({});
-            const candidateFromList = (listResult as any)?.models || (listResult as any)?.model || [];
-            if (Array.isArray(candidateFromList)) {
-              listingModels = candidateFromList.map((m: any) => (m?.name || m || '').toString()).filter(Boolean);
-            }
-          } catch (e) {
-            console.warn('Could not retrieve model list from Gemini, continuing with default candidates.', e);
-          }
-
-          const modelCandidates = Array.from(new Set([
-            ...userModelList,
-            ...availableModelCandidates.filter(m => listingModels.length === 0 || listingModels.includes(m)),
-            ...availableModelCandidates
-          ]));
-
-          let response: any = null;
-          let usedModel: string | null = null;
-
-          for (const model of modelCandidates) {
+          for (const modelName of validModels) {
             try {
-              response = await ai.models.generateContent({
-                model,
-                contents: [
-                  {
-                    role: 'user',
-                    parts: [
-                      { text: promptText },
-                      {
-                        fileData: {
-                          mimeType: uploadFile.type || (isPdf ? 'application/pdf' : isWord ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : isTxt ? 'text/plain' : 'audio/webm'),
-                          fileUri
-                        }
-                      }
-                    ]
-                  }
-                ]
+              console.log(`Attempting extraction with model: ${modelName}`);
+              const model = genAI.getGenerativeModel({ 
+                model: modelName,
+                generationConfig: {
+                  maxOutputTokens: 8192,
+                  responseMimeType: "application/json"
+                }
               });
-              usedModel = model;
-              console.log(`Transcription generated with model ${model}`);
+
+              const result = await model.generateContent([
+                { text: promptText },
+                {
+                  fileData: {
+                    mimeType: uploadFile.type || (isPdf ? 'application/pdf' : isWord ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : isTxt ? 'text/plain' : 'audio/webm'),
+                    fileUri
+                  }
+                }
+              ]);
+              const res = await result.response;
+              rawText = res.text() || "{}";
+              success = true;
               break;
             } catch (err: any) {
               const status = err?.status || err?.code;
-              const message = (err?.message || '').toLowerCase();
-              const retryConditions = [
-                status === 429,
-                message.includes('quota'),
-                message.includes('too many requests'),
-                message.includes('resource_exhausted'),
-                status === 404,
-                message.includes('not found'),
-                message.includes('is not found')
-              ];
-
-              if (retryConditions.some(Boolean)) {
-                console.warn(`Model ${model} unavailable/quota issue, trying next:`, err?.message || err);
+              if (status === 429) {
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                continue;
+              } else if (status === 404) {
                 continue;
               }
-              throw err;
+              console.warn(`Model ${modelName} failed, trying next…`, err);
             }
           }
 
-          if (!response || !usedModel) {
-            throw new Error('All Gemini models exhausted or unavailable. Please check billing/quota.');
-          }
-
-          // Robust parsing
-          let rawText = "{}";
-          const resAny = response as any;
-          if (resAny.response?.text && typeof resAny.response.text === 'function') {
-            rawText = resAny.response.text();
-          } else if (resAny.text && typeof resAny.text === 'function') {
-            rawText = resAny.text();
-          } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-            rawText = resAny.response.candidates[0].content.parts[0].text;
+          if (!success) {
+            throw new Error('All Gemini models exhausted or unavailable.');
           }
 
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
-import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, Share2 as ShareIcon, LayoutDashboard, ScanQrCode } from 'lucide-react';
+import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -267,7 +267,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
             title="Lead Capture QR"
             className="relative p-2.5 rounded-xl transition-all active:scale-95 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)]"
           >
-            <ScanQrCode size={20} />
+            <QrCode size={20} />
           </button>
           </div>
           <NotificationBell />
@@ -502,19 +502,29 @@ const RecordingView = () => {
       }
       if (!audioBlob) throw new Error("Unable to retrieve audio stream.");
       const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-      const ai = new GoogleGenAI({ apiKey });
-      const validModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
+      const ai = new GoogleGenAI(apiKey);
+      const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
       let success = false;
       let finalTranscriptData = null;
       for (const modelName of validModels) {
         try {
           const prompt = "Transcribe this audio recording into English with timestamps. Return a JSON object with a 'fullText' string and a 'segments' array ({text: string, startTime: float, endTime: float}). Provide ONLY the raw JSON.";
-          const response = await ai.models.generateContent({
+          
+          const model = ai.getGenerativeModel({ 
             model: modelName,
-            config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
-            contents: [{ role: 'user', parts: [{ text: prompt }, { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }] }]
+            generationConfig: {
+              maxOutputTokens: 8192,
+              responseMimeType: "application/json"
+            }
           });
-          const rawText = response.text || "{}";
+
+          const result = await model.generateContent([
+            { text: prompt },
+            { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
+          ]);
+
+          const response = await result.response;
+          const rawText = response.text() || "{}";
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
           finalTranscriptData = JSON.parse(jsonStr);
           success = true;
@@ -530,15 +540,22 @@ const RecordingView = () => {
       if (!success) throw new Error("Intelligence services temporarily unavailable or quota exceeded.");
 
       let aiInsights = null;
+      const genAI = new GoogleGenAI(apiKey);
       for (const modelName of validModels) {
         try {
           const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${finalTranscriptData?.fullText || ''}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
-          const res2 = await ai.models.generateContent({
+          
+          const model = genAI.getGenerativeModel({ 
             model: modelName,
-            config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
-            contents: [{ role: 'user', parts: [{ text: prompt2 }] }]
+            generationConfig: {
+              maxOutputTokens: 8192,
+              responseMimeType: "application/json"
+            }
           });
-          const rawText2 = res2.text || "{}";
+
+          const result = await model.generateContent([{ text: prompt2 }]);
+          const res2 = await result.response;
+          const rawText2 = res2.text() || "{}";
           const jsonStr2 = rawText2.replace(/```json/g, '').replace(/```/g, '').trim();
           aiInsights = JSON.parse(jsonStr2);
           break;
@@ -1007,29 +1024,38 @@ const GlobalRecorder = () => {
       let aiInsights = null;
 
       if (apiKey) {
-        const ai = new GoogleGenAI({ apiKey });
+        const genAI = new GoogleGenAI(apiKey);
+        const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
         const fileUri = await uploadFileToGemini(blob, apiKey);
-        const validModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
 
         // 1. Transcribe
         const prompt1 = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
 
         let text1 = "{}";
-        for (const model of validModels) {
+
+        for (const modelName of validModels) {
           try {
-            const res1 = await ai.models.generateContent({
-              model: model,
-              config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
-              contents: [{ role: 'user', parts: [{ text: prompt1 }, { fileData: { mimeType: blob.type || "audio/webm", fileUri } }] }]
+            const model = genAI.getGenerativeModel({ 
+              model: modelName,
+              generationConfig: {
+                maxOutputTokens: 8192,
+                responseMimeType: "application/json"
+              }
             });
-            text1 = res1.text || "{}";
+
+            const result = await model.generateContent([
+              { text: prompt1 }, 
+              { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
+            ]);
+            const response = await result.response;
+            text1 = response.text() || "{}";
             break;
           } catch (e: any) {
             if (e?.status === 429) {
               await new Promise(r => setTimeout(r, 3000));
               continue;
             }
-            console.warn(`Transcription failed on ${model}`, e);
+            console.warn(`Transcription failed on ${modelName}`, e);
           }
         }
 
@@ -1045,21 +1071,27 @@ const GlobalRecorder = () => {
         setStatusText('Generating Analytics Report...');
         const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${transcript}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
 
-        for (const model of validModels) {
+        for (const modelName of validModels) {
           try {
-            const res2 = await ai.models.generateContent({
-              model: model,
-              config: { maxOutputTokens: 8192, responseMimeType: "application/json" },
-              contents: [{ role: 'user', parts: [{ text: prompt2 }] }]
+            const model = genAI.getGenerativeModel({ 
+              model: modelName,
+              generationConfig: {
+                maxOutputTokens: 8192,
+                responseMimeType: "application/json"
+              }
             });
-            aiInsights = JSON.parse((res2.text || "{}").replace(/```json/g, '').replace(/```/g, '').trim());
+
+            const result = await model.generateContent([{ text: prompt2 }]);
+            const response = await result.response;
+            const rawText = response.text() || "{}";
+            aiInsights = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
             break;
           } catch (e: any) {
             if (e?.status === 429) {
               await new Promise(r => setTimeout(r, 3000));
               continue;
             }
-            console.warn(`Analytics failed on ${model}`, e);
+            console.warn(`Analytics failed on ${modelName}`, e);
           }
         }
       }

@@ -341,7 +341,7 @@ export default function RegisterCompany() {
               </linearGradient>
             </defs>
             <motion.path
-              d="M-100,200 Q400,100 900,400 T1500,200"
+              initial={{ d: "M-100,200 Q400,100 900,400 T1500,200" }}
               stroke="url(#lineGrad)"
               strokeWidth="2"
               fill="none"
