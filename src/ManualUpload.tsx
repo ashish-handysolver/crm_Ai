@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
@@ -135,7 +135,9 @@ export default function ManualUpload({ user }: { user: any }) {
           }
 
           if (!success) {
-            throw new Error('All Gemini models exhausted or unavailable.');
+            console.warn("Manual processing exhausted Gemini models.");
+            alert(GEMINI_FALLBACK_MESSAGE);
+            finalTranscript = "Intelligence services temporarily unavailable. Please try re-syncing this record later.";
           }
 
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -169,7 +171,11 @@ export default function ManualUpload({ user }: { user: any }) {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to save information.');
+      if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
+        alert(GEMINI_FALLBACK_MESSAGE);
+      } else {
+        setError(err.message || 'Failed to save information.');
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -14,7 +14,7 @@ import {
 import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
-import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import { logActivity } from './utils/activity';
 
 export default function LeadInsights({ user }: { user: any }) {
@@ -173,7 +173,14 @@ export default function LeadInsights({ user }: { user: any }) {
           }
         }
 
-        if (!success || !parsed) throw new Error("All Gemini models exhausted or unavailable.");
+        if (!success || !parsed) {
+          console.warn("Intelligence service exhausted.");
+          alert(GEMINI_FALLBACK_MESSAGE);
+          setSubmitting(false);
+          setFormatting(false);
+          setGeneratingAI(false);
+          return;
+        }
 
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
           parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
@@ -261,8 +268,11 @@ export default function LeadInsights({ user }: { user: any }) {
         transcript: parsed.fullText || selectedRec.transcript,
         transcriptData: parsed.segments || []
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Transcription sync failed:", err);
+      if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
+        alert(GEMINI_FALLBACK_MESSAGE);
+      }
     } finally {
       setSyncingTranscript(false);
     }

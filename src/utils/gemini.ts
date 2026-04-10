@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
+export const GEMINI_FALLBACK_MESSAGE = "Intelligence services temporarily unavailable or quota exceeded. Switching back to basic mode (Free Agent)";
+
 /**
  * Returns the Gemini API key from environment variables.
  * Strips surrounding quotes that can be introduced when keys are

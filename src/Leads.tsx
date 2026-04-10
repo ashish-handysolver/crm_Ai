@@ -5,7 +5,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
@@ -268,7 +268,10 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
             }
           }
 
-          if (!success) throw new Error("All transcription models failed.");
+          if (!success) {
+            console.warn("Transcription models exhausted.");
+            alert(GEMINI_FALLBACK_MESSAGE);
+          }
 
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
@@ -283,6 +286,9 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         }
       } catch (e: any) {
         console.warn("Transcription failed", e);
+        if (e?.status === 429 || e?.message?.toLowerCase().includes('quota')) {
+          alert(GEMINI_FALLBACK_MESSAGE);
+        }
       }
 
       await setDoc(doc(db, 'recordings', recordId), {

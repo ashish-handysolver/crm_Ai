@@ -4,7 +4,7 @@ import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, L
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import {
   collection,
   doc,
@@ -570,7 +570,15 @@ const RecordingView = () => {
         updatedAt: Timestamp.now()
       });
       setRecording((prev: any) => ({ ...prev, transcript: finalTranscriptData.fullText, transcriptData: finalTranscriptData.segments, ...(aiInsights ? { aiInsights } : {}) }));
-    } catch (err: any) { alert(err.message || "Protocol transmission failed."); } finally { setIsSyncing(false); }
+    } catch (err: any) { 
+      if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
+        alert(GEMINI_FALLBACK_MESSAGE);
+      } else {
+        alert(err.message || "Protocol transmission failed.");
+      }
+    } finally { 
+      setIsSyncing(false); 
+    }
   };
 
   useEffect(() => {
@@ -1102,9 +1110,32 @@ const GlobalRecorder = () => {
       });
 
       navigate(`/r/${recordId}`);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to process recording.");
+      if (e?.status === 429 || e?.message?.includes('quota') || e?.message?.includes('exhausted')) {
+        alert(GEMINI_FALLBACK_MESSAGE);
+        // Attempt to save basic record anyway if we have the audioUrl
+        if (recordId && audioUrl) {
+          try {
+            await setDoc(doc(db, 'recordings', recordId), {
+              id: recordId,
+              audioUrl,
+              transcript: "Intelligence services temporarily unavailable. Please re-sync later.",
+              transcriptData: [],
+              aiInsights: null,
+              createdAt: Timestamp.now(),
+              authorUid: user?.uid || '',
+              companyId: companyId || '',
+              leadId: 'general'
+            });
+            navigate(`/r/${recordId}`);
+            return;
+          } catch (saveErr) {
+            console.error("Critical fallback save failure", saveErr);
+          }
+        }
+      }
+      alert("Failed to process recording: " + (e.message || "Unknown error"));
     } finally {
       setIsProcessing(false);
       setStatusText('');
