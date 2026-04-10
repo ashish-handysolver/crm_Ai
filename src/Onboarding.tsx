@@ -73,13 +73,13 @@ export default function Onboarding() {
   const step = STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#0A0D14] flex items-center justify-center p-4 sm:p-8 overflow-hidden font-sans">
+    <div className="fixed inset-0 z-[200] bg-[var(--crm-bg)] flex items-center justify-center p-4 sm:p-8 overflow-hidden font-sans">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] -z-10 translate-x-1/4 -translate-y-1/4"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 -translate-x-1/4 translate-y-1/4"></div>
 
       <motion.div
         layout
-        className="w-full max-w-6xl bg-slate-900/40 backdrop-blur-2xl rounded-[3rem] shadow-2xl shadow-black/50 border border-white/10 overflow-hidden flex flex-col md:flex-row min-h-[600px] relative"
+        className="w-full max-w-6xl bg-[var(--crm-card-bg)] backdrop-blur-2xl rounded-[3rem] shadow-2xl border border-[var(--crm-border)] overflow-hidden flex flex-col md:flex-row min-h-[600px] relative"
       >
         {/* Left Side: Visual Content */}
         <div className="md:w-1/2 relative overflow-hidden bg-black group">
@@ -103,14 +103,14 @@ export default function Onboarding() {
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-xs font-black uppercase tracking-widest mb-6 shadow-xl"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--crm-bg)]/20 backdrop-blur-md border border-[var(--crm-border)] rounded-xl text-[var(--crm-text)] text-xs font-black uppercase tracking-widest mb-6 shadow-xl"
                 >
                   <Rocket size={14} className="text-indigo-400" /> Feature Overiew {currentStep + 1}
                 </motion.div>
-                <h3 className="text-3xl font-black text-white tracking-tighter mb-4">{step.subtitle}</h3>
+                <h3 className="text-3xl font-black text-[var(--crm-text)] tracking-tighter mb-4">{step.subtitle}</h3>
                 <div className="flex gap-2">
                   {STEPS.map((_, i) => (
-                    <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentStep ? 'w-12 bg-indigo-500' : 'w-2 bg-white/20'}`}></div>
+                    <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentStep ? 'w-12 bg-indigo-500' : 'w-2 bg-[var(--crm-text-muted)]/20'}`}></div>
                   ))}
                 </div>
               </div>
@@ -121,7 +121,7 @@ export default function Onboarding() {
         {/* Right Side: Text & Navigation */}
         <div className="md:w-1/2 p-8 sm:p-16 flex flex-col justify-between relative bg-transparent">
           <div className="absolute top-12 right-12">
-            <button onClick={completeOnboarding} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">Skip for now</button>
+            <button onClick={completeOnboarding} className="text-[10px] font-black text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] uppercase tracking-widest transition-colors">Skip for now</button>
           </div>
 
           <div className="my-auto">
@@ -133,25 +133,25 @@ export default function Onboarding() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center shadow-inner border border-white/10">
+                <div className="w-20 h-20 rounded-[2rem] bg-[var(--crm-bg)]/20 flex items-center justify-center shadow-inner border border-[var(--crm-border)]">
                   {step.icon}
                 </div>
 
                 <div className="space-y-4">
-                  <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter leading-none">{step.title}</h2>
-                  <p className="text-slate-400 text-lg sm:text-xl font-medium leading-relaxed max-w-md">
+                  <h2 className="text-4xl sm:text-5xl font-black text-[var(--crm-text)] tracking-tighter leading-none">{step.title}</h2>
+                  <p className="text-[var(--crm-text-muted)] text-lg sm:text-xl font-medium leading-relaxed max-w-md">
                     {step.description}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="p-5 rounded-3xl bg-black/20 border border-white/10 group hover:border-indigo-500/30 transition-colors shadow-inner">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Benefit</div>
-                    <div className="font-bold text-white text-sm">Save Time Monthly</div>
+                  <div className="p-5 rounded-3xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] group hover:border-indigo-500/30 transition-colors shadow-inner">
+                    <div className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2">Benefit</div>
+                    <div className="font-bold text-[var(--crm-text)] text-sm">Save Time Monthly</div>
                   </div>
-                  <div className="p-5 rounded-3xl bg-black/20 border border-white/10 group hover:border-indigo-500/30 transition-colors shadow-inner">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Status</div>
-                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                  <div className="p-5 rounded-3xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] group hover:border-indigo-500/30 transition-colors shadow-inner">
+                    <div className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2">Status</div>
+                    <div className="font-bold text-[var(--crm-text)] text-sm flex items-center gap-2">
                       <CheckCircle2 size={14} className="text-emerald-500" /> Ready to Use
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export default function Onboarding() {
             <button
               onClick={handleBack}
               disabled={currentStep === 0}
-              className={`p-4 rounded-2xl border border-white/10 bg-white/5 transition-all ${currentStep === 0 ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10 hover:text-white text-slate-400 active:scale-95'}`}
+              className={`p-4 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 transition-all ${currentStep === 0 ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10 hover:text-[var(--crm-text)] text-[var(--crm-text-muted)] active:scale-95'}`}
             >
               <ChevronLeft size={20} />
             </button>
@@ -173,7 +173,7 @@ export default function Onboarding() {
               {currentStep < STEPS.length - 1 && (
                 <button
                   onClick={completeOnboarding}
-                  className="hidden sm:flex items-center gap-2 px-6 py-4 border border-white/10 bg-transparent text-slate-300 rounded-2xl font-bold text-sm hover:bg-white/5 hover:text-white transition-all active:scale-95"
+                  className="hidden sm:flex items-center gap-2 px-6 py-4 border border-[var(--crm-border)] bg-transparent text-[var(--crm-text-muted)] rounded-2xl font-bold text-sm hover:bg-[var(--crm-bg)]/20 hover:text-[var(--crm-text)] transition-all active:scale-95"
                 >
                   Finish Now
                 </button>

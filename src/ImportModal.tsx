@@ -228,13 +228,13 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
-          className="bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden relative z-10 max-h-[90vh] md:max-h-[85vh] m-auto border border-white/10 shadow-black/50"
+          className="bg-[var(--crm-bg)] rounded-[2rem] shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden relative z-10 max-h-[90vh] md:max-h-[85vh] m-auto border border-[var(--crm-border)] shadow-black/50"
         >
           {/* Header */}
           <div className="p-6 md:px-8 border-b border-white/10 flex items-center justify-between bg-white/5">
             <div>
-              <h2 className="text-2xl font-black tracking-tight text-white">Import Leads</h2>
-              <p className="text-sm font-medium text-slate-400 mt-1">Supercharge your CRM by bringing in fresh contacts.</p>
+              <h2 className="text-2xl font-black tracking-tight text-[var(--crm-text)]">Import Leads</h2>
+              <p className="text-sm font-medium text-[var(--crm-text-muted)] mt-1">Supercharge your CRM by bringing in fresh contacts.</p>
             </div>
             {!isImporting && (
               <button onClick={onClose} className="p-2.5 bg-white/5 rounded-full hover:bg-rose-500/20 hover:text-rose-400 transition-all shadow-sm border border-white/10 group">
@@ -280,8 +280,8 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                       <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm">
                         <UploadCloud size={40} className="text-indigo-400" />
                       </div>
-                      <h3 className="text-xl font-extrabold text-white mb-2">Drop your CSV here</h3>
-                      <p className="text-sm font-medium text-slate-500 mb-8">Format: standard comma-separated values (.csv)</p>
+                      <h3 className="text-xl font-extrabold text-[var(--crm-text)] mb-2">Drop your CSV here</h3>
+                      <p className="text-sm font-medium text-[var(--crm-text-muted)] mb-8">Format: standard comma-separated values (.csv)</p>
                       <span className="bg-white/10 text-white px-8 py-3.5 rounded-2xl text-sm font-bold shadow-lg shadow-black/20 group-hover:bg-indigo-600 group-hover:shadow-indigo-500/20 transition-all duration-300 inline-flex items-center gap-2">
                         Browse Files
                       </span>
@@ -313,8 +313,8 @@ export default function ImportModal({ isOpen, onClose, user }: ImportModalProps)
                     <FileText size={24} />
                   </div>
                   <div>
-                    <span className="font-extrabold text-white block text-lg">{file?.name}</span>
-                    <span className="text-slate-400 font-semibold text-sm">Discovered <span className="text-indigo-400 font-bold">{csvRows.length} rows</span> ready for mapping</span>
+                    <span className="font-extrabold text-[var(--crm-text)] block text-lg">{file?.name}</span>
+                    <span className="text-[var(--crm-text-muted)] font-semibold text-sm">Discovered <span className="text-indigo-400 font-bold">{csvRows.length} rows</span> ready for mapping</span>
                   </div>
                 </div>
 

@@ -11,10 +11,12 @@ import { useAuth } from './contexts/AuthContext';
 import {
   User, Mail, Lock, Camera, Loader2, CheckCircle2,
   AlertCircle, ShieldCheck, Zap, Sparkles, LogOut,
-  ChevronRight, ArrowLeft, ExternalLink, Activity
+  ChevronRight, ArrowLeft, ExternalLink, Activity, Video
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { playNotificationSound, SoundProfile, NOTIFICATION_SOUNDS } from './utils/sounds';
+import { Bell } from 'lucide-react';
 
 const GRADIENTS = [
   'from-indigo-500 to-purple-600',
@@ -34,6 +36,9 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
     email: user?.email || '',
+    defaultMeetUrl: '',
+    notificationMinutes: 10,
+    notificationSoundId: 'cyber_pulse' as SoundProfile,
     newPassword: '',
     confirmPassword: ''
   });
@@ -44,7 +49,16 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       getDoc(doc(db, 'users', user.uid)).then(snap => {
-        if (snap.exists()) setUserRole(snap.data().role);
+        if (snap.exists()) {
+          const data = snap.data();
+          setUserRole(data.role);
+          setFormData(f => ({ 
+            ...f, 
+            defaultMeetUrl: data.defaultMeetUrl || '',
+            notificationMinutes: data.notificationMinutes || 10,
+            notificationSoundId: (data.notificationSoundId as SoundProfile) || 'cyber_pulse'
+          }));
+        }
       });
     }
   }, [user]);
@@ -68,6 +82,13 @@ export default function Profile() {
         await updateEmail(user, formData.email);
         await updateDoc(doc(db, 'users', user.uid), { email: formData.email });
       }
+
+      // Update Notification Settings
+      await updateDoc(doc(db, 'users', user.uid), { 
+        defaultMeetUrl: formData.defaultMeetUrl,
+        notificationMinutes: Number(formData.notificationMinutes),
+        notificationSoundId: formData.notificationSoundId
+      });
 
       // Update Password
       if (formData.newPassword) {
@@ -114,8 +135,8 @@ export default function Profile() {
 
   const randomGradient = GRADIENTS[user?.uid.charCodeAt(0) % GRADIENTS.length];
 
-  const inputClasses = "w-full px-6 py-4 rounded-2xl border border-white/10 bg-slate-900/50 focus:bg-slate-800/80 outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-sm text-white shadow-sm disabled:opacity-50";
-  const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1";
+  const inputClasses = "w-full px-6 py-4 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card-bg)] focus:bg-[var(--crm-border)] outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-sm text-[var(--crm-text)] shadow-sm disabled:opacity-50";
+  const labelClasses = "text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-3 block px-1";
 
   return (
     <div className="flex-1 bg-transparent p-4 sm:p-8 lg:p-12 min-h-screen font-sans overflow-x-hidden">
@@ -138,8 +159,8 @@ export default function Profile() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
                 <Sparkles size={14} className="animate-pulse" /> Access Authorization Verified
               </div>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-none">Account Configuration</h1>
-              <p className="text-slate-500 font-medium max-w-2xl text-sm sm:text-lg italic leading-relaxed">Manage your neural identity and authentication vectors.</p>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[var(--crm-text)] leading-none">Account Configuration</h1>
+              <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-lg italic leading-relaxed">Manage your neural identity and authentication vectors.</p>
             </motion.div>
 
             {/* <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 shrink-0">
@@ -170,7 +191,7 @@ export default function Profile() {
           {/* Sidebar Identity Card */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-4 space-y-8 lg:sticky lg:top-8">
 
-            <div className="glass-card !rounded-[3rem] bg-white/5 border border-white/10 shadow-2xl shadow-black/40 overflow-hidden relative group">
+            <div className="glass-card !rounded-[3rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] shadow-2xl shadow-black/40 overflow-hidden relative group">
               <div className={`h-32 bg-gradient-to-br ${randomGradient} opacity-90 transition-transform duration-700 group-hover:scale-110`}></div>
 
               <div className="px-10 pb-10 -mt-16 text-center relative z-10">
@@ -197,8 +218,8 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-1 mb-8">
-                  <h2 className="text-2xl font-black text-white tracking-tight">{formData.displayName || 'Anonymous Asset'}</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                  <h2 className="text-2xl font-black text-[var(--crm-text)] tracking-tight">{formData.displayName || 'Anonymous Asset'}</h2>
+                  <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest flex items-center justify-center gap-2">
                     <Mail size={12} className="text-indigo-400" /> {user?.email}
                   </p>
                 </div>
@@ -223,13 +244,13 @@ export default function Profile() {
             </div>
 
             {/* Security Summary */}
-            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-10 text-white shadow-2xl relative overflow-hidden group">
+            <div className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-10 text-[var(--crm-text)] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
 
               <div className="flex items-center gap-4 mb-6 sm:mb-8">
                 <div className="w-11 h-11 sm:w-12 h-12 rounded-xl sm:rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center border border-white/10 backdrop-blur-md shadow-xl"><ShieldCheck size={24} /></div>
                 <div className="space-y-0.5">
-                  <h3 className="text-xs sm:text-sm font-black text-white tracking-[0.1em] uppercase">Security Matrix</h3>
+                  <h3 className="text-xs sm:text-sm font-black text-[var(--crm-text)] tracking-[0.1em] uppercase">Security Matrix</h3>
                   <div className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol Version 4.0.2</div>
                 </div>
               </div>
@@ -267,7 +288,7 @@ export default function Profile() {
 
           {/* Configuration Cell */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-8">
-            <form onSubmit={handleUpdateProfile} className="glass-card !bg-white/5 !rounded-[2.5rem] sm:!rounded-[3.5rem] p-6 sm:p-14 border border-white/10 shadow-2xl shadow-black/40 relative overflow-hidden">
+            <form onSubmit={handleUpdateProfile} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] sm:!rounded-[3.5rem] p-6 sm:p-14 border border-[var(--crm-border)] shadow-2xl shadow-black/40 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
 
               <div className="relative z-10 space-y-10 sm:space-y-14">
@@ -279,7 +300,7 @@ export default function Profile() {
                       <User size={28} className="hidden sm:block" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase tracking-[0.05em]">Personal Metadata</h3>
+                      <h3 className="text-xl sm:text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Personal Metadata</h3>
                       <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Identity Verification</p>
                     </div>
                   </div>
@@ -311,6 +332,77 @@ export default function Profile() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-3 md:col-span-2">
+                      <label className={labelClasses}>Default Meet Link (Suggestion)</label>
+                      <div className="relative group/input">
+                        <Video className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
+                        <input
+                          type="url"
+                          value={formData.defaultMeetUrl}
+                          onChange={e => setFormData(f => ({ ...f, defaultMeetUrl: e.target.value }))}
+                          className={`${inputClasses} pl-16`}
+                          placeholder="https://meet.google.com/your-room"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <div className="h-px bg-white/10"></div>
+
+                <section className="space-y-10">
+                  <div className="flex items-center gap-6">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30 shadow-2xl backdrop-blur-sm">
+                      <Bell size={28} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Notification Protocols</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Neural Proximity Alert Configuration</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-3">
+                      <label className={labelClasses}>Alert Lead Time (Minutes)</label>
+                      <div className="relative group/input">
+                        <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
+                        <select
+                          value={formData.notificationMinutes}
+                          onChange={e => setFormData(f => ({ ...f, notificationMinutes: Number(e.target.value) }))}
+                          className={`${inputClasses} pl-16 appearance-none cursor-pointer`}
+                        >
+                          {[1, 5, 10, 15, 30, 60].map(min => (
+                            <option key={min} value={min} className="bg-slate-900 text-white">{min} Minutes Before</option>
+                          ))}
+                        </select>
+                        <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none rotate-90" size={16} />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className={labelClasses}>Audio Profile Identity</label>
+                      <div className="relative group/input">
+                        <Activity className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
+                        <select
+                          value={formData.notificationSoundId}
+                          onChange={e => setFormData(f => ({ ...f, notificationSoundId: e.target.value as SoundProfile }))}
+                          className={`${inputClasses} pl-16 appearance-none cursor-pointer`}
+                        >
+                          {NOTIFICATION_SOUNDS.map(s => (
+                            <option key={s.id} value={s.id} className="bg-slate-900 text-white">{s.name}</option>
+                          ))}
+                        </select>
+                        <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none rotate-90" size={16} />
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <button
+                        type="button"
+                        onClick={() => playNotificationSound(formData.notificationSoundId)}
+                        className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-indigo-300 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-indigo-500/30 transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        <Zap size={14} className="text-indigo-500" /> Test Audio Signal
+                      </button>
+                    </div>
                   </div>
                 </section>
 
@@ -322,7 +414,7 @@ export default function Profile() {
                       <Lock size={28} />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-white tracking-tight uppercase tracking-[0.05em]">Security Protocols</h3>
+                      <h3 className="text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Security Protocols</h3>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Credential Access Control</p>
                     </div>
                   </div>

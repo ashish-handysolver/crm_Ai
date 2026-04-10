@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { Eye } from 'lucide-react';
+import SearchableSelect from './components/SearchableSelect';
 
 export default function ManualUpload({ user }: { user: any }) {
   const { companyId, role } = useAuth();
@@ -235,8 +236,8 @@ export default function ManualUpload({ user }: { user: any }) {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm mb-2">
             <UploadCloud size={14} className="animate-pulse" /> Data Integration
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase tracking-tight">Add Audio / Docs / Text</h1>
-          <p className="text-slate-400 font-medium max-w-2xl text-lg italic">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-tight uppercase tracking-tight">Add Audio / Docs / Text</h1>
+          <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-lg italic">
             Upload recordings, documents, or manual context for your leads.
           </p>
         </header>
@@ -247,17 +248,17 @@ export default function ManualUpload({ user }: { user: any }) {
               key="success"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="glass-card !bg-slate-900/40 !border-white/10 rounded-[2.5rem] p-12 text-center shadow-2xl shadow-black/50 relative overflow-hidden"
+              className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] rounded-[2.5rem] p-12 text-center shadow-2xl relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/5 to-transparent pointer-events-none"></div>
               <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}
                 className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20"
               >
                 <CheckCircle2 size={48} className="text-white" />
               </motion.div>
-              <h2 className="text-3xl font-extrabold mb-3 text-white">Saved!</h2>
-              <p className="text-slate-500 text-lg font-medium max-w-md mx-auto">The information has been successfully saved. Going to history...</p>
+              <h2 className="text-3xl font-extrabold mb-3 text-[var(--crm-text)]">Saved!</h2>
+              <p className="text-[var(--crm-text-muted)] text-lg font-medium max-w-md mx-auto">The information has been successfully saved. Going to history...</p>
             </motion.div>
           ) : (
             <motion.form
@@ -265,7 +266,7 @@ export default function ManualUpload({ user }: { user: any }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               onSubmit={handleSubmit}
-              className="glass-card !bg-slate-900/40 !border-white/10 !rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative overflow-hidden"
+              className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative overflow-hidden"
             >
               {error && (
                 <div className="mb-8 p-4 rounded-2xl flex items-start gap-3 text-sm font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
@@ -277,27 +278,19 @@ export default function ManualUpload({ user }: { user: any }) {
               <div className="space-y-8">
                 {/* Lead Selection */}
                 <div className="bg-black/20 rounded-3xl p-6 border border-white/10 shadow-inner">
-                  <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">
-                    <UserCircle size={18} className="text-indigo-500" />
-                    Target Lead <span className="text-rose-500">*</span>
-                  </label>
-                  <select
+                  <SearchableSelect
+                    options={leads}
                     value={selectedLeadId}
-                    onChange={e => setSelectedLeadId(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-base font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-white shadow-sm appearance-none cursor-pointer [&>option]:bg-slate-900"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 7l5 5 5-5'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
-                  >
-                    <option value="" disabled>Select a Lead</option>
-                    {leads.map(l => (
-                      <option key={l.id} value={l.id}>{l.name} {l.company ? `— ${l.company}` : ''}</option>
-                    ))}
-                  </select>
+                    onChange={setSelectedLeadId}
+                    label="Target Lead"
+                    placeholder="Search and select a lead..."
+                  />
                 </div>
 
                 {/* Upload Zones Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Audio Upload Zone */}
-                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-indigo-500 bg-indigo-500/20' : 'border-white/20 bg-black/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
+                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-indigo-500 bg-indigo-500/20' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
                     <input
                       type="file"
                       accept="audio/*"
@@ -307,21 +300,21 @@ export default function ManualUpload({ user }: { user: any }) {
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isAudio ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-white/10 shadow-inner'}`}>
-                      <FileAudio className={`w-7 h-7 ${uploadFile && isAudio ? 'text-white' : 'text-slate-400'}`} />
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isAudio ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-[var(--crm-border)] shadow-inner'}`}>
+                      <FileAudio className={`w-7 h-7 ${uploadFile && isAudio ? 'text-white' : 'text-[var(--crm-text-muted)]'}`} />
                     </div>
                     <div className="text-center">
-                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isAudio ? 'text-indigo-300' : 'text-slate-400'}`}>
+                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isAudio ? 'text-indigo-300' : 'text-[var(--crm-text-muted)]'}`}>
                         {uploadFile && isAudio ? 'Audio Loaded' : 'Upload Audio'}
                       </p>
-                      <p className="text-[9px] font-bold text-slate-400 tracking-tighter">
+                      <p className="text-[9px] font-bold text-[var(--crm-text-muted)] tracking-tighter">
                         {uploadFile && isAudio ? uploadFile.name : 'MP3, WAV, WEBM'}
                       </p>
                     </div>
                   </div>
 
                   {/* Document Upload Zone */}
-                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-indigo-500 bg-indigo-500/20' : 'border-white/20 bg-black/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
+                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-indigo-500 bg-indigo-500/20' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.txt"
@@ -331,14 +324,14 @@ export default function ManualUpload({ user }: { user: any }) {
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isDoc ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-white/10 shadow-inner'}`}>
-                      <FileText className={`w-7 h-7 ${uploadFile && isDoc ? 'text-white' : 'text-slate-400'}`} />
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isDoc ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-[var(--crm-border)] shadow-inner'}`}>
+                      <FileText className={`w-7 h-7 ${uploadFile && isDoc ? 'text-white' : 'text-[var(--crm-text-muted)]'}`} />
                     </div>
                     <div className="text-center">
-                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isDoc ? 'text-indigo-300' : 'text-slate-400'}`}>
+                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isDoc ? 'text-indigo-300' : 'text-[var(--crm-text-muted)]'}`}>
                         {uploadFile && isDoc ? 'Doc Encrypted' : 'Upload File'}
                       </p>
-                      <p className="text-[9px] font-bold text-slate-400 tracking-tighter">
+                      <p className="text-[9px] font-bold text-[var(--crm-text-muted)] tracking-tighter">
                         {uploadFile && isDoc ? uploadFile.name : 'Word, PDF, TXT'}
                       </p>
                     </div>
@@ -348,22 +341,22 @@ export default function ManualUpload({ user }: { user: any }) {
                 {/* Manual Transcript Zone */}
                 <div className="pt-4">
                   <div className="relative">
-                    <div className="absolute top-5 left-5 text-slate-400 pointer-events-none">
-                      <Sparkles size={18} className="text-indigo-500" />
+                    <div className="absolute top-5 left-5 text-[var(--crm-text-muted)] pointer-events-none">
+                      <FileText className="text-indigo-500" />
                     </div>
                     <textarea
                       value={manualText}
                       onChange={e => setManualText(e.target.value)}
                       placeholder="Paste manual notes or context here..."
-                      className="w-full min-h-[180px] bg-black/20 border border-white/10 rounded-[2rem] pl-14 pr-8 py-5 text-sm font-bold focus:bg-black/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none text-white placeholder:text-slate-500 leading-relaxed shadow-inner"
+                      className="w-full min-h-[180px] bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-[2rem] pl-14 pr-8 py-5 text-sm font-bold focus:bg-[var(--crm-bg)]/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] leading-relaxed shadow-inner"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Footer Actions */}
-              <div className="mt-10 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <span className="text-[9px] font-black text-slate-500 px-3 py-1 bg-white/10 rounded-lg uppercase tracking-widest">Protocol validation required</span>
+              <div className="mt-10 pt-8 border-t border-[var(--crm-border)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-[9px] font-black text-[var(--crm-text-muted)] px-3 py-1 bg-[var(--crm-border)] rounded-lg uppercase tracking-widest">Protocol validation required</span>
                 <button
                   type="submit"
                   disabled={isSubmitting || isDemoMode}

@@ -54,9 +54,12 @@ import SuperLogin from './SuperLogin';
 import Settings from './Settings';
 import TranscriptPlayer from './TranscriptPlayer';
 import DownloadApp from './DownloadApp';
+import ThemeToggle from './components/ThemeToggle';
+import { NotificationWatcher } from './components/NotificationWatcher';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
+import { useTheme } from './contexts/ThemeContext';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 
 
@@ -77,7 +80,7 @@ interface FirestoreErrorInfo {
 }
 
 const NotificationBell = () => {
-  const { companyId } = useAuth();
+  const { companyId, role, user } = useAuth();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(
@@ -86,17 +89,51 @@ const NotificationBell = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!companyId) return;
+    if (!companyId || !user) return;
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
+    
+    // Track seen meetings to avoid duplicate alerts upon initial load
+    const seenMeetings = new Set<string>();
+    let isInitialLoad = true;
+
     const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const now = new Date();
-      const upcoming = data.filter((m: any) => m.scheduledAt?.toDate?.() > now)
+      
+      const filtered = (role === 'admin' || role === 'super_admin' || role === 'management')
+        ? data
+        : data.filter((m: any) => m.ownerUid === user.uid || (m.assignedTo || []).includes(user.uid));
+
+      const upcoming = filtered.filter((m: any) => m.scheduledAt?.toDate?.() > now)
         .sort((a: any, b: any) => a.scheduledAt.toMillis() - b.scheduledAt.toMillis());
+      
       setMeetings(upcoming);
+
+      // --- Push Notification Engine ---
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added' || change.type === 'modified') {
+          const m = { id: change.doc.id, ...change.doc.data() } as any;
+          const isAssigned = (m.assignedTo || []).includes(user.uid);
+          
+          if (!isInitialLoad && isAssigned && !seenMeetings.has(m.id)) {
+            seenMeetings.add(m.id);
+            // Trigger native notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('📅 New Meeting Assigned', {
+                body: `"${m.title}" has been added to your logic vector.`,
+                icon: '/logo.png',
+                tag: m.id
+              });
+            }
+          } else if (isAssigned) {
+            seenMeetings.add(m.id);
+          }
+        }
+      });
+      isInitialLoad = false;
     });
     return unsub;
-  }, [companyId]);
+  }, [companyId, role, user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -192,40 +229,52 @@ const NotificationBell = () => {
 
 const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: User, onMenuClick: () => void, onInstall: () => void, showInstallButton: boolean }) => {
   const { companyName, companyId } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showQrModal, setShowQrModal] = useState(false);
   const [success, setSuccess] = useState('');
 
   return (
     <>
-      <nav className="glass-nav z-[90] px-4 sm:px-12 py-3.5 sm:py-4 flex items-center justify-between border-b border-white/10">
+      <nav className="glass-nav z-[90] px-4 sm:px-12 py-3.5 sm:py-4 flex items-center justify-between border-b border-[var(--crm-border)]">
         <div className="flex items-center gap-3 sm:gap-6">
-          <button onClick={onMenuClick} className="lg:hidden p-2.5 text-slate-400 hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 border border-white/10">
+          <button onClick={onMenuClick} className="lg:hidden p-2.5 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)] rounded-xl transition-all shadow-sm active:scale-95 border border-[var(--crm-border)]">
             <Menu size={20} />
           </button>
-
+          
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/10 p-1.5 overflow-hidden">
+              <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-base sm:text-lg font-black tracking-tighter text-[var(--crm-text)] lowercase leading-none">handydash.ai</span>
+            </div>
+          </Link>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-6">
           {showInstallButton && (
             <button
               onClick={onInstall}
-              className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-400 transition-all shadow-xl shadow-black/20 active:scale-95"
+              className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-400 transition-all shadow-xl shadow-black/20 active:scale-95"
             >
               <Download size={14} /> Install
             </button>
           )}
-          <button
-            onClick={() => setShowQrModal(true)}
+          <div className="flex items-center gap-3 pl-2 border-l border-[var(--crm-border)]">
+            <ThemeToggle />
+            <button
+              onClick={() => setShowQrModal(true)}
             title="Lead Capture QR"
-            className="relative p-2.5 rounded-xl transition-all active:scale-95 text-slate-300 hover:bg-slate-800"
+            className="relative p-2.5 rounded-xl transition-all active:scale-95 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)]"
           >
             <ScanQrCode size={20} />
           </button>
+          </div>
           <NotificationBell />
           <div className="h-8 w-[1px] bg-white/10 mx-1 hidden md:block"></div>
           <div className="hidden md:flex flex-col items-end">
-            <span className="text-xs font-black text-white leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
+            <span className="text-xs font-black text-[var(--crm-text)] leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
+            <span className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
           </div>
           <Link to="/profile" className="relative group p-1 bg-white/5 border border-white/10 rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-black/20 hover:border-indigo-400 transition-all">
             <img
@@ -571,7 +620,7 @@ const RecordingView = () => {
   };
 
   if (loading) return (
-    <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
       <div className="relative">
         <Loader2 className="animate-spin text-indigo-500 w-16 h-16" />
         <div className="absolute inset-0 bg-indigo-500/20 blur-3xl animate-pulse"></div>
@@ -580,7 +629,7 @@ const RecordingView = () => {
   );
 
   if (recording === 'UNAUTHORIZED') return (
-    <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
       <div className="text-rose-500 font-black uppercase tracking-[0.4em] text-xs flex flex-col items-center gap-6">
         <ShieldCheck size={48} className="text-rose-600" />
         Transmission Intercepted: Access Forbidden
@@ -589,7 +638,7 @@ const RecordingView = () => {
   );
 
   if (!recording) return (
-    <div className="flex-1 bg-[#030014] min-h-screen flex items-center justify-center">
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
       <div className="text-slate-500 font-black uppercase tracking-[0.4em] text-xs flex items-center gap-4">
         <Sparkles size={20} className="text-slate-700" /> Logic Vector Depleted
       </div>
@@ -597,7 +646,7 @@ const RecordingView = () => {
   );
 
   return (
-    <div className="flex-1 bg-[#030014] min-h-screen overflow-y-auto selection:bg-indigo-500 selection:text-white font-sans">
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen overflow-y-auto selection:bg-indigo-500 selection:text-white font-sans">
       <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-600/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
       <div className="max-w-5xl mx-auto p-4 sm:p-12 lg:p-20 space-y-20 relative z-10">
@@ -1189,7 +1238,7 @@ const AppContent = () => {
   if (!user || !companyId) return null;
 
   return (
-    <div className="flex min-h-[100dvh] bg-transparent text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex-row w-full overflow-hidden">
+    <div className="flex min-h-[100dvh] bg-[var(--crm-bg)] text-[var(--crm-text)] font-sans selection:bg-indigo-500/30 selection:text-white flex-row w-full overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 relative h-[100dvh] overflow-hidden w-full">
         <Navbar
@@ -1217,6 +1266,7 @@ const AppContent = () => {
           </Routes>
         </main>
         <GlobalRecorder />
+        <NotificationWatcher />
       </div>
     </div>
   );

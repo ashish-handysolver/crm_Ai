@@ -20,22 +20,22 @@ export default function Settings({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <SettingsIcon size={14} className="animate-spin-slow" /> System Settings
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-none">Workspace Settings</h1>
-            <p className="text-slate-400 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Configure your custom fields, manage team members, and update your preferences.</p>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">Workspace Settings</h1>
+            <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Configure your custom fields, manage team members, and update your preferences.</p>
           </motion.div>
         </header>
 
         {/* Dynamic Navigation Tabs */}
-        <div className="flex bg-white/5 backdrop-blur-md p-1.5 rounded-2xl sm:rounded-[2rem] w-full max-w-md border border-white/10 shadow-xl shadow-black/20">
+        <div className="flex bg-[var(--crm-bg)]/20 backdrop-blur-md p-1.5 rounded-2xl sm:rounded-[2rem] w-full max-w-md border border-[var(--crm-border)] shadow-xl shadow-black/20">
           <button
             onClick={() => setActiveTab('fields')}
-            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'fields' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'fields' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/20 shadow-inner'}`}
           >
             <Sliders size={18} className="hidden sm:block" /> Custom Fields
           </button>
           <button
             onClick={() => setActiveTab('team')}
-            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+            className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === 'team' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/20 shadow-inner'}`}
           >
             <Users size={18} className="hidden sm:block" /> Users
           </button>

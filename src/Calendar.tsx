@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  collection, query, where, onSnapshot, addDoc, deleteDoc, doc, Timestamp
+  collection, query, where, onSnapshot, addDoc, deleteDoc, doc, Timestamp, updateDoc, getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import {
   ChevronLeft, ChevronRight, Plus, X, Bell, Loader2,
-  Clock, User, Trash2, CalendarDays, AlertCircle, CheckCircle2, Sparkles, Zap, Calendar as CalendarIcon, Info, Video
+  Clock, User, Trash2, CalendarDays, AlertCircle, CheckCircle2, Sparkles, Zap, Calendar as CalendarIcon, Info, Video, MessageSquare, ShieldCheck, Users
 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 
 interface Meeting {
   id: string;
@@ -20,6 +21,9 @@ interface Meeting {
   notes: string;
   companyId: string;
   reminderSent: boolean;
+  meetLink?: string;
+  assignedTo?: string[];
+  ownerUid?: string;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -39,39 +43,24 @@ export default function CalendarPage({ user }: { user: any }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [leads, setLeads] = useState<any[]>([]);
-  const [form, setForm] = useState({ title: '', leadId: '', leadName: '', time: '10:00', notes: '' });
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [userSettings, setUserSettings] = useState({ defaultMeetUrl: '' });
+  const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
+  const [leadSearch, setLeadSearch] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  
+  const [form, setForm] = useState({ 
+    title: '', 
+    leadId: '', 
+    leadName: '', 
+    time: '10:00', 
+    notes: '',
+    meetLink: '',
+    assignedTo: [] as string[]
+  });
+  const [showShareTemplates, setShowShareTemplates] = useState<string | null>(null);
 
-  // Waiting ringtone — generated via Web Audio API (no external URL needed)
-  const playPulseSound = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const playTone = (freq1: number, freq2: number, startAt: number, duration: number) => {
-        [freq1, freq2].forEach(freq => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0, ctx.currentTime + startAt);
-          gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + startAt + 0.02);
-          gain.gain.setValueAtTime(0.18, ctx.currentTime + startAt + duration - 0.02);
-          gain.gain.linearRampToValueAtTime(0, ctx.currentTime + startAt + duration);
-          osc.start(ctx.currentTime + startAt);
-          osc.stop(ctx.currentTime + startAt + duration);
-        });
-      };
-      // Ring pattern: 7 cycles × ~1.4s = ~10 seconds of ringing
-      for (let i = 0; i < 7; i++) {
-        const base = i * 1.4;
-        playTone(480, 440, base, 0.4); // first ring
-        playTone(480, 440, base + 0.6, 0.4); // second ring
-      }
-      setTimeout(() => ctx.close(), 11000);
-    } catch (e) {
-      console.error('Ringtone playback failed:', e);
-    }
-  };
+  // Legacy audio pulse removed - centralized in NotificationWatcher Utility
 
   const reminderCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sentReminders = useRef<Set<string>>(new Set());
@@ -82,6 +71,18 @@ export default function CalendarPage({ user }: { user: any }) {
       Notification.requestPermission();
     }
   }, []);
+
+  // Fetch user settings
+  useEffect(() => {
+    if (user) {
+      getDoc(doc(db, 'users', user.uid)).then(snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setUserSettings({ defaultMeetUrl: data.defaultMeetUrl || '' });
+        }
+      });
+    }
+  }, [user]);
 
   // Fetch meetings
   useEffect(() => {
@@ -103,9 +104,9 @@ export default function CalendarPage({ user }: { user: any }) {
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Meeting));
-      const filtered = role === 'team_member'
-        ? data.filter((m: any) => m.ownerUid === user.uid || leads.some(l => l.id === m.leadId))
-        : data;
+      const filtered = (role === 'admin' || role === 'super_admin' || role === 'management')
+        ? data
+        : data.filter((m: any) => m.ownerUid === user.uid || (m.assignedTo || []).includes(user.uid));
       setMeetings(filtered);
       setLoading(false);
     }, (err) => {
@@ -113,7 +114,7 @@ export default function CalendarPage({ user }: { user: any }) {
       setLoading(false);
     });
     return () => unsub();
-  }, [companyId, isDemoMode, demoData]);
+  }, [companyId, isDemoMode, demoData, role, user.uid]);
 
   // Fetch leads for the meeting modal
   useEffect(() => {
@@ -125,45 +126,21 @@ export default function CalendarPage({ user }: { user: any }) {
     const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, snap => {
       const allLeads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const filtered = role === 'team_member'
-        ? allLeads.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid)
-        : allLeads;
+      const filtered = (role === 'admin' || role === 'super_admin' || role === 'management')
+        ? allLeads
+        : allLeads.filter((l: any) => l.assignedTo === user.uid || l.authorUid === user.uid);
       setLeads(filtered);
     });
-    return () => unsub();
-  }, [companyId, isDemoMode, demoData]);
 
-  // 10-minute reminder checker
-  useEffect(() => {
-    reminderCheckRef.current = setInterval(() => {
-      const now = new Date();
-      meetings.forEach(m => {
-        if (sentReminders.current.has(m.id)) return;
-        const meetingTime = m.scheduledAt?.toDate?.();
-        if (!meetingTime) return;
-        const diffMs = meetingTime.getTime() - now.getTime();
-        const diffMin = diffMs / 60000;
-        if (diffMin > 0 && diffMin <= 10) {
-          sentReminders.current.add(m.id);
-          playPulseSound();
-          // Browser notification
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('📅 Temporal Alignment Detected', {
-              body: `"${m.title}" with ${m.leadName || 'Entity'} initiates in ${Math.ceil(diffMin)} minute(s).`,
-              icon: '/favicon.ico',
-              tag: m.id,
-            });
-          }
-          setSuccess(`⏰ Proximity Alert: "${m.title}" with ${m.leadName || 'Lead'} starts in ${Math.ceil(diffMin)} min.`);
-          setTimeout(() => setSuccess(''), 15000);
-        }
-      });
-    }, 30000);
+    const qUsers = query(collection(db, 'users'), where('companyId', '==', companyId));
+    const unsubUsers = onSnapshot(qUsers, snap => {
+      setTeamMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
 
-    return () => {
-      if (reminderCheckRef.current) clearInterval(reminderCheckRef.current);
-    };
-  }, [meetings]);
+    return () => { unsub(); unsubUsers(); };
+  }, [companyId, isDemoMode, demoData, role, user.uid]);
+
+  // 10-minute reminder checker removed - centralized in NotificationWatcher component
 
   const getDaysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
   const getFirstDayOfMonth = (y: number, m: number) => new Date(y, m, 1).getDay();
@@ -189,9 +166,78 @@ export default function CalendarPage({ user }: { user: any }) {
     if (isDemoMode) return;
     const date = new Date(currentYear, currentMonth, day);
     setSelectedDate(date);
-    setForm({ title: '', leadId: '', leadName: '', time: '10:00', notes: '' });
+    setEditingMeetingId(null);
+    setForm({ 
+      title: '', 
+      leadId: '', 
+      leadName: '', 
+      time: '10:00', 
+      notes: '',
+      meetLink: userSettings.defaultMeetUrl || '',
+      assignedTo: [user.uid]
+    });
     setError('');
     setShowModal(true);
+  };
+
+  const openEditModal = (m: Meeting) => {
+    if (isDemoMode) return;
+    const date = m.scheduledAt.toDate();
+    setSelectedDate(date);
+    setEditingMeetingId(m.id);
+    setForm({
+      title: m.title,
+      leadId: m.leadId,
+      leadName: m.leadName || '',
+      time: date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'),
+      notes: m.notes,
+      meetLink: m.meetLink || '',
+      assignedTo: m.assignedTo || [user.uid]
+    });
+    setError('');
+    setShowModal(true);
+  };
+
+  const handleShareWhatsApp = (rec: any, templateId: string) => {
+    const template = WHATSAPP_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+
+    const lead = leads.find(l => l.id === rec.leadId);
+    const d = rec.scheduledAt?.toDate?.() || new Date();
+    const dateTimeStr = d.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false });
+
+    const text = template.generate({
+      leadName: rec.leadName,
+      meetingTitle: rec.title,
+      dateTime: dateTimeStr,
+      meetingUrl: rec.meetLink
+    });
+
+    openWhatsApp(lead?.phone || '', text);
+    setShowShareTemplates(null);
+  };
+
+  const handleQuickShare = (rec: any) => {
+    const template = WHATSAPP_TEMPLATES.find(t => t.id === 'meeting-invite');
+    if (!template) return;
+
+    const lead = leads.find(l => l.id === rec.leadId);
+    if (!lead?.phone) {
+      alert("No contact number associated with this lead vector.");
+      return;
+    }
+
+    const d = rec.scheduledAt?.toDate?.() || new Date();
+    const dateTimeStr = d.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false });
+
+    const text = template.generate({
+      leadName: rec.leadName,
+      meetingTitle: rec.title,
+      dateTime: dateTimeStr,
+      meetingUrl: rec.meetLink
+    });
+
+    openWhatsApp(lead.phone, text);
   };
 
   const handleSave = async () => {
@@ -204,16 +250,26 @@ export default function CalendarPage({ user }: { user: any }) {
       const scheduledDate = new Date(selectedDate);
       scheduledDate.setHours(h, min, 0, 0);
 
-      await addDoc(collection(db, 'meetings'), {
+      const meetingData = {
         title: form.title,
         leadId: form.leadId || '',
         leadName: form.leadName || '',
         notes: form.notes,
         scheduledAt: Timestamp.fromDate(scheduledDate),
         companyId: companyId,
-        ownerUid: user.uid,
-        reminderSent: false,
-      });
+        meetLink: form.meetLink,
+        assignedTo: form.assignedTo.length > 0 ? form.assignedTo : [user.uid],
+      };
+
+      if (editingMeetingId) {
+        await updateDoc(doc(db, 'meetings', editingMeetingId), meetingData);
+      } else {
+        await addDoc(collection(db, 'meetings'), {
+          ...meetingData,
+          ownerUid: user.uid,
+          reminderSent: false,
+        });
+      }
       setShowModal(false);
     } catch (err: any) {
       setError('Matrix Denial: ' + err.message);
@@ -238,45 +294,47 @@ export default function CalendarPage({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-transparent text-white p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+      <div className="flex-1 bg-transparent text-[var(--crm-text)] p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
         <div className="max-w-7xl mx-auto animate-pulse">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
             <div className="space-y-4 w-full">
-              <div className="w-32 h-4 bg-white/10 rounded-full"></div>
-              <div className="w-64 sm:w-96 h-12 bg-white/10 rounded-xl"></div>
-              <div className="w-full max-w-xl h-6 bg-white/10 rounded"></div>
+              <div className="w-32 h-4 bg-[var(--crm-border)] rounded-full"></div>
+              <div className="w-64 sm:w-96 h-12 bg-[var(--crm-border)] rounded-xl"></div>
+              <div className="w-full max-w-xl h-6 bg-[var(--crm-border)] rounded"></div>
             </div>
-            <div className="w-48 h-14 bg-white/10 rounded-2xl shrink-0"></div>
+            <div className="w-48 h-14 bg-[var(--crm-border)] rounded-2xl shrink-0"></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-            <div className="lg:col-span-3 h-[600px] bg-white/5 border border-white/10 rounded-[2.5rem]"></div>
-            <div className="h-[600px] bg-white/5 border border-white/10 rounded-[2.5rem]"></div>
+            <div className="lg:col-span-3 h-[600px] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem]"></div>
+            <div className="h-[600px] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem]"></div>
           </div>
         </div>
       </div>
     );
   }
 
-  const inputClasses = "w-full px-4 py-3 rounded-xl border border-white/10 bg-black/20 focus:bg-black/40 outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-sm text-white shadow-inner [&>option]:bg-slate-900";
-  const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-1";
+  const inputClasses = "w-full px-4 py-3 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 focus:bg-[var(--crm-bg)]/40 outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-sm text-[var(--crm-text)] shadow-inner [&>option]:bg-[var(--crm-sidebar-bg)]";
+  const labelClasses = "text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2 block px-1";
 
   return (
-    <div className="flex-1 bg-transparent text-white p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
+    <div className="flex-1 bg-transparent text-[var(--crm-text)] p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-8 md:mb-12">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-[10px] font-black text-indigo-600 tracking-[0.25em] uppercase mb-4 flex items-center gap-2">
-              <CalendarIcon size={14} className="fill-indigo-600 animate-pulse" /> Meeting Scheduler
+            <div className="text-[9px] md:text-[10px] font-black text-indigo-600 tracking-[0.25em] uppercase mb-2 md:mb-4 flex items-center gap-2">
+              <CalendarIcon size={12} className="fill-indigo-600 animate-pulse md:hidden" />
+              <CalendarIcon size={14} className="fill-indigo-600 animate-pulse hidden md:block" />
+              Meeting Scheduler
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white leading-none uppercase">Team Calendar</h1>
-            <p className="text-slate-400 mt-4 text-lg font-medium max-w-xl leading-relaxed italic">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--crm-text)] leading-none uppercase">Team Calendar</h1>
+            <p className="text-[var(--crm-text-muted)] mt-2 md:mt-4 text-sm md:text-lg font-medium max-w-xl leading-relaxed italic">
               Coordinate client meetings and internal strategy sessions in real-time.
             </p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
             <button
               onClick={() => {
                 Notification.requestPermission();
@@ -284,7 +342,7 @@ export default function CalendarPage({ user }: { user: any }) {
                 setSuccess('Notifications active: High-priority alerts tested.');
                 setTimeout(() => setSuccess(''), 4000);
               }}
-              className="group flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-sm font-black hover:border-indigo-500/30 hover:bg-white/10 shadow-sm transition-all active:scale-95 uppercase tracking-widest"
+              className="group flex items-center justify-center md:justify-start gap-3 w-full md:w-auto px-6 md:px-8 py-3.5 md:py-4 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-xs md:text-sm font-black hover:border-indigo-500/30 hover:bg-[var(--crm-card-bg)] shadow-sm transition-all active:scale-95 uppercase tracking-widest"
             >
               <Bell size={18} className="group-hover:rotate-12 transition-transform" />
               Test Notifications
@@ -307,20 +365,20 @@ export default function CalendarPage({ user }: { user: any }) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
 
           {/* Calendar Grid */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 glass-card !bg-slate-900/40 !p-0 !rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden relative group">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 glass-card !bg-[var(--crm-card-bg)] !p-0 !rounded-[2.5rem] shadow-2xl border border-[var(--crm-border)] overflow-hidden relative group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/20 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-indigo-100/10 transition-colors"></div>
 
             {/* Month nav */}
-            <div className="flex items-center justify-between px-10 py-8 border-b border-white/10 bg-white/5 relative z-10">
-              <button onClick={prevMonth} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronLeft size={20} className="text-slate-300" /></button>
-              <h2 className="text-2xl font-black text-white tracking-tight">{MONTHS[currentMonth]} {currentYear}</h2>
-              <button onClick={nextMonth} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronRight size={20} className="text-slate-300" /></button>
+            <div className="flex items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 relative z-10">
+              <button onClick={prevMonth} className="p-2.5 md:p-3 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronLeft size={18} className="text-[var(--crm-text-muted)] md:hidden" /><ChevronLeft size={20} className="text-[var(--crm-text-muted)] hidden md:block" /></button>
+              <h2 className="text-lg md:text-2xl font-black text-[var(--crm-text)] tracking-tight">{MONTHS[currentMonth]} {currentYear}</h2>
+              <button onClick={nextMonth} className="p-2.5 md:p-3 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronRight size={18} className="text-[var(--crm-text-muted)] md:hidden" /><ChevronRight size={20} className="text-[var(--crm-text-muted)] hidden md:block" /></button>
             </div>
 
             {/* Day names */}
-            <div className="grid grid-cols-7 border-b border-white/10 bg-black/20 relative z-10">
+            <div className="grid grid-cols-7 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/40 relative z-10">
               {DAYS.map(d => (
-                <div key={d} className="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{d}</div>
+                <div key={d} className="py-4 text-center text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{d}</div>
               ))}
             </div>
 
@@ -338,20 +396,41 @@ export default function CalendarPage({ user }: { user: any }) {
                   <div
                     key={day}
                     onClick={() => openModal(day)}
-                    className={`h-28 sm:h-36 border-b border-r border-white/5 p-2 sm:p-4 cursor-pointer transition-all group/cell hover:bg-indigo-500/10 ${isToday ? 'bg-indigo-500/20' : 'bg-transparent'}`}
+                    className={`h-20 sm:h-36 border-b border-r border-[var(--crm-border)] p-1 sm:p-4 cursor-pointer transition-all group/cell hover:bg-indigo-500/10 ${isToday ? 'bg-indigo-500/20' : 'bg-transparent'}`}
                   >
-                    <div className={`text-xs font-black w-8 h-8 flex items-center justify-center rounded-xl mb-3 transition-all ${isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 group-hover/cell:text-indigo-300 group-hover/cell:bg-indigo-500/20 group-hover/cell:shadow-sm'}`}>
+                    <div className={`text-[10px] sm:text-xs font-black w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg sm:rounded-xl mb-1.5 sm:mb-3 transition-all ${isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-[var(--crm-text-muted)] group-hover/cell:text-indigo-300 group-hover/cell:bg-indigo-500/20 group-hover/cell:shadow-sm'}`}>
                       {day}
                     </div>
-                    <div className="space-y-1.5 overflow-hidden">
+                    {/* Desktop View: Full Text */}
+                    <div className="hidden sm:block space-y-1.5 overflow-hidden">
                       {dayMeetings.slice(0, 3).map(m => (
-                        <div key={m.id} className="text-[9px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-lg truncate border border-indigo-500/30 shadow-sm transition-all group-hover/cell:scale-105">
-                          {m.scheduledAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · {m.title}
+                        <div key={m.id} className="relative group/meeting">
+                          <div 
+                            className="text-[9px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-lg truncate border border-indigo-500/30 shadow-sm transition-all group-hover/cell:scale-105"
+                          >
+                            {m.scheduledAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · {m.title}
+                          </div>
+                          
+                          {/* Quick Actions Hover */}
+                          <div className="absolute inset-0 bg-indigo-600 rounded-lg opacity-0 group-hover/meeting:opacity-100 transition-opacity flex items-center justify-center gap-3 z-10">
+                            <button onClick={(e) => { e.stopPropagation(); openEditModal(m); }} className="text-white hover:scale-125 transition-transform" title="Edit Meeting"><Sparkles size={10} /></button>
+                            {m.meetLink && (
+                              <button onClick={(e) => { e.stopPropagation(); window.open(m.meetLink, '_blank'); }} className="text-white hover:scale-125 transition-transform" title="Join Meet"><Video size={10} /></button>
+                            )}
+                            <button onClick={(e) => { e.stopPropagation(); handleQuickShare(m); }} className="text-white hover:scale-125 transition-transform" title="WhatsApp Invite"><MessageSquare size={10} /></button>
+                          </div>
                         </div>
                       ))}
                       {dayMeetings.length > 3 && (
                         <div className="text-[9px] text-slate-300 font-bold uppercase tracking-tighter pl-1">+{dayMeetings.length - 3} more</div>
                       )}
+                    </div>
+                    {/* Mobile View: Markers (Dots) */}
+                    <div className="flex sm:hidden flex-wrap gap-1 mt-auto">
+                      {dayMeetings.slice(0, 6).map(m => (
+                        <div key={m.id} className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.6)]" />
+                      ))}
+                      {dayMeetings.length > 6 && <div className="text-[6px] text-indigo-400 font-black">+</div>}
                     </div>
                   </div>
                 );
@@ -361,7 +440,7 @@ export default function CalendarPage({ user }: { user: any }) {
 
           {/* Upcoming Meetings Sidebar */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            <div className="bg-slate-900/40 border border-white/10 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+            <div className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] p-8 text-[var(--crm-text)] relative overflow-hidden shadow-2xl">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
 
               <h3 className="text-xs font-black text-indigo-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
@@ -385,11 +464,14 @@ export default function CalendarPage({ user }: { user: any }) {
                     return (
                       <motion.div
                         initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
-                        key={m.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 group/item hover:bg-white/10 hover:border-indigo-400/30 transition-all relative overflow-hidden"
+                        key={m.id} className="p-5 rounded-2xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] group/item hover:bg-white/10 hover:border-indigo-400/30 transition-all relative overflow-hidden"
                       >
-                        <div className="flex items-start justify-between gap-3 relative z-10">
+                        <div className="absolute top-5 left-5 text-[var(--crm-text-muted)] pointer-events-none">
+                          <Sparkles size={18} className="text-indigo-500" />
+                        </div>
+                        <div className="flex items-start justify-between gap-3 relative z-10 pl-8">
                           <div className="min-w-0">
-                            <div className="font-black text-white text-sm truncate tracking-tight">{m.title}</div>
+                            <div className="font-black text-[var(--crm-text)] text-sm truncate tracking-tight">{m.title}</div>
                             <div className="flex items-center gap-2 text-[10px] text-indigo-400 font-black uppercase mt-1.5 tracking-widest">
                               <CalendarIcon size={12} />
                               {d?.toLocaleDateString([], { month: 'short', day: 'numeric' })} · {d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
@@ -399,17 +481,60 @@ export default function CalendarPage({ user }: { user: any }) {
                                 <User size={10} /> Lead: {m.leadName}
                               </div>
                             )}
+                            {m.assignedTo && m.assignedTo !== m.ownerUid && (
+                              <div className="flex items-center gap-2 text-[10px] text-emerald-400/60 font-black uppercase tracking-widest mt-1">
+                                <Users size={10} /> Rep: {teamMembers.find(t => t.id === m.assignedTo)?.displayName || teamMembers.find(t => t.id === m.assignedTo)?.email?.split('@')[0] || 'Team'}
+                              </div>
+                            )}
                           </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex items-center gap-2 mt-4 relative z-10">
+                        <div className="flex flex-wrap items-center gap-2 mt-5 relative z-10">
                           <button
-                            onClick={() => window.open(`/m/${m.id}`, '_blank')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95"
+                            onClick={() => openEditModal(m)}
+                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all active:scale-95 border border-white/5"
+                            title="Edit"
                           >
-                            <Video size={11} /> Launch Hub
+                            <Sparkles size={14} />
                           </button>
+                          <button
+                            onClick={() => window.open(m.meetLink || `/m/${m.id}`, '_blank')}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95 border border-indigo-500/20"
+                          >
+                            <Video size={14} /> Join
+                          </button>
+                          
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowShareTemplates(showShareTemplates === m.id ? null : m.id)}
+                              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95 border border-emerald-500/20"
+                            >
+                              <MessageSquare size={14} /> Invite
+                            </button>
+                            
+                            <AnimatePresence>
+                              {showShareTemplates === m.id && (
+                                <motion.div 
+                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                  className="absolute bottom-full left-0 mb-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 p-1"
+                                >
+                                  {WHATSAPP_TEMPLATES.filter(t => t.category === 'FORMAL').map(t => (
+                                    <button
+                                      key={t.id}
+                                      onClick={() => handleShareWhatsApp(m, t.id)}
+                                      className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-xl text-[9px] font-black text-white hover:text-emerald-400 transition-all uppercase tracking-tight"
+                                    >
+                                      {t.name}
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+
                           <button onClick={() => handleDelete(m.id)} className="ml-auto p-2 text-white/10 hover:text-rose-400 transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -420,45 +545,46 @@ export default function CalendarPage({ user }: { user: any }) {
                 </div>
               )}
             </div>
-
-            {/* Legend / Information */}
-
           </motion.div>
         </div>
       </div>
 
-      {/* Create Meeting Modal */}
+      {/* Create/Edit Meeting Modal */}
       <AnimatePresence>
         {showModal && selectedDate && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-black/50 w-full max-w-xl border border-white/10 relative z-10 overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 50 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              exit={{ scale: 0.9, opacity: 0, y: 50 }}
+              className="bg-[var(--crm-sidebar-bg)] sm:rounded-[2.5rem] shadow-2xl w-full h-full sm:h-auto sm:max-w-xl border-[var(--crm-border)] relative z-10 overflow-hidden flex flex-col"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-bl-[100px] -z-0 pointer-events-none"></div>
 
-              <div className="flex items-center justify-between px-10 py-8 border-b border-white/10 bg-white/5 relative z-10">
+              <div className="flex items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 relative z-10 shrink-0">
                 <div>
-                  <h2 className="text-2xl font-black text-white tracking-tight">Schedule Meeting</h2>
-                  <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-2 flex items-center gap-2">
-                    <CalendarIcon size={14} />
-                    {selectedDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  <h2 className="text-xl md:text-2xl font-black text-[var(--crm-text)] tracking-tight">
+                    {editingMeetingId ? 'Modify Strategy' : 'Schedule Meeting'}
+                  </h2>
+                  <div className="text-[9px] md:text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1 md:mt-2 flex items-center gap-2">
+                    <CalendarIcon size={12} />
+                    {selectedDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
-                <button onClick={() => setShowModal(false)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors text-slate-400">
+                <button onClick={() => setShowModal(false)} className="p-2.5 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 rounded-2xl transition-colors text-[var(--crm-text-muted)]">
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="p-10 space-y-8 relative z-10">
+              <div className="p-6 md:p-10 space-y-6 md:space-y-8 relative z-10 overflow-y-auto flex-1 custom-scrollbar">
                 {error && (
-                  <div className="p-4 bg-rose-500/10 text-rose-400 text-xs rounded-2xl flex items-center gap-3 font-bold border border-rose-500/20 shadow-lg shadow-rose-500/10">
-                    <AlertCircle size={18} /> {error}
+                  <div className="p-4 bg-rose-500/10 text-rose-400 text-xs rounded-2xl flex items-center gap-3 font-bold border border-rose-500/20 shadow-lg">
+                    <AlertCircle size={18} className="shrink-0" /> {error}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <div className="space-y-6">
                     <div>
                       <label className={labelClasses}>Meeting Title</label>
@@ -483,22 +609,93 @@ export default function CalendarPage({ user }: { user: any }) {
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <label className={labelClasses}>Meet Link (URL)</label>
+                      <div className="relative">
+                        <Video className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <input
+                          type="url"
+                          value={form.meetLink}
+                          onChange={e => setForm(f => ({ ...f, meetLink: e.target.value }))}
+                          placeholder="https://meet.google.com/..."
+                          className={`${inputClasses} pl-12`}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-6">
                     <div>
                       <label className={labelClasses}>Target Lead</label>
-                      <select
-                        value={form.leadId}
-                        onChange={e => {
-                          const lead = leads.find(l => l.id === e.target.value);
-                          setForm(f => ({ ...f, leadId: e.target.value, leadName: lead?.name || '' }));
-                        }}
-                        className={`${inputClasses} !appearance-none`}
-                      >
-                        <option value="">— No Lead Selected —</option>
-                        {leads.map(l => <option key={l.id} value={l.id}>{l.name} {l.company ? `(${l.company})` : ''}</option>)}
-                      </select>
+                      <div className="space-y-2">
+                        <input 
+                          type="text"
+                          placeholder="Search lead..."
+                          value={leadSearch}
+                          onChange={e => setLeadSearch(e.target.value)}
+                          className={`${inputClasses} !bg-white/5 border-dashed`}
+                        />
+                        <select
+                          value={form.leadId}
+                          onChange={e => {
+                            const lead = leads.find(l => l.id === e.target.value);
+                            setForm(f => ({ ...f, leadId: e.target.value, leadName: lead?.name || '' }));
+                          }}
+                          className={`${inputClasses} !appearance-none`}
+                        >
+                          <option value="">— No Lead Selected —</option>
+                          {leads
+                            .filter(l => l.name?.toLowerCase().includes(leadSearch.toLowerCase()) || l.company?.toLowerCase().includes(leadSearch.toLowerCase()))
+                            .map(l => <option key={l.id} value={l.id}>{l.name} {l.company ? `(${l.company})` : ''}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={labelClasses}>Assigned Representatives</label>
+                      <div className="space-y-3">
+                        <input 
+                          type="text"
+                          placeholder="Search member..."
+                          value={memberSearch}
+                          onChange={e => setMemberSearch(e.target.value)}
+                          className={`${inputClasses} !bg-white/5 border-dashed`}
+                        />
+                        <div className="bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl p-4 max-h-[160px] overflow-y-auto space-y-3 custom-scrollbar">
+                          {teamMembers
+                            .filter(m => (m.displayName || m.email).toLowerCase().includes(memberSearch.toLowerCase()))
+                            .map(m => {
+                              const isSelected = form.assignedTo.includes(m.id);
+                              return (
+                                <div 
+                                  key={m.id} 
+                                  onClick={() => {
+                                    if (role === 'team_member' && m.id !== user.uid) return;
+                                    setForm(f => ({
+                                      ...f,
+                                      assignedTo: isSelected 
+                                        ? f.assignedTo.filter(id => id !== m.id)
+                                        : [...f.assignedTo, m.id]
+                                    }));
+                                  }}
+                                  className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${isSelected ? 'bg-indigo-500 text-white' : 'bg-[var(--crm-border)] text-[var(--crm-text-muted)]'}`}>
+                                      {m.displayName?.[0] || m.email?.[0] || 'U'}
+                                    </div>
+                                    <div>
+                                      <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-[var(--crm-text-muted)]'}`}>{m.displayName || m.email?.split('@')[0]}</div>
+                                      <div className="text-[9px] font-black uppercase text-indigo-400 opacity-60 tracking-tighter">{m.role}</div>
+                                    </div>
+                                  </div>
+                                  {isSelected ? <CheckCircle2 size={16} className="text-indigo-400" /> : <div className="w-4 h-4 rounded-full border-2 border-[var(--crm-border)]" />}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 flex items-start gap-3">
@@ -506,7 +703,7 @@ export default function CalendarPage({ user }: { user: any }) {
                         <Bell size={16} />
                       </div>
                       <p className="text-[10px] font-bold text-indigo-300 leading-relaxed uppercase tracking-widest">
-                        Smart notifications enabled. You will receive a reminder 10 minutes before the start.
+                        Smart notifications enabled. Assigned members will receive alerts across the matrix.
                       </p>
                     </div>
                   </div>
@@ -524,13 +721,13 @@ export default function CalendarPage({ user }: { user: any }) {
                 </div>
               </div>
 
-              <div className="px-10 pb-10 flex gap-4 relative z-10">
-                <button onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-white hover:bg-white/10 transition-all text-sm uppercase tracking-widest">
+              <div className="px-6 md:px-10 pb-6 md:pb-10 pt-4 md:pt-0 border-t sm:border-t-0 border-[var(--crm-border)] flex gap-4 relative z-10 shrink-0 bg-[var(--crm-sidebar-bg)]">
+                <button onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-white hover:bg-white/10 transition-all text-xs md:text-sm uppercase tracking-widest">
                   Cancel
                 </button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 btn-primary shadow-xl shadow-indigo-500/20 disabled:opacity-50 !py-4">
-                  {saving ? <Loader2 size={20} className="animate-spin" /> : <Plus size={20} />}
-                  <span>Schedule Meeting</span>
+                <button onClick={handleSave} disabled={saving} className="flex-1 btn-primary shadow-xl shadow-indigo-500/20 disabled:opacity-50 !py-4 text-xs md:text-sm">
+                  {saving ? <Loader2 size={20} className="animate-spin" /> : (editingMeetingId ? <Sparkles size={18} /> : <Plus size={18} />)}
+                  <span>{editingMeetingId ? 'Update Protocol' : 'Schedule Meeting'}</span>
                 </button>
               </div>
             </motion.div>

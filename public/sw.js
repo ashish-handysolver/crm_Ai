@@ -41,6 +41,9 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+  
+  // Only handle standard HTTP and HTTPS schemes to avoid errors with extensions (chrome-extension://)
+  if (!(url.protocol === 'http:' || url.protocol === 'https:')) return;
 
   // For navigation requests (like reloading the page or entering the URL)
   if (event.request.mode === 'navigate') {
