@@ -3,13 +3,14 @@
  * Generates premium diagnostic tones using the Web Audio API.
  */
 
-export type SoundProfile = 'cyber_pulse' | 'crystal_echo' | 'neural_ping' | 'digital_blip';
+export type SoundProfile = 'cyber_pulse' | 'crystal_echo' | 'neural_ping' | 'digital_blip' | 'high_intensity';
 
 export const NOTIFICATION_SOUNDS: { id: SoundProfile; name: string }[] = [
   { id: 'cyber_pulse', name: 'Cyber Pulse (Original)' },
   { id: 'crystal_echo', name: 'Crystal Echo' },
   { id: 'neural_ping', name: 'Neural Ping' },
-  { id: 'digital_blip', name: 'Digital Blip' }
+  { id: 'digital_blip', name: 'Digital Blip' },
+  { id: 'high_intensity', name: 'High Intensity Alert (10s)' }
 ];
 
 export const playNotificationSound = (profile: SoundProfile = 'cyber_pulse') => {
@@ -59,6 +60,15 @@ export const playNotificationSound = (profile: SoundProfile = 'cyber_pulse') => 
         playTone(800, 0.1, 0.1, 0.06, 'square');
         break;
 
+      case 'high_intensity':
+        // High volume rhythmic alert for 10 seconds
+        for (let i = 0; i < 10; i++) {
+          const base = i * 1.0;
+          playTone(880, base, 0.25, 0.6, 'square', true);
+          playTone(440, base + 0.5, 0.25, 0.5, 'square', true);
+        }
+        break;
+
       case 'cyber_pulse':
       default:
         // Original pulse sound
@@ -70,8 +80,8 @@ export const playNotificationSound = (profile: SoundProfile = 'cyber_pulse') => 
         break;
     }
 
-    // Close context after enough time for longest sound
-    setTimeout(() => ctx.close(), 3000);
+    // Close context after enough time for longest sound (10s + buffer)
+    setTimeout(() => ctx.close(), 12000);
   } catch (e) {
     console.error('Core audio transmission failed:', e);
   }
