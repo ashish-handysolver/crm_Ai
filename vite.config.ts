@@ -16,9 +16,9 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      hmr: process.env.DISABLE_HMR === 'true' ? false : {
+      port: 3000,
+      hmr: env.DISABLE_HMR === 'true' ? false : {
         overlay: false,
-        host: 'localhost',
       },
     },
   };

@@ -31,15 +31,16 @@
 }
 
 [data-theme='light'] {
-  --crm-bg: #f8fafc;
-  --crm-card-bg: rgba(255, 255, 255, 0.7);
-  --crm-card-border: rgba(99, 102, 241, 0.1);
-  --crm-card-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.08);
+  --crm-bg: #fdfdfe;
+  --crm-card-bg: rgba(255, 255, 255, 0.8);
+  --crm-card-border: rgba(99, 102, 241, 0.12);
+  --crm-card-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.04);
   --crm-sidebar-bg: #ffffff;
   --crm-text: #0f172a;
-  --crm-text-muted: #64748b;
-  --crm-border: rgba(0, 0, 0, 0.05);
-  --crm-glass-bg: rgba(255, 255, 255, 0.8);
+  --crm-text-muted: #475569;
+  --crm-border: rgba(0, 0, 0, 0.08);
+  --crm-glass-bg: rgba(255, 255, 255, 0.9);
+  --crm-glow-opacity: 0.03;
 }
 
 [data-theme='dark'] {
@@ -52,6 +53,7 @@
   --crm-text-muted: #94a3b8;
   --crm-border: rgba(255, 255, 255, 0.05);
   --crm-glass-bg: rgba(15, 23, 42, 0.8);
+  --crm-glow-opacity: 0.15;
 }
 
 @layer base {
@@ -94,7 +96,7 @@
   }
 
   .glass-nav {
-    @apply bg-slate-950/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 shadow-2xl shadow-black/20;
+    @apply bg-[var(--crm-glass-bg)] backdrop-blur-md border-b border-[var(--crm-border)] sticky top-0 z-40 shadow-2xl shadow-black/5;
   }
 
   .btn-primary {
@@ -128,7 +130,7 @@
   }
 
   .sidebar-item-active {
-    @apply bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-[inset_0_0_20px_#6366f11a];
+    @apply bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 shadow-[inset_0_0_20px_#6366f10a];
   }
 
   .sidebar-item-inactive {

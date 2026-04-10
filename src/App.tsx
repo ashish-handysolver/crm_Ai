@@ -160,7 +160,7 @@ const NotificationBell = () => {
 
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${showDropdown ? 'bg-indigo-900 text-indigo-400' : 'text-slate-300 hover:bg-slate-800'}`}
+        className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${showDropdown ? 'bg-indigo-500/20 text-indigo-500 shadow-sm' : 'text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)]'}`}
       >
         <Bell size={20} />
         {hasNotifications && (
@@ -174,10 +174,10 @@ const NotificationBell = () => {
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute right-0 mt-4 w-80 bg-slate-900 rounded-2xl !p-0 border border-slate-800 shadow-2xl shadow-black/50 z-[100] overflow-hidden"
+            className="absolute right-0 mt-4 w-80 bg-[var(--crm-glass-bg)] backdrop-blur-3xl rounded-2xl !p-0 border border-[var(--crm-border)] shadow-2xl z-[100] overflow-hidden"
           >
-            <div className="p-5 border-b border-slate-800 bg-slate-800 flex justify-between items-center">
-              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Notifications</h3>
+            <div className="p-5 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 flex justify-between items-center">
+              <h3 className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.2em]">Notifications</h3>
               <span className="px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[8px] font-black uppercase tracking-widest">{meetings.length} Upcoming</span>
             </div>
 
@@ -185,9 +185,9 @@ const NotificationBell = () => {
               {!pushEnabled && (
                 <div className="p-4 mx-2 mb-2 rounded-2xl bg-rose-950 border border-rose-900 hover:bg-rose-900 transition-all cursor-pointer group" onClick={handleRequestPush}>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-rose-900 text-rose-400 shadow-sm"><Bell size={14} /></div>
+                    <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 shadow-sm"><Bell size={14} /></div>
                     <div className="flex-1">
-                      <div className="font-black text-white text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
+                      <div className="font-black text-[var(--crm-text)] text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
                       <div className="text-[10px] text-slate-300 font-bold uppercase tracking-tight opacity-70">Get alerted for upcoming meetings</div>
                     </div>
                   </div>
@@ -195,8 +195,8 @@ const NotificationBell = () => {
               )}
 
               {meetings.length > 0 ? meetings.map((m, idx) => (
-                <div key={m.id} className="px-4 py-4 hover:bg-slate-800 transition-all cursor-pointer border-b border-slate-800 last:border-0 group">
-                  <div className="font-bold text-white text-sm mb-1 group-hover:text-indigo-400 transition-colors">{m.title}</div>
+                <div key={m.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group">
+                  <div className="font-bold text-[var(--crm-text)] text-sm mb-1 group-hover:text-indigo-500 transition-colors">{m.title}</div>
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-wider">
                     <Clock size={10} className="text-indigo-500/50" />
                     {m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false })}
@@ -212,12 +212,12 @@ const NotificationBell = () => {
                   <div className="p-4 bg-slate-800 rounded-full w-fit mx-auto text-slate-400">
                     <History size={32} />
                   </div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic">No notifications yet.</p>
+                  <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em] italic">No notifications yet.</p>
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-800 bg-slate-800 text-center">
+            <div className="p-4 border-t border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-center">
               <Link to="/calendar" className="text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-all">View Calendar &rarr;</Link>
             </div>
           </motion.div>
@@ -242,7 +242,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           </button>
           
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/10 p-1.5 overflow-hidden">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--crm-text)] rounded-xl flex items-center justify-center shadow-lg border border-[var(--crm-border)] p-1.5 overflow-hidden">
               <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
             </div>
             <div className="hidden sm:flex flex-col">
@@ -255,7 +255,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           {showInstallButton && (
             <button
               onClick={onInstall}
-              className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-400 transition-all shadow-xl shadow-black/20 active:scale-95"
+              className="hidden lg:flex items-center gap-2.5 px-5 py-2.5 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-400 transition-all shadow-xl shadow-black/5 active:scale-95"
             >
               <Download size={14} /> Install
             </button>
@@ -271,34 +271,34 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           </button>
           </div>
           <NotificationBell />
-          <div className="h-8 w-[1px] bg-white/10 mx-1 hidden md:block"></div>
+          <div className="h-8 w-[1px] bg-[var(--crm-border)] mx-1 hidden md:block"></div>
           <div className="hidden md:flex flex-col items-end">
             <span className="text-xs font-black text-[var(--crm-text)] leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
             <span className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
           </div>
-          <Link to="/profile" className="relative group p-1 bg-white/5 border border-white/10 rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-black/20 hover:border-indigo-400 transition-all">
+          <Link to="/profile" className="relative group p-1 bg-[var(--crm-bg)]/5 border border-[var(--crm-border)] rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-black/5 hover:border-indigo-500 transition-all">
             <img
               src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=6366f1&color=fff`}
               alt="Profile"
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover border border-white group-hover:scale-105 transition-all group-active:scale-95"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover border border-[var(--crm-border)] group-hover:scale-105 transition-all group-active:scale-95"
             />
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-[3px] border-white shadow-sm ring-1 ring-emerald-500/20"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-[3px] border-[var(--crm-bg)] shadow-sm ring-1 ring-emerald-500/20"></div>
           </Link>
         </div>
       </nav>
 
       <AnimatePresence>
         {showQrModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-[#0f111a]/80 backdrop-blur-xl rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-white/10 text-center relative overflow-hidden" onClick={e => e.stopPropagation()}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[var(--crm-bg)]/40 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-[var(--crm-glass-bg)] backdrop-blur-xl rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-[var(--crm-border)] text-center relative overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-500"></div>
               <div className="flex items-center justify-center gap-2 mb-6">
-                <div className="w-8 h-8 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center shadow-lg"><Sparkles size={16} className="text-indigo-400" /></div>
-                <span className="text-lg font-black tracking-tight text-white">Handysolver<span className="text-indigo-400">.AI</span></span>
+                <div className="w-8 h-8 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center shadow-lg"><Sparkles size={16} className="text-indigo-500" /></div>
+                <span className="text-lg font-black tracking-tight text-[var(--crm-text)]">Handysolver<span className="text-indigo-500">.AI</span></span>
               </div>
-              <h2 className="text-2xl font-black mb-2 text-white tracking-tight">Lead Capture QR</h2>
-              <p className="text-sm text-slate-400 mb-6 font-medium">Prospects can scan this to automatically join your pipeline.</p>
-              <div className="bg-white p-4 rounded-[2rem] border border-white/10 inline-block mb-6 shadow-inner">
+              <h2 className="text-2xl font-black mb-2 text-[var(--crm-text)] tracking-tight">Lead Capture QR</h2>
+              <p className="text-sm text-[var(--crm-text-muted)] mb-6 font-medium">Prospects can scan this to automatically join your pipeline.</p>
+              <div className="bg-white p-4 rounded-[2rem] border border-[var(--crm-border)] inline-block mb-6 shadow-inner">
                 <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/capture/${companyId}`)}`} alt="QR Code" className="w-48 h-48 rounded-xl mix-blend-multiply" />
               </div>
               <button onClick={() => {
@@ -319,7 +319,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
                 }
                 setSuccess("Capture link copied!");
                 setTimeout(() => setSuccess(''), 3000);
-              }} className="w-full py-3.5 bg-white/5 border border-white/10 text-indigo-300 font-black text-xs uppercase tracking-widest rounded-xl mb-3 hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2">
+              }} className="w-full py-3.5 bg-[var(--crm-bg)]/5 border border-[var(--crm-border)] text-indigo-600 dark:text-indigo-400 font-black text-xs uppercase tracking-widest rounded-xl mb-3 hover:bg-[var(--crm-bg)]/10 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2">
                 {success ? <><CheckCircle2 size={16} /> Copied!</> : 'Copy Direct Link'}
               </button>
               <button onClick={() => setShowQrModal(false)} className="w-full py-3.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-indigo-500 transition-all shadow-md shadow-indigo-500/20 active:scale-95">Close Window</button>
@@ -352,8 +352,8 @@ const HistoryView = ({ user }: { user: User }) => {
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto">
       <header className="mb-10">
-        <h1 className="text-3xl font-black text-black tracking-tight mb-2">All Recordings</h1>
-        <p className="text-slate-500 font-medium">A list of all recordings and notes.</p>
+        <h1 className="text-3xl font-black text-[var(--crm-text)] tracking-tight mb-2">All Recordings</h1>
+        <p className="text-[var(--crm-text-muted)] font-medium">A list of all recordings and notes.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -362,33 +362,33 @@ const HistoryView = ({ user }: { user: User }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             key={rec.id}
-            className="bg-orange-50 p-6 rounded-[2rem] border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group"
+            className="bg-[var(--crm-card-bg)] p-6 rounded-[2rem] border border-[var(--crm-border)] shadow-sm hover:shadow-xl hover:shadow-[var(--crm-border)] transition-all group"
           >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center font-bold shadow-inner">
+              <div className="w-12 h-12 bg-orange-500/10 text-orange-600 rounded-2xl flex items-center justify-center font-bold shadow-inner">
                 <History size={24} />
               </div>
               <div>
-                <h3 className="font-extrabold text-black">Recording</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{rec.id.slice(0, 8)}</p>
+                <h3 className="font-extrabold text-[var(--crm-text)]">Recording</h3>
+                <p className="text-xs font-bold text-[var(--crm-text-muted)] uppercase tracking-widest">{rec.id.slice(0, 8)}</p>
               </div>
             </div>
 
             <div className="space-y-4 mb-8">
-              <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+              <div className="flex items-center gap-2 text-sm text-[var(--crm-text-muted)] font-medium">
                 <Calendar size={14} className="text-orange-400" />
                 {rec.createdAt?.toDate?.().toLocaleString() || 'Recent'}
               </div>
-              <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed font-medium bg-orange-50 p-4 rounded-2xl border border-orange-100/50">
+              <p className="text-sm text-[var(--crm-text-muted)] line-clamp-3 leading-relaxed font-medium bg-[var(--crm-bg)]/20 p-4 rounded-2xl border border-[var(--crm-border)]">
                 {rec.transcript || 'No transcript version recorded.'}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-orange-50">
+            <div className="flex items-center justify-between pt-4 border-t border-[var(--crm-border)]">
               <div className="flex gap-2">
                 <Link
                   to={`/r/${rec.id}`}
-                  className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
+                  className="p-2.5 text-[var(--crm-text-muted)] hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
                 >
                   <ExternalLink size={20} />
                 </Link>
@@ -410,21 +410,21 @@ const HistoryView = ({ user }: { user: User }) => {
                       textArea.remove();
                     }
                   }}
-                  className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                  className="p-2.5 text-[var(--crm-text-muted)] hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                 >
                   <Copy size={20} />
                 </button>
               </div>
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">AudioCRM v2</span>
+              <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">AudioCRM v2</span>
             </div>
           </motion.div>
         ))}
       </div>
 
       {recordings.length === 0 && (
-        <div className="text-center py-20 bg-orange-50 rounded-[3rem] border-2 border-dashed border-orange-100">
-          <History size={48} className="mx-auto text-slate-200 mb-4" />
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No recordings found</p>
+        <div className="text-center py-20 bg-[var(--crm-card-bg)] rounded-[3rem] border-2 border-dashed border-[var(--crm-border)]">
+          <History size={48} className="mx-auto text-[var(--crm-text-muted)] mb-4" />
+          <p className="text-[var(--crm-text-muted)] font-bold uppercase tracking-widest text-sm">No recordings found</p>
         </div>
       )}
     </div>
@@ -639,32 +639,32 @@ const RecordingView = () => {
 
   if (!recording) return (
     <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
-      <div className="text-slate-500 font-black uppercase tracking-[0.4em] text-xs flex items-center gap-4">
-        <Sparkles size={20} className="text-slate-700" /> Logic Vector Depleted
+      <div className="text-[var(--crm-text-muted)] font-black uppercase tracking-[0.4em] text-xs flex items-center gap-4">
+        <Sparkles size={20} className="text-[var(--crm-text-muted)]" /> Logic Vector Depleted
       </div>
     </div>
   );
 
   return (
     <div className="flex-1 bg-[var(--crm-bg)] min-h-screen overflow-y-auto selection:bg-indigo-500 selection:text-white font-sans">
-      <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-600/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-500 blur-[160px] -translate-y-1/2 translate-x-1/2 pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }}></div>
 
       <div className="max-w-5xl mx-auto p-4 sm:p-12 lg:p-20 space-y-20 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card !bg-white/[0.02] !backdrop-blur-3xl !border-white/5 !p-12 sm:!p-20 !rounded-[4rem] relative overflow-hidden shadow-3xl"
+          className="glass-card !bg-[var(--crm-card-bg)] !backdrop-blur-3xl !border-[var(--crm-border)] !p-12 sm:!p-20 !rounded-[4rem] relative overflow-hidden shadow-3xl"
         >
           {/* Top Decorative bar */}
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
 
-          <header className="mb-20 pb-12 border-b border-white/5 flex flex-col xl:flex-row justify-between items-start gap-12">
+          <header className="mb-20 pb-12 border-b border-[var(--crm-border)] flex flex-col xl:flex-row justify-between items-start gap-12">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] shadow-lg">
                 <Sparkles size={14} className="animate-pulse" /> Intelligence Hub
               </div>
-              <h1 className="text-5xl sm:text-7xl font-black text-white tracking-tightest leading-[0.9] uppercase">
-                Interaction <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Metadata</span>
+              <h1 className="text-5xl sm:text-7xl font-black text-[var(--crm-text)] tracking-tightest leading-[0.9] uppercase">
+                Interaction <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Metadata</span>
               </h1>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2 text-slate-500 font-black uppercase tracking-widest text-[10px]">
@@ -682,9 +682,9 @@ const RecordingView = () => {
               <div className="relative group/wa">
                 <button
                   onClick={() => setShowTemplates(!showTemplates)}
-                  className="w-full px-8 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-900/40 active:scale-95 flex items-center justify-center gap-3 group"
+                  className="w-full px-8 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-900/10 active:scale-95 flex items-center justify-center gap-3 group"
                 >
-                  <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div>
+                  <div className="p-1.5 bg-white/10 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div>
                   WhatsApp Share
                 </button>
 
@@ -700,19 +700,19 @@ const RecordingView = () => {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute bottom-full left-0 mb-4 w-72 bg-slate-900 border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[120] overflow-hidden p-2"
+                        className="absolute bottom-full left-0 mb-4 w-72 bg-[var(--crm-glass-bg)] backdrop-blur-3xl border border-[var(--crm-border)] rounded-[2rem] shadow-2xl z-[120] overflow-hidden p-2"
                       >
-                        <div className="px-5 py-3 border-b border-white/5 bg-white/5 mb-2">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Select Narrative</span>
+                        <div className="px-5 py-3 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 mb-2">
+                          <span className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Select Narrative</span>
                         </div>
                         {WHATSAPP_TEMPLATES.map((t) => (
                           <button
                             key={t.id}
                             onClick={() => handleShareWhatsApp(t.id)}
-                            className="w-full text-left px-5 py-3.5 rounded-xl hover:bg-white/5 transition-all flex flex-col gap-1 group/item"
+                            className="w-full text-left px-5 py-3.5 rounded-xl hover:bg-[var(--crm-bg)]/20 transition-all flex flex-col gap-1 group/item"
                           >
-                            <span className="text-xs font-black text-white group-hover/item:text-emerald-400 transition-colors uppercase tracking-tight">{t.name}</span>
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Context: {t.category}</span>
+                            <span className="text-xs font-black text-[var(--crm-text)] group-hover/item:text-emerald-500 transition-colors uppercase tracking-tight">{t.name}</span>
+                            <span className="text-[9px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest leading-none">Context: {t.category}</span>
                           </button>
                         ))}
                       </motion.div>
@@ -723,14 +723,14 @@ const RecordingView = () => {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="px-8 py-5 bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-indigo-400 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                className="px-8 py-5 bg-[var(--crm-bg)]/5 border border-[var(--crm-border)] text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/10 hover:border-indigo-400 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
               >
-                {isSyncing ? <Loader2 size={16} className="animate-spin text-cyan-400" /> : <RotateCcw size={16} className="text-indigo-400" />}
+                {isSyncing ? <Loader2 size={16} className="animate-spin text-cyan-500" /> : <RotateCcw size={16} className="text-indigo-500" />}
                 {isSyncing ? 'Synchronizing' : 'Recalibrate Logic'}
               </button>
               <button
                 onClick={() => window.print()}
-                className="col-span-1 sm:col-span-2 px-8 py-5 bg-white text-black rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-cyan-400 transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3"
+                className="col-span-1 sm:col-span-2 px-8 py-5 bg-slate-900 text-white dark:bg-white dark:text-black rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3"
               >
                 <Download size={16} /> Export Core Signal
               </button>
@@ -744,10 +744,10 @@ const RecordingView = () => {
                 <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/20 shadow-2xl"><Languages size={24} /></div>
                 <div>
                   <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Dialect Decomposition</h2>
-                  <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Multi-vector neural transcript</p>
+                  <p className="text-[9px] text-[var(--crm-text-muted)] font-black uppercase tracking-widest mt-1">Multi-vector neural transcript</p>
                 </div>
               </div>
-              <div className="bg-black/40 p-1 bg-gradient-to-b from-white/5 to-transparent rounded-[3.5rem] border border-white/5 shadow-inner">
+              <div className="bg-[var(--crm-bg)]/20 p-1 bg-gradient-to-b from-[var(--crm-text)]/5 to-transparent rounded-[3.5rem] border border-[var(--crm-border)] shadow-inner">
                 <div className="bg-transparent p-10 sm:p-14">
                   {recording.transcript ? (
                     <TranscriptPlayer
@@ -775,45 +775,45 @@ const RecordingView = () => {
                 >
                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-400/5 rounded-full blur-[40px] group-hover/insight:scale-150 transition-transform duration-1000"></div>
                   <div className="flex items-center gap-3 mb-8">
-                    <Sparkles size={18} className="text-indigo-400" />
-                    <h4 className="font-black text-white uppercase tracking-[0.4em] text-[11px]">Executive Matrix Summary</h4>
+                    <Sparkles size={18} className="text-indigo-500" />
+                    <h4 className="font-black text-[var(--crm-text)] uppercase tracking-[0.4em] text-[11px]">Executive Matrix Summary</h4>
                   </div>
-                  <p className="text-slate-300 text-xl leading-[1.8] font-medium tracking-tight italic">
-                    <span className="text-4xl text-indigo-500/30">"</span>
+                  <p className="text-[var(--crm-text-muted)] text-xl leading-[1.8] font-medium tracking-tight italic">
+                    <span className="text-4xl text-indigo-500/20">"</span>
                     {recording.aiInsights.overview}
-                    <span className="text-4xl text-indigo-500/30">"</span>
+                    <span className="text-4xl text-indigo-500/20">"</span>
                   </p>
                 </motion.div>
 
-                <div className="bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
-                  <h4 className="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
+                <div className="bg-[var(--crm-bg)]/20 p-10 rounded-[3rem] border border-[var(--crm-border)] shadow-2xl space-y-8">
+                  <h4 className="font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
                     Meeting Minutes Protocol
                   </h4>
                   <ul className="space-y-6">
                     {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
-                      <li key={i} className="flex items-start gap-5 text-base text-slate-400 font-medium group/item">
-                        <div className="p-1 px-2.5 bg-white/5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-tighter mt-1 group-hover/item:text-indigo-400 transition-colors">0{i + 1}</div>
-                        <span className="group-hover/item:text-slate-200 transition-colors">{pt}</span>
+                      <li key={i} className="flex items-start gap-5 text-base text-[var(--crm-text-muted)] font-medium group/item">
+                        <div className="p-1 px-2.5 bg-[var(--crm-bg)]/20 rounded-lg text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-tighter mt-1 group-hover/item:text-indigo-500 transition-colors">0{i + 1}</div>
+                        <span className="group-hover/item:text-[var(--crm-text)] transition-colors">{pt}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-2xl space-y-8">
-                  <h4 className="font-black text-slate-500 uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
+                <div className="bg-[var(--crm-bg)]/20 p-10 rounded-[3rem] border border-[var(--crm-border)] shadow-2xl space-y-8">
+                  <h4 className="font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
                     Action Item Vectors
                   </h4>
                   <ul className="space-y-6">
                     {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
-                      <li key={i} className="flex items-start gap-5 text-base text-slate-400 font-medium group/task">
-                        <div className={`p-2 rounded-xl transition-all ${t.completed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-white/5 text-slate-700 border border-white/5"}`}>
+                      <li key={i} className="flex items-start gap-5 text-base text-[var(--crm-text-muted)] font-medium group/task">
+                        <div className={`p-2 rounded-xl transition-all ${t.completed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] border border-[var(--crm-border)]"}`}>
                           <CheckCircle2 size={18} />
                         </div>
                         <div className="space-y-1">
-                          <span className={t.completed ? "line-through text-slate-600" : "group-hover/task:text-slate-200 transition-colors"}>{t.title}</span>
-                          <div className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em]">{t.assignee}</div>
+                          <span className={t.completed ? "line-through opacity-50" : "group-hover/task:text-[var(--crm-text)] transition-colors"}>{t.title}</span>
+                          <div className="text-[9px] font-black uppercase text-indigo-500 tracking-[0.2em]">{t.assignee}</div>
                         </div>
                       </li>
                     ))}
@@ -824,9 +824,9 @@ const RecordingView = () => {
               <div className="p-16 bg-indigo-500/5 rounded-[4rem] border border-indigo-500/10 border-dashed relative group/ai overflow-hidden">
                 <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/5 rounded-full blur-[60px] group-hover/ai:scale-110 transition-transform duration-1000"></div>
                 <div className="flex flex-col md:flex-row items-center gap-10 relative z-10 text-center md:text-left">
-                  <div className="p-8 bg-black/40 rounded-[2.5rem] text-indigo-400 shadow-3xl border border-white/5"><Sparkles size={48} className="animate-pulse" /></div>
+                  <div className="p-8 bg-[var(--crm-bg)]/20 rounded-[2.5rem] text-indigo-500 shadow-3xl border border-[var(--crm-border)]"><Sparkles size={48} className="animate-pulse" /></div>
                   <div className="space-y-4">
-                    <h3 className="font-black text-white text-2xl uppercase tracking-[0.3em]">AI Synthesis Pending</h3>
+                    <h3 className="font-black text-[var(--crm-text)] text-2xl uppercase tracking-[0.3em]">AI Synthesis Pending</h3>
                     <p className="text-[11px] font-black text-indigo-500/70 uppercase tracking-[0.4em] leading-relaxed max-w-lg">Initiate the 'Recalibrate Logic' protocol to synthesize interaction intelligence and behavioral metrics.</p>
                   </div>
                 </div>
@@ -836,7 +836,7 @@ const RecordingView = () => {
         </motion.div>
 
         <footer className="text-center py-10 opacity-20 hover:opacity-100 transition-opacity duration-1000">
-          <p className="text-[10px] font-black text-white uppercase tracking-[0.8em]">Handydash CRM AI &bull; Intelligence Framework v9.4</p>
+          <p className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.8em]">Handydash CRM AI &bull; Intelligence Framework v9.4</p>
         </footer>
       </div>
     </div>

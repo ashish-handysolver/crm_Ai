@@ -11,12 +11,12 @@ import { useAuth } from './contexts/AuthContext';
 import {
   User, Mail, Lock, Camera, Loader2, CheckCircle2,
   AlertCircle, ShieldCheck, Zap, Sparkles, LogOut,
-  ChevronRight, ArrowLeft, ExternalLink, Activity, Video
+  ChevronRight, ArrowLeft, ExternalLink, Activity, Video, Clock, Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { playNotificationSound, SoundProfile, NOTIFICATION_SOUNDS } from './utils/sounds';
-import { Bell } from 'lucide-react';
+
 
 const GRADIENTS = [
   'from-indigo-500 to-purple-600',
@@ -38,10 +38,11 @@ export default function Profile() {
     email: user?.email || '',
     defaultMeetUrl: '',
     notificationMinutes: 10,
-    notificationSoundId: 'cyber_pulse' as SoundProfile,
+    notificationSoundId: 'high_intensity' as SoundProfile,
     newPassword: '',
     confirmPassword: ''
   });
+  const [isTestingAudio, setIsTestingAudio] = useState(false);
 
   const [uploading, setUploading] = useState(false);
   const [userRole, setUserRole] = useState('');
@@ -56,7 +57,7 @@ export default function Profile() {
             ...f, 
             defaultMeetUrl: data.defaultMeetUrl || '',
             notificationMinutes: data.notificationMinutes || 10,
-            notificationSoundId: (data.notificationSoundId as SoundProfile) || 'cyber_pulse'
+            notificationSoundId: (data.notificationSoundId as SoundProfile) || 'high_intensity'
           }));
         }
       });
@@ -137,6 +138,14 @@ export default function Profile() {
 
   const inputClasses = "w-full px-6 py-4 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card-bg)] focus:bg-[var(--crm-border)] outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-sm text-[var(--crm-text)] shadow-sm disabled:opacity-50";
   const labelClasses = "text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-3 block px-1";
+
+  const handleTestAudio = () => {
+    if (isTestingAudio) return;
+    setIsTestingAudio(true);
+    playNotificationSound(formData.notificationSoundId);
+    const duration = formData.notificationSoundId === 'high_intensity' ? 10500 : 2500;
+    setTimeout(() => setIsTestingAudio(false), duration);
+  };
 
   return (
     <div className="flex-1 bg-transparent p-4 sm:p-8 lg:p-12 min-h-screen font-sans overflow-x-hidden">
@@ -397,10 +406,20 @@ export default function Profile() {
                     <div className="md:col-span-2">
                       <button
                         type="button"
-                        onClick={() => playNotificationSound(formData.notificationSoundId)}
-                        className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-indigo-300 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-indigo-500/30 transition-all active:scale-95 flex items-center gap-2"
+                        onClick={handleTestAudio}
+                        disabled={isTestingAudio}
+                        className={`px-6 py-3 rounded-xl border text-indigo-300 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 ${
+                          isTestingAudio 
+                          ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-indigo-500/30'
+                        }`}
                       >
-                        <Zap size={14} className="text-indigo-500" /> Test Audio Signal
+                        {isTestingAudio ? (
+                          <Activity size={14} className="text-indigo-400 animate-[pulse_1s_infinite]" />
+                        ) : (
+                          <Zap size={14} className="text-indigo-500" />
+                        )}
+                        {isTestingAudio ? 'Transmitting Signal...' : 'Test Audio Signal'}
                       </button>
                     </div>
                   </div>

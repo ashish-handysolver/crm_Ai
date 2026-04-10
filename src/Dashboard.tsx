@@ -191,7 +191,7 @@ export default function Dashboard({ user }: { user: any }) {
                     onClick={() => kpi.link && navigate(kpi.link, { state: kpi.filter })}
                     className={`glass-card p-4 sm:p-8 group hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between min-h-[140px] sm:min-h-0 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] ${kpi.link ? 'cursor-pointer' : ''}`}
                   >
-                    <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-indigo-500 rounded-full -translate-y-1/2 translate-x-1/2" style={{ opacity: 'var(--crm-glow-opacity)' }} />
                     <div className="flex flex-col sm:flex-row justify-between items-start mb-2 sm:mb-6 gap-2 relative z-10 w-full">
                       <div className={`w-8 h-8 sm:w-14 sm:h-14 ${kpi.color} text-white rounded-xl sm:rounded-2xl flex items-center justify-center  shadow-${kpi.color.split('-')[1]}-200`}>
                         {React.cloneElement(kpi.icon as React.ReactElement, { size: 14 })}
@@ -220,13 +220,13 @@ export default function Dashboard({ user }: { user: any }) {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {pipelineData.map((item) => {
                       const phaseColors: Record<string, string> = {
-                        'DISCOVERY': 'from-blue-500/10 to-cyan-500/10 text-blue-400 border-blue-500/20',
-                        'CONNECTED': 'from-teal-500/10 to-emerald-500/10 text-teal-400 border-teal-500/20',
-                        'NURTURING': 'from-purple-500/10 to-fuchsia-500/10 text-purple-400 border-purple-500/20',
-                        'QUALIFIED': 'from-indigo-500/10 to-violet-500/10 text-indigo-400 border-indigo-500/20',
-                        'WON': 'from-emerald-500/10 to-teal-500/10 text-emerald-400 border-emerald-500/20',
-                        'LOST': 'from-rose-500/10 to-red-500/10 text-rose-400 border-rose-500/20',
-                        'INACTIVE': 'from-slate-500/10 to-gray-500/10 text-slate-400 border-white/10'
+                        'DISCOVERY': 'from-blue-500/10 to-cyan-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+                        'CONNECTED': 'from-teal-500/10 to-emerald-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+                        'NURTURING': 'from-purple-500/10 to-fuchsia-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+                        'QUALIFIED': 'from-indigo-500/10 to-violet-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+                        'WON': 'from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+                        'LOST': 'from-rose-500/10 to-red-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+                        'INACTIVE': 'from-slate-500/10 to-gray-500/10 text-slate-500 dark:text-slate-400 border-white/10'
                       };
                       const c = phaseColors[item.name.toUpperCase()] || phaseColors['INACTIVE'];
 
@@ -252,9 +252,9 @@ export default function Dashboard({ user }: { user: any }) {
                   </h2>
                   <div className="grid grid-cols-3 gap-3">
                     {healthData.map(item => {
-                      const colors = item.label === 'HOT' ? 'from-rose-500/10 to-orange-500/10 text-rose-400 border-rose-500/20' :
-                        item.label === 'WARM' ? 'from-amber-500/10 to-yellow-500/10 text-amber-400 border-amber-500/20' :
-                          'from-slate-500/10 to-indigo-500/10 text-slate-400 border-white/10';
+                      const colors = item.label === 'HOT' ? 'from-rose-500/10 to-orange-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' :
+                        item.label === 'WARM' ? 'from-amber-500/10 to-yellow-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' :
+                          'from-slate-500/10 to-indigo-500/10 text-slate-500 dark:text-slate-400 border-[var(--crm-border)]';
                       const icons = item.label === 'HOT' ? '🔥' : item.label === 'WARM' ? '☀️' : '❄️';
                       return (
                         <div
@@ -390,8 +390,8 @@ export default function Dashboard({ user }: { user: any }) {
 
                   {leads.length === 0 && !loading && (
                     <div className="py-20 text-center">
-                      <LayoutDashboard className="mx-auto text-slate-200 mb-4" size={48} />
-                      <p className="font-bold text-slate-400 uppercase tracking-widest text-sm">No clients found in registry</p>
+                      <LayoutDashboard className="mx-auto text-[var(--crm-border)] mb-4" size={48} />
+                      <p className="font-bold text-[var(--crm-text-muted)] uppercase tracking-widest text-sm">No clients found in registry</p>
                     </div>
                   )}
                 </div>
