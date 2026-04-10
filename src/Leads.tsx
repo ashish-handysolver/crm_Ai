@@ -5,7 +5,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
 import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
@@ -232,12 +232,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       let transcriptText = "No info generated.";
       let transcriptData = null;
       try {
-        const apiKey = [
-          (import.meta as any).env.VITE_GEMINI_API_KEY,
-          (process.env as any).GEMINI_API_KEY,
-          (import.meta as any).env.GEMINI_API_KEY
-        ].find(k => k && k !== 'undefined' && k !== 'null' && k !== '') || '';
-
+        const apiKey = getGeminiApiKey();
         if (apiKey) {
           const fileUri = await uploadFileToGemini(audioBlob, apiKey);
           const genAI = new GoogleGenAI(apiKey);

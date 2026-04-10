@@ -14,7 +14,7 @@ import {
 import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
-import { uploadFileToGemini } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
 import { logActivity } from './utils/activity';
 
 export default function LeadInsights({ user }: { user: any }) {
@@ -112,7 +112,7 @@ export default function LeadInsights({ user }: { user: any }) {
       attemptedRecs.current.add(selectedRec.id);
       setGeneratingAI(true);
       try {
-        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+        const apiKey = getGeminiApiKey();
         if (!apiKey) return;
 
         const ai = new GoogleGenAI(apiKey);
@@ -231,7 +231,7 @@ export default function LeadInsights({ user }: { user: any }) {
     if (!selectedRec || !selectedRec.audioUrl || syncingTranscript) return;
     setSyncingTranscript(true);
     try {
-      const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+      const apiKey = getGeminiApiKey();
       if (!apiKey) return;
 
       const storageRef = ref(storage, selectedRec.audioUrl);

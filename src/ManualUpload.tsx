@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadFileToGemini } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
@@ -79,14 +79,10 @@ export default function ManualUpload({ user }: { user: any }) {
 
       let transcriptData = null;
       if (uploadFile && !finalTranscript) {
-        const apiKey = [
-          (import.meta as any).env.VITE_GEMINI_API_KEY,
-          (process.env as any).GEMINI_API_KEY,
-          (import.meta as any).env.GEMINI_API_KEY
-        ].find(k => k && k !== 'undefined' && k !== 'null' && k !== '') || '';
+        const apiKey = getGeminiApiKey();
 
         if (!apiKey) {
-          throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your .env file.");
+          throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your Vercel environment variables.");
         }
 
         if (apiKey) {

@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
@@ -156,7 +156,7 @@ export default function GuestRecord() {
       let transcriptText = 'No transcript generated.';
       let transcriptData = null;
       try {
-        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+        const apiKey = getGeminiApiKey();
         if (apiKey) {
           const fileUri = await uploadFileToGemini(blob, apiKey);
           const genAI = new GoogleGenAI(apiKey);
