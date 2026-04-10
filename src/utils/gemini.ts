@@ -9,6 +9,8 @@ export const getGeminiApiKey = (): string => {
   const raw = [
     (import.meta as any).env.VITE_GEMINI_API_KEY,
     (import.meta as any).env.GEMINI_API_KEY,
+    (process.env as any)?.GEMINI_API_KEY,
+    (process.env as any)?.VITE_GEMINI_API_KEY,
   ].find(k => k && k !== 'undefined' && k !== 'null' && k !== '') || '';
 
   // Strip surrounding quotes (common mistake in .env files and CI/CD dashboards)
