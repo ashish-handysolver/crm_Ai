@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>handycrm.ai | System Synchronization Offline</title>
+    <title>handydash.ai | System Maintenance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
@@ -33,11 +33,11 @@
         }
     </script>
     <style>
-        body { background-color: #020617; color: #f8fafc; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        body { background-color: #020617; color: #f8fafc; font-family: 'Outfit', sans-serif; min-height: 100vh; overflow-x: hidden; display: flex; align-items: center; justify-content: center; padding: 3rem 0; }
         .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .neon-glow { box-shadow: 0 0 50px rgba(239, 68, 68, 0.2); }
         .grid-bg { background-image: radial-gradient(circle at 1px 1px, rgba(239, 68, 68, 0.05) 1px, transparent 0); background-size: 40px 40px; }
-        .error-code { font-family: 'JetBrains Mono', monospace; font-size: 15rem; opacity: 0.03; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        .error-code { font-family: 'JetBrains Mono', monospace; font-size: clamp(5rem, 20vw, 15rem); opacity: 0.03; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap; }
     </style>
 </head>
 <body class="grid-bg">
@@ -55,15 +55,15 @@
         </div>
 
         <div class="space-y-6">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Signal Interference Detected
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></span> Scheduled Maintenance In Progress
             </div>
             <h1 class="text-6xl md:text-8xl font-black tracking-tighter text-white uppercase leading-[0.8]">
                 System<br>
-                <span class="text-red-500">Desync.</span>
+                <span class="text-indigo-500">Upgrade.</span>
             </h1>
             <p class="mt-8 text-lg font-mono text-slate-500 max-w-xl mx-auto leading-relaxed">
-                // Critical node failure in the neural grid. Our engineers are currently manually stabilizing the operational loop. 
+                // We are currently optimizing the neural infrastructure. Normal operations will resume shortly after the synchronization loop completes. 
             </p>
         </div>
 
@@ -77,13 +77,13 @@
             </div>
         </div>
 
-        <div class="mt-16 flex justify-center gap-8">
-             <button onclick="window.location.reload()" class="px-12 py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-3xl active:scale-95">Re-Sync Node</button>
-             <a href="mailto:support@handycrm.ai" class="px-12 py-5 glass text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5 flex items-center justify-center">Manual Support</a>
+        <div class="mt-16 flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 max-w-sm sm:max-w-none mx-auto w-full px-4">
+             <button onclick="window.location.reload()" class="w-full sm:w-auto px-12 py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-3xl active:scale-95">Verify Status</button>
+             <a href="mailto:support@handydash.ai" class="w-full sm:w-auto px-12 py-5 glass text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5 flex items-center justify-center">Network Support</a>
         </div>
 
         <div class="mt-20">
-            <p class="text-[9px] font-black text-slate-700 uppercase tracking-[0.6em] font-mono">&copy; 2026 // HANDYSOLVER SYSTEMS // EMERGENCY_MODE_01</p>
+            <p class="text-[9px] font-black text-slate-700 uppercase tracking-[0.6em] font-mono">&copy; 2026 // HANDYDASH SYSTEMS // CORE_OPTIMIZATION_ALPHA</p>
         </div>
     </div>
 

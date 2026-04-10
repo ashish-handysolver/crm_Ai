@@ -7,44 +7,61 @@ export interface WhatsAppTemplate {
   id: string;
   name: string;
   category: 'RECAP' | 'NEXT_STEPS' | 'QUICK_NOTE' | 'FORMAL';
-  generate: (data: { 
-    leadName?: string; 
-    company?: string; 
-    aiInsights?: any; 
+  generate: (data: {
+    leadName?: string;
+    company?: string;
+    aiInsights?: any;
     meetingUrl?: string;
+    meetingTitle?: string;
+    dateTime?: string;
   }) => string;
 }
 
 export const WHATSAPP_TEMPLATES: WhatsAppTemplate[] = [
   {
+    id: 'meeting-invite',
+    name: '📅 Formal Meeting Invite',
+    category: 'FORMAL',
+    generate: ({ leadName, meetingTitle, dateTime, meetingUrl }) => {
+      let text = `📅 *NEW MEETING SCHEDULED* \n\n`;
+      text += `Hi ${leadName || 'there'},\n\nI've finalized our temporal alignment for: *${meetingTitle || 'Strategic Discussion'}*.\n\n`;
+      text += `⏰ *TIME:* ${dateTime || 'TBD'}\n`;
+      if (meetingUrl) {
+        text += `🔗 *JOIN LINK:* ${meetingUrl}\n`;
+      }
+      text += `\nLooking forward to a productive session!\n\n--- \nSent via *handycrm.ai*`;
+      return text;
+    }
+  },
+  {
     id: 'meeting-recap',
     name: '📝 Meeting Recap & Minutes',
     category: 'RECAP',
     generate: ({ leadName, aiInsights, meetingUrl }) => {
-      let text = `🚀 *Meeting Intelligence Report* 🚀\n\n`;
-      text += `Hi ${leadName || 'there'},\nIt was great connecting today. Here's a quick recap of our discussion:\n\n`;
-      
+      let text = `🚀 *MEETING INTELLIGENCE RECAP* 🚀\n\n`;
+      text += `Hi ${leadName || 'there'},\nGreat connecting with you. Here are the core insights from our synchronization:\n\n`;
+
       if (aiInsights?.overview) {
-        text += `📝 *Summary:* ${aiInsights.overview}\n\n`;
+        text += `📝 *EXECUTIVE SUMMARY:*\n${aiInsights.overview}\n\n`;
       }
-      
+
       if (aiInsights?.meetingMinutes && aiInsights.meetingMinutes.length > 0) {
-        text += `💡 *Key Points:*\n`;
+        text += `💡 *CORE TAKEAWAYS:*\n`;
         aiInsights.meetingMinutes.forEach((p: string) => text += `• ${p}\n`);
         text += `\n`;
       }
-      
+
       if (aiInsights?.tasks && aiInsights.tasks.length > 0) {
-        text += `✅ *Next Steps:*\n`;
+        text += `✅ *ACTION ITEMS:*\n`;
         aiInsights.tasks.forEach((t: any) => text += `• ${t.title}\n`);
         text += `\n`;
       }
 
       if (meetingUrl) {
-        text += `🔗 *Full Protocol & Recordings:* ${meetingUrl}\n\n`;
+        text += `🔗 *FULL RECORDINGS & DATA:* ${meetingUrl}\n\n`;
       }
-      
-      text += `Feel free to reach out if you have any questions!\n\n`;
+
+      text += `Please reach out if you require further neural clarification.\n\n`;
       text += `--- \nSent via *handycrm.ai*`;
       return text;
     }

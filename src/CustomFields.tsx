@@ -214,8 +214,8 @@ export default function CustomFields({ user }: { user: any }) {
     );
   }
 
-  const inputClasses = "w-full px-4 py-3 rounded-xl border border-white/10 bg-black/20 focus:bg-black/40 outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-sm text-white shadow-inner [&>option]:bg-slate-900";
-  const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block";
+  const inputClasses = "w-full px-4 py-3 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card-bg)] focus:bg-[var(--crm-border)] outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-sm text-[var(--crm-text)] shadow-inner [&>option]:bg-slate-900";
+  const labelClasses = "text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2 block";
 
   return (
     <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
@@ -227,7 +227,7 @@ export default function CustomFields({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <Sparkles size={14} className="animate-pulse" /> System Settings
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-none">Custom Fields</h1>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">Custom Fields</h1>
             <p className="text-slate-400 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Customize your lead fields, sources, and pipeline stages.</p>
           </motion.div>
 
@@ -256,12 +256,12 @@ export default function CustomFields({ user }: { user: any }) {
 
           {/* Core Data Vectors Module */}
           <div className="lg:col-span-2 space-y-10">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !bg-black/20 !rounded-[2.5rem] overflow-hidden relative border border-white/10 shadow-sm">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] overflow-hidden relative border border-[var(--crm-border)] shadow-sm">
               <div className="p-8 sm:p-12 space-y-12">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner border border-indigo-500/30"><Settings size={18} /></div>
-                    <h2 className="text-xl font-black text-white tracking-tight">Lead Fields</h2>
+                    <h2 className="text-xl font-black text-[var(--crm-text)] tracking-tight">Lead Fields</h2>
                   </div>
                   {!isDemoMode && (
                     <button onClick={addField} className="text-[10px] font-black text-indigo-300 hover:text-white hover:bg-indigo-500/30 bg-indigo-500/20 flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-500/30 rounded-xl transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto shadow-sm">
@@ -283,7 +283,7 @@ export default function CustomFields({ user }: { user: any }) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="p-6 sm:p-8 bg-white/5 border border-white/10 rounded-[2rem] flex flex-col gap-6 sm:gap-10 relative group/field hover:bg-white/10 transition-all duration-500"
+                        className="p-6 sm:p-8 bg-white/5 border border-[var(--crm-border)] rounded-[2rem] flex flex-col gap-6 sm:gap-10 relative group/field hover:bg-white/10 transition-all duration-500"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
@@ -367,10 +367,10 @@ export default function CustomFields({ user }: { user: any }) {
           <div className="space-y-10">
 
             {/* Acquisition Matrix */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card !bg-black/20 p-8 border border-white/10 shadow-sm space-y-8">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card !bg-[var(--crm-card-bg)] p-8 border border-[var(--crm-border)] shadow-sm space-y-8">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shadow-inner border border-emerald-500/20"><Tag size={20} /></div>
-                <h2 className="text-sm font-black text-white uppercase tracking-widest">Lead Sources</h2>
+                <h2 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-widest">Lead Sources</h2>
               </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
@@ -397,10 +397,10 @@ export default function CustomFields({ user }: { user: any }) {
             </motion.div>
 
             {/* Lifecycle Stages */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card !bg-black/20 p-8 border border-white/10 shadow-sm space-y-8">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card !bg-[var(--crm-card-bg)] p-8 border border-[var(--crm-border)] shadow-sm space-y-8">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shadow-inner border border-purple-500/20"><GitBranch size={20} /></div>
-                <h2 className="text-sm font-black text-white uppercase tracking-widest">Pipeline Stages</h2>
+                <h2 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-widest">Pipeline Stages</h2>
               </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
@@ -427,10 +427,10 @@ export default function CustomFields({ user }: { user: any }) {
             </motion.div>
 
             {/* Entity Types */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="glass-card !bg-black/20 p-8 border border-white/10 shadow-sm space-y-8">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="glass-card !bg-[var(--crm-card-bg)] p-8 border border-[var(--crm-border)] shadow-sm space-y-8">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shadow-inner border border-blue-500/20"><Users size={20} /></div>
-                <h2 className="text-sm font-black text-white uppercase tracking-widest">Lead Types</h2>
+                <h2 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-widest">Lead Types</h2>
               </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">

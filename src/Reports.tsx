@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
-import { Loader2, Play, Search, Filter, Calendar, AudioWaveform, Clock, Sparkles, ShieldCheck, UserPlus, X, Send, Building2, Mail, User as UserIcon } from 'lucide-react';
+import { Loader2, Play, Search, Filter, Calendar, AudioWaveform, Clock, Sparkles, ShieldCheck, UserPlus, X, Send, Building2, Mail, User as UserIcon, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { v4 as uuidv4 } from 'uuid';
 import { logActivity } from './utils/activity';
+import SearchableSelect from './components/SearchableSelect';
 
 export default function Reports({ user }: { user: any }) {
   const { companyId, role } = useAuth();
@@ -20,6 +21,10 @@ export default function Reports({ user }: { user: any }) {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [isCreatingLead, setIsCreatingLead] = useState(false);
   const [quickLeadData, setQuickLeadData] = useState({ name: '', company: '', email: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [recToDelete, setRecToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -97,8 +102,8 @@ export default function Reports({ user }: { user: any }) {
         authorName: user.displayName || 'System',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        phase: 'DISCOVERY',
-        health: 'WARM',
+        phase: (import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY',
+        health: (import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM',
         isInterested: true,
         score: 50,
         source: 'MANUAL_SYNC'
@@ -125,6 +130,35 @@ export default function Reports({ user }: { user: any }) {
       alert("Failed to create lead.");
     } finally {
       setIsCreatingLead(false);
+    }
+  };
+
+  const initiateDelete = (recId: string) => {
+    setRecToDelete(recId);
+  };
+
+  const handleDeleteRecording = async () => {
+    if (!recToDelete) return;
+    
+    setIsDeleting(recToDelete);
+    setError('');
+    const idToNotify = recToDelete;
+    setRecToDelete(null);
+
+    try {
+      if (isDemoMode) {
+        setSuccess("Report deleted from the session matrix.");
+      } else {
+        const { deleteDoc, doc } = await import('firebase/firestore');
+        await deleteDoc(doc(db, 'recordings', idToNotify));
+        setSuccess("Intelligence report successfully purged.");
+      }
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to purge the intelligence report.");
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -179,16 +213,25 @@ export default function Reports({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <AudioWaveform size={14} className="animate-pulse" /> Archive Intelligence
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">Call Intelligence</h1>
-            <p className="text-slate-400 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Access all captured conversation data and AI-generated insights across your client portfolio.</p>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-tight">Call Intelligence</h1>
+            <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Access all captured conversation data and AI-generated insights across your client portfolio.</p>
           </motion.div>
         </header>
+
+        <AnimatePresence>
+          {(error || success) && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm border ${error ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+              {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+              {error || success}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Filters & Tools */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card !bg-slate-900/40 !border-white/10 p-3 sm:p-5 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 shadow-xl"
+          className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] p-3 sm:p-5 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 shadow-xl"
         >
           <div className="relative w-full max-w-2xl group shrink-0 lg:shrink">
             <div className="absolute inset-y-0 left-0 pl-4 sm:pl-5 flex items-center pointer-events-none z-10">
@@ -199,7 +242,7 @@ export default function Reports({ user }: { user: any }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search..."
-              className="w-full pl-11 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-4 bg-slate-900/50 hover:bg-slate-900 border border-white/10 rounded-2xl text-sm sm:text-base font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-500 text-white shadow-inner"
+              className="w-full pl-11 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-4 bg-slate-900/50 hover:bg-slate-900 border border-[var(--crm-border)] rounded-2xl text-sm sm:text-base font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-[var(--crm-text-muted)] text-[var(--crm-text)] shadow-inner"
             />
           </div>
           <div className="flex gap-4 w-full lg:w-auto">
@@ -231,7 +274,7 @@ export default function Reports({ user }: { user: any }) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, type: 'spring', stiffness: 200, damping: 25 }}
                   key={rec.id}
-                  className="glass-card !bg-slate-900/40 group flex flex-col lg:flex-row relative overflow-hidden h-full border border-white/10 hover:border-indigo-500/30 transition-all duration-500 shadow-xl"
+                  className="glass-card !bg-[var(--crm-card-bg)] group flex flex-col lg:flex-row relative overflow-hidden h-full border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-500 shadow-xl"
                 >
                   {/* Visual Accent */}
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-500 to-violet-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
@@ -250,7 +293,7 @@ export default function Reports({ user }: { user: any }) {
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 border-2 sm:border-4 border-slate-900 shadow-sm" />
                           </div>
                           <div className="min-w-0">
-                            <h3 className="font-black text-lg sm:text-xl lg:text-2xl text-white tracking-tight truncate">{rec.lead.name}</h3>
+                            <h3 className="font-black text-lg sm:text-xl lg:text-2xl text-[var(--crm-text)] tracking-tight truncate">{rec.lead.name}</h3>
                             <div className="text-[10px] sm:text-xs font-black text-indigo-400 mt-0.5 sm:mt-1 uppercase tracking-widest truncate flex items-center gap-1.5 sm:gap-2">
                               <Sparkles size={12} className="animate-pulse" /> {rec.lead.company}
                             </div>
@@ -265,17 +308,14 @@ export default function Reports({ user }: { user: any }) {
                               <div className="text-[10px] sm:text-xs font-bold text-slate-500 mt-0.5 sm:mt-1 uppercase tracking-widest">Isolated Discovery</div>
                             </div>
                             {syncingRecordId === rec.id ? (
-                              <select 
-                                onChange={(e) => handleLinkRecordToLead(rec.id, e.target.value)} 
-                                className="text-[10px] font-bold bg-slate-900 border border-white/10 text-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 shadow-xl w-full max-w-[220px] cursor-pointer hover:bg-black transition-all appearance-none" 
-                                defaultValue=""
-                              >
-                                <option value="" disabled>Link to Client...</option>
-                                <option value="ADD_NEW" className="text-indigo-400 font-black">✨ Add New Lead...</option>
-                                <optgroup label="Select Existing">
-                                  {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                </optgroup>
-                              </select>
+                              <SearchableSelect
+                                options={leads}
+                                value=""
+                                onChange={(val) => handleLinkRecordToLead(rec.id, val)}
+                                onAddNew={() => handleLinkRecordToLead(rec.id, 'ADD_NEW')}
+                                placeholder="Link to Client..."
+                                compact={true}
+                              />
                             ) : (
                               <button onClick={() => setSyncingRecordId(rec.id)} className="px-4 py-2 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 hover:text-white border border-indigo-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-1.5 w-fit active:scale-95">
                                 <UserPlus size={12} /> Sync Lead
@@ -310,6 +350,16 @@ export default function Reports({ user }: { user: any }) {
 
                   {/* Intelligence Manifest column */}
                   <div className="p-5 sm:p-6 lg:p-12 flex-1 flex flex-col relative bg-transparent z-10">
+                    {(role === 'admin' || role === 'super_admin' || role === 'management') && (
+                      <button 
+                        onClick={() => initiateDelete(rec.id)}
+                        disabled={isDeleting === rec.id}
+                        className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 bg-white/5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-white/10 hover:border-rose-500/30 rounded-xl transition-all shadow-sm active:scale-95 group/del z-[20]"
+                        title="Purge Intel"
+                      >
+                        {isDeleting === rec.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      </button>
+                    )}
                     <div className="absolute top-4 right-4 sm:top-8 sm:right-10 text-[5rem] sm:text-[8rem] lg:text-[10rem] text-white/5 font-serif leading-none italic pointer-events-none select-none">"</div>
                     {/* Blur backing for card depth */}
                     <div className="absolute top-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-indigo-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-all duration-700 pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
@@ -438,6 +488,46 @@ export default function Reports({ user }: { user: any }) {
                         Sync Intelligence
                       </>
                     )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+        {/* Confirmation Modal */}
+        <AnimatePresence>
+          {recToDelete && (
+            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setRecToDelete(null)}
+                className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10 text-center"
+              >
+                <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
+                  <Trash2 size={32} className="text-rose-500" />
+                </div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Confirm Purge</h3>
+                <p className="text-sm font-bold text-slate-400 leading-relaxed mb-8">
+                  Are you sure you want to permanently delete this intelligence report? This action will purge all conversation data from the secure matrix and cannot be reversed.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button 
+                    onClick={() => setRecToDelete(null)}
+                    className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                  >
+                    Abort Mission
+                  </button>
+                  <button 
+                    onClick={handleDeleteRecording}
+                    className="flex-1 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20 active:scale-95"
+                  >
+                    Confirm Deletion
                   </button>
                 </div>
               </motion.div>

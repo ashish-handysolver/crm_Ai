@@ -32,10 +32,10 @@ export default function LeadForm({ user }: { user: any }) {
     location: '',
     phone: '',
     source: 'DIRECT',
-    leadType: String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim(),
-    health: String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim(),
+    leadType: String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim().toUpperCase(),
+    health: String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim().toUpperCase(),
     score: 50,
-    phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim(),
+    phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim().toUpperCase(),
     avatar: '',
     assignedTo: user?.uid || '',
     createdAtStr: new Date().toISOString().split('T')[0]
@@ -203,20 +203,20 @@ export default function LeadForm({ user }: { user: any }) {
     return (
       <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12 space-y-8 animate-pulse">
-          <div className="w-32 h-6 bg-white/10 rounded"></div>
+          <div className="w-32 h-6 bg-[var(--crm-border)] rounded"></div>
           <div className="space-y-4">
-            <div className="w-48 h-6 bg-white/10 rounded-full"></div>
-            <div className="w-64 sm:w-96 h-10 sm:h-12 bg-white/10 rounded-xl"></div>
-            <div className="w-full max-w-2xl h-4 bg-white/10 rounded"></div>
+            <div className="w-48 h-6 bg-[var(--crm-border)] rounded-full"></div>
+            <div className="w-64 sm:w-96 h-10 sm:h-12 bg-[var(--crm-border)] rounded-xl"></div>
+            <div className="w-full max-w-2xl h-4 bg-[var(--crm-border)] rounded"></div>
           </div>
-          <div className="h-[800px] bg-white/5 rounded-[2.5rem] border border-white/10"></div>
+          <div className="h-[800px] bg-[var(--crm-card-bg)] rounded-[2.5rem] border border-[var(--crm-border)]"></div>
         </div>
       </div>
     );
   }
 
-  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-white/10 bg-black/20 focus:bg-black/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-white shadow-inner placeholder:text-slate-500 placeholder:font-medium";
-  const labelClasses = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5 block px-1";
+  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 focus:bg-[var(--crm-bg)]/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-[var(--crm-text)] shadow-inner placeholder:text-[var(--crm-text-muted)] placeholder:font-medium";
+  const labelClasses = "text-[11px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2.5 block px-1";
 
   return (
     <>
@@ -224,8 +224,8 @@ export default function LeadForm({ user }: { user: any }) {
         <div className="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12 space-y-8">
 
           {/* Back Link */}
-          <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-400 transition-all group w-fit">
-            <div className="p-2 bg-white/5 border border-white/10 rounded-xl group-hover:border-indigo-500/30 group-hover:bg-indigo-500/20 shadow-sm transition-all text-white">
+          <Link to="/clients" className="inline-flex items-center gap-2 text-sm font-bold text-[var(--crm-text-muted)] hover:text-indigo-400 transition-all group w-fit">
+            <div className="p-2 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl group-hover:border-indigo-500/30 group-hover:bg-indigo-500/20 shadow-sm transition-all text-[var(--crm-text)]">
               <ChevronLeft size={16} />
             </div>
             Return to Leads
@@ -236,10 +236,10 @@ export default function LeadForm({ user }: { user: any }) {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <Sparkles size={14} className="animate-pulse" /> Client Profile
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-tight">
               {isEditing ? 'Edit Existing Lead' : 'Add New Lead'}
             </h1>
-            <p className="text-slate-400 font-medium max-w-2xl">
+            <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl">
               {isEditing ? 'Modify the information for this lead to maintain an accurate business pipeline.' : 'Enter the details for your new lead to begin tracking their progress through the sales funnel.'}
             </p>
           </motion.header>
@@ -253,19 +253,19 @@ export default function LeadForm({ user }: { user: any }) {
             </motion.div>
           )}
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !bg-slate-900/40 !border-white/10 !rounded-[2.5rem] overflow-hidden relative shadow-2xl">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
             <form onSubmit={handleSubmit} className="p-8 sm:p-12 space-y-12 relative z-10">
 
               {/* Avatar Section */}
-              <div className="flex flex-col items-center pb-12 border-b border-white/10">
+              <div className="flex flex-col items-center pb-12 border-b border-[var(--crm-border)]">
                 <div className="relative group cursor-pointer mb-5">
                   <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                  <div className="w-32 h-32 rounded-[2.5rem] border-2 border-dashed border-white/20 flex items-center justify-center bg-black/20 overflow-hidden group-hover:border-indigo-500 group-hover:bg-indigo-500/10 transition-all duration-300 relative shadow-inner">
+                  <div className="w-32 h-32 rounded-[2.5rem] border-2 border-dashed border-[var(--crm-border)] flex items-center justify-center bg-[var(--crm-bg)]/20 overflow-hidden group-hover:border-indigo-500 group-hover:bg-indigo-500/10 transition-all duration-300 relative shadow-inner">
                     {formData.avatar ? (
                       <img src={formData.avatar} alt="Avatar profile" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-indigo-300 transition-colors">
+                      <div className="flex flex-col items-center gap-2 text-[var(--crm-text-muted)] group-hover:text-indigo-300 transition-colors">
                         <User size={40} />
                         <span className="text-[10px] font-black uppercase tracking-tighter">Add Photo</span>
                       </div>
@@ -275,7 +275,7 @@ export default function LeadForm({ user }: { user: any }) {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Identity</h3>
+                <h3 className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">Profile Identity</h3>
               </div>
 
               <div className="space-y-14">
@@ -286,7 +286,7 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
                       <User size={18} />
                     </div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Core Information</h3>
+                    <h3 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-[0.1em]">Core Information</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -320,7 +320,7 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
                       <Building2 size={18} />
                     </div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Company Details</h3>
+                    <h3 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-[0.1em]">Company Details</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -348,7 +348,7 @@ export default function LeadForm({ user }: { user: any }) {
                       <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
                         <UserCircle size={18} />
                       </div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Owner & Assignment</h3>
+                      <h3 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-[0.1em]">Owner & Assignment</h3>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -359,7 +359,7 @@ export default function LeadForm({ user }: { user: any }) {
                           value={formData.assignedTo || ''} 
                           onChange={handleChange} 
                           disabled={role === 'team_member'}
-                          className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}
+                          className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}
                         >
                           <option value="">— Unassigned —</option>
                           {teamMembers.map(m => (
@@ -377,7 +377,7 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
                       <Zap size={18} />
                     </div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Pipeline & Classification</h3>
+                    <h3 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-[0.1em]">Pipeline & Classification</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -395,29 +395,31 @@ export default function LeadForm({ user }: { user: any }) {
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Lead Type</label>
-                      <select name="leadType" value={formData.leadType || String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim()} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
-                        {String((import.meta as any).env.VITE_LEAD_TYPES || 'B2B,B2C,ENTERPRISE').split(',').map(t => {
-                          const val = t.trim();
-                          return <option key={val} value={val}>{val}</option>;
-                        })}
-                        {customLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                      <select name="leadType" value={formData.leadType} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
+                        {Array.from(new Set([
+                          ...String((import.meta as any).env.VITE_LEAD_TYPES || 'B2B,B2C,ENTERPRISE').split(',').map(t => t.trim().toUpperCase()),
+                          ...customLeadTypes.map(t => t.toUpperCase())
+                        ])).map(val => (
+                          <option key={val} value={val}>{val}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Pipeline Phase</label>
-                      <select name="phase" value={formData.phase} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
-                        {String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => {
-                          const val = p.trim();
-                          return <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>;
-                        })}
-                        {customPhases.map(p => <option key={p} value={p}>{p}</option>)}
+                      <select name="phase" value={formData.phase} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
+                        {Array.from(new Set([
+                          ...String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => p.trim().toUpperCase()),
+                          ...customPhases.map(p => p.toUpperCase())
+                        ])).map(val => (
+                          <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Health Status</label>
-                      <select name="health" value={formData.health} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                      <select name="health" value={formData.health} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
                         {String((import.meta as any).env.VITE_HEALTH_STATUSES || 'HOT,WARM,COLD').split(',').map(h => {
-                          const val = h.trim();
+                          const val = h.trim().toUpperCase();
                           return <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>;
                         })}
                       </select>
@@ -428,7 +430,7 @@ export default function LeadForm({ user }: { user: any }) {
                         <span className="text-indigo-400 font-black">{formData.score}% Match</span>
                       </label>
                       <div className="pt-2">
-                        <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-black/40 border border-white/10 rounded-full appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all shadow-inner" />
+                        <input type="range" name="score" min="0" max="100" value={formData.score} onChange={handleChange} className="w-full h-2 bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-full appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all shadow-inner" />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -448,7 +450,7 @@ export default function LeadForm({ user }: { user: any }) {
                       <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-500/30">
                         <Globe size={18} />
                       </div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-[0.1em]">Extended Fields</h3>
+                      <h3 className="text-sm font-black text-[var(--crm-text)] uppercase tracking-[0.1em]">Extended Fields</h3>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -456,7 +458,7 @@ export default function LeadForm({ user }: { user: any }) {
                         <div key={field.id} className="space-y-2">
                           <label className={labelClasses}>{field.name}</label>
                           {field.type === 'DROPDOWN' ? (
-                            <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-slate-900`}>
+                            <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
                               <option value="">Select Option</option>
                               {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
@@ -473,8 +475,8 @@ export default function LeadForm({ user }: { user: any }) {
               </div>
 
               {/* Footer */}
-              <div className="mt-16 pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-end gap-4 relative z-10">
-                <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-slate-300 hover:text-white bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-2 active:scale-95">
+              <div className="mt-16 pt-10 border-t border-[var(--crm-border)] flex flex-col sm:flex-row justify-end gap-4 relative z-10">
+                <Link to="/clients" className="px-8 py-4 rounded-2xl font-black text-[var(--crm-text-muted)] hover:text-white bg-[var(--crm-bg)]/5 border border-[var(--crm-border)] hover:bg-white/10 transition-all flex items-center justify-center gap-2 active:scale-95">
                   Cancel
                 </Link>
                 <button type="submit" disabled={saving} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 min-w-[180px] shadow-xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50">

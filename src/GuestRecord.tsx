@@ -371,7 +371,7 @@ export default function GuestRecord() {
 
   /* ─── Loading ─── */
   if (loading) return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-[#0A0D14]">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--crm-bg)]">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
         <Loader2 className="text-indigo-500" size={40} />
       </motion.div>
@@ -380,14 +380,14 @@ export default function GuestRecord() {
 
   /* ─── Invalid link ─── */
   if (error && !meeting) return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-[#0A0D14] p-6">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--crm-bg)] p-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white/5 border border-white/10 rounded-[2.5rem] p-12 text-center max-w-sm w-full backdrop-blur-xl">
+        className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] p-12 text-center max-w-sm w-full backdrop-blur-xl">
         <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <AlertCircle className="text-red-400" size={32} />
         </div>
-        <h1 className="text-2xl font-black text-white mb-3 tracking-tight">Invalid Link</h1>
-        <p className="text-white/40 font-medium leading-relaxed">{error}</p>
+        <h1 className="text-2xl font-black text-[var(--crm-text)] mb-3 tracking-tight">Invalid Link</h1>
+        <p className="text-[var(--crm-text-muted)] font-medium leading-relaxed">{error}</p>
       </motion.div>
     </div>
   );
@@ -396,7 +396,7 @@ export default function GuestRecord() {
 
   /* ─── Main ─── */
   return (
-    <div className="min-h-[100dvh] bg-[#0A0D14] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-[var(--crm-bg)] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
 
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -414,7 +414,7 @@ export default function GuestRecord() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 sm:p-12 text-center backdrop-blur-xl"
+              className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] p-10 sm:p-12 text-center backdrop-blur-xl"
             >
               <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -427,11 +427,11 @@ export default function GuestRecord() {
                 </div>
               </motion.div>
 
-              <h1 className="text-3xl font-black text-white tracking-tight mb-3">Delivered! 🎉</h1>
-              <p className="text-white/40 leading-relaxed mb-10 font-medium">{success}</p>
+              <h1 className="text-3xl font-black text-[var(--crm-text)] tracking-tight mb-3">Delivered! 🎉</h1>
+              <p className="text-[var(--crm-text-muted)] leading-relaxed mb-10 font-medium">{success}</p>
 
               <button onClick={resetAll}
-                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white font-bold text-sm transition-all active:scale-95">
+                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-2xl bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-bold text-sm transition-all active:scale-95">
                 <RotateCcw size={15} /> Record Another
               </button>
             </motion.div>
@@ -445,7 +445,7 @@ export default function GuestRecord() {
               className="flex flex-col items-center"
             >
               {/* Header card */}
-              <motion.div className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center shadow-xl">
+              <motion.div className="w-full bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] p-8 sm:p-10 mb-5 backdrop-blur-xl text-center shadow-xl">
 
                 {/* Brand pill */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/15 border border-indigo-500/20 mb-7">
@@ -453,13 +453,13 @@ export default function GuestRecord() {
                   <span className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em]">AudioCRM · Secure Recording</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3 leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-[var(--crm-text)] tracking-tight mb-3 leading-tight">
                   {meeting.title || 'Guest Recording'}
                 </h1>
-                <p className="text-white/35 text-sm font-medium leading-relaxed max-w-xs mx-auto">
+                <p className="text-[var(--crm-text-muted)] text-sm font-medium leading-relaxed max-w-xs mx-auto">
                   Your response will be securely transcribed and attached to the client file.
                 </p>
-                <div className="mt-4 mb-2 flex items-center justify-center gap-2 text-xs text-slate-300">
+                <div className="mt-4 mb-2 flex items-center justify-center gap-2 text-xs text-[var(--crm-text-muted)]">
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -476,7 +476,7 @@ export default function GuestRecord() {
               </motion.div>
 
               {/* Recording card */}
-              <div className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 sm:p-10 backdrop-blur-xl flex flex-col items-center shadow-xl">
+              <div className="w-full bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] p-8 sm:p-10 backdrop-blur-xl flex flex-col items-center shadow-xl">
 
                 {/* Timer */}
                 <AnimatePresence>
@@ -485,7 +485,7 @@ export default function GuestRecord() {
                       initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                       className="mb-8 flex flex-col items-center gap-3"
                     >
-                      <span className={`font-mono text-5xl font-black tracking-tighter tabular-nums ${isPaused ? 'text-amber-400' : 'text-white'}`}>
+                      <span className={`font-mono text-5xl font-black tracking-tighter tabular-nums ${isPaused ? 'text-amber-400' : 'text-[var(--crm-text)]'}`}>
                         {formatTime(recordingSeconds)}
                       </span>
                       {isPaused
@@ -536,7 +536,7 @@ export default function GuestRecord() {
                 {/* Idle label */}
                 {!isRecording && !audioBlob && (
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="text-white/25 text-xs font-bold uppercase tracking-[0.2em] mb-2">
+                    className="text-[var(--crm-text-muted)] text-xs font-bold uppercase tracking-[0.2em] mb-2">
                     Tap to begin
                   </motion.p>
                 )}
@@ -573,7 +573,7 @@ export default function GuestRecord() {
                       {/* Duration badge */}
                       <div className="flex items-center justify-center gap-2 mb-1">
                         <Clock size={13} className="text-indigo-400" />
-                        <span className="text-xs font-black text-white/50 uppercase tracking-widest">
+                        <span className="text-xs font-black text-[var(--crm-text-muted)] uppercase tracking-widest">
                           Duration: {formatTime(recordingSeconds)}
                         </span>
                       </div>
@@ -598,7 +598,7 @@ export default function GuestRecord() {
                       </motion.button>
 
                       <button onClick={resetAll}
-                        className="flex items-center justify-center gap-2 text-white/25 hover:text-white/60 font-bold text-sm transition-colors py-1">
+                        className="flex items-center justify-center gap-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-bold text-sm transition-colors py-1">
                         <RotateCcw size={14} /> Retake
                       </button>
                     </motion.div>
@@ -618,7 +618,7 @@ export default function GuestRecord() {
               </div>
 
               {/* Footer note */}
-              <p className="mt-6 text-white/15 text-[11px] font-medium text-center">
+              <p className="mt-6 text-[var(--crm-text-muted)] text-[11px] font-medium text-center">
                 Powered by AudioCRM · End-to-end encrypted
               </p>
             </motion.div>
@@ -638,7 +638,7 @@ export default function GuestRecord() {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 60, opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-              className="bg-slate-900 border border-white/10 rounded-[2rem] p-8 sm:p-10 w-full max-w-sm text-center shadow-2xl"
+              className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2rem] p-8 sm:p-10 w-full max-w-sm text-center shadow-2xl"
             >
               <motion.div
                 animate={{ rotate: [0, -8, 8, -8, 0] }}
@@ -648,9 +648,9 @@ export default function GuestRecord() {
                 <ShieldAlert className="text-amber-400" size={30} />
               </motion.div>
 
-              <h2 className="text-xl font-black text-white mb-2 tracking-tight">Safety Check-In</h2>
-              <p className="text-white/40 text-sm leading-relaxed mb-2">
-                You've been recording for <span className="text-white font-bold">{Math.floor(recordingSeconds / 60)} minutes</span>.
+              <h2 className="text-xl font-black text-[var(--crm-text)] mb-2 tracking-tight">Safety Check-In</h2>
+              <p className="text-[var(--crm-text-muted)] text-sm leading-relaxed mb-2">
+                You've been recording for <span className="text-[var(--crm-text)] font-bold">{Math.floor(recordingSeconds / 60)} minutes</span>.
               </p>
               <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-8">
                 Auto-submitting in {autoSubmitCountdown}s...
@@ -659,7 +659,7 @@ export default function GuestRecord() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSafetyAlert(false)}
-                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all active:scale-95"
+                  className="flex-1 py-3.5 rounded-2xl font-black text-sm bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] text-[var(--crm-text)] transition-all active:scale-95"
                 >
                   Keep Going
                 </button>

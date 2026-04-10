@@ -24,11 +24,39 @@
   --crm-card-border: rgba(255, 255, 255, 0.06);
   --crm-card-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.15);
   --crm-sidebar-bg: rgba(3, 0, 20, 0.95);
+  --crm-text: #f1f5f9;
+  --crm-text-muted: #94a3b8;
+  --crm-border: rgba(255, 255, 255, 0.05);
+  --crm-glass-bg: rgba(15, 23, 42, 0.8);
+}
+
+[data-theme='light'] {
+  --crm-bg: #f8fafc;
+  --crm-card-bg: rgba(255, 255, 255, 0.7);
+  --crm-card-border: rgba(99, 102, 241, 0.1);
+  --crm-card-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.08);
+  --crm-sidebar-bg: #ffffff;
+  --crm-text: #0f172a;
+  --crm-text-muted: #64748b;
+  --crm-border: rgba(0, 0, 0, 0.05);
+  --crm-glass-bg: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme='dark'] {
+  --crm-bg: #030014;
+  --crm-card-bg: rgba(15, 23, 42, 0.55);
+  --crm-card-border: rgba(255, 255, 255, 0.06);
+  --crm-card-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.15);
+  --crm-sidebar-bg: rgba(3, 0, 20, 0.95);
+  --crm-text: #f1f5f9;
+  --crm-text-muted: #94a3b8;
+  --crm-border: rgba(255, 255, 255, 0.05);
+  --crm-glass-bg: rgba(15, 23, 42, 0.8);
 }
 
 @layer base {
   body {
-    @apply bg-[var(--crm-bg)] text-slate-100 antialiased;
+    @apply bg-[var(--crm-bg)] text-[var(--crm-text)] antialiased;
     overflow-x: hidden;
   }
 
@@ -139,7 +167,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f0f1a;
+  background: var(--crm-bg);
 }
 
 ::-webkit-scrollbar-thumb {

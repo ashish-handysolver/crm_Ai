@@ -136,14 +136,14 @@ export default function RegisterCompany() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] bg-[#030014] font-sans selection:bg-indigo-500 selection:text-white overflow-hidden relative" style={{ width: '100%' }}>
+    <div className="flex min-h-[100dvh] bg-[var(--crm-bg)] font-sans selection:bg-indigo-500 selection:text-white overflow-hidden relative" style={{ width: '100%' }}>
       {/* Neural Background for the whole page */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#4f46e510_0%,transparent_50%)]"></div>
       </div>
 
       {/* Left Area - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-black/40 backdrop-blur-2xl border-r border-white/5 z-10 relative overflow-hidden shadow-2xl">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:flex-none lg:w-[45%] xl:w-[40%] bg-[var(--crm-card-bg)] backdrop-blur-2xl border-r border-[var(--crm-border)] z-10 relative overflow-hidden shadow-2xl">
 
         {/* Decorative background blurs inside form area */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
@@ -154,12 +154,12 @@ export default function RegisterCompany() {
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: "easeOut" }} className="mx-auto w-full max-w-md relative z-10 py-12">
 
           <Link to="/" className="flex items-center gap-4 group/logo mb-12">
-            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center shadow-2xl shadow-black/40 border border-white/10 p-3 transition-all duration-700 group-hover/logo:rotate-[15deg] group-hover/logo:scale-110 overflow-hidden relative">
+            <div className="w-14 h-14 bg-[var(--crm-bg)]/20 rounded-2xl flex items-center justify-center shadow-2xl shadow-black/40 border border-[var(--crm-border)] p-3 transition-all duration-700 group-hover/logo:rotate-[15deg] group-hover/logo:scale-110 overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover/logo:opacity-100 transition-opacity"></div>
               <img src="/logo.png" className="w-full h-full object-contain relative z-10" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-3xl font-black tracking-tightest text-white leading-none mb-1 lowercase">handycrm.ai</span>
+              <span className="text-3xl font-black tracking-tightest text-[var(--crm-text)] leading-none mb-1 lowercase">handycrm.ai</span>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] leading-none">Registration Node</span>
                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -167,7 +167,7 @@ export default function RegisterCompany() {
             </div>
           </Link>
 
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white mb-4 leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-[var(--crm-text)] mb-4 leading-tight">
             Create account
           </h1>
 
@@ -183,7 +183,7 @@ export default function RegisterCompany() {
                   className="space-y-6"
                 >
                   <div className="space-y-2">
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Organization Name</label>
+                    <label className="block text-xs font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Organization Name</label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                         <Building2 size={18} />
@@ -194,14 +194,14 @@ export default function RegisterCompany() {
                         value={companyName}
                         onChange={e => setCompanyName(e.target.value)}
                         placeholder="e.g. Global Tech Solutions"
-                        className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-white placeholder:text-slate-600 shadow-inner"
+                        className="w-full pl-14 pr-6 py-5 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl focus:bg-[var(--crm-bg)]/40 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] shadow-inner"
                       />
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => companyName.trim() ? setStep(2) : setError("Please enter an organization name.")}
-                    className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl py-5 font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
+                    className="w-full bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 text-[var(--crm-text)] border border-[var(--crm-border)] rounded-2xl py-5 font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
                   >
                     <span>Proceed</span>
                     <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform text-indigo-400" />
@@ -217,30 +217,30 @@ export default function RegisterCompany() {
                 >
                   <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-2">
-                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">User Name</label>
+                      <label className="block text-xs font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">User Name</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                           <UserIcon size={18} />
                         </div>
-                        <input required type="text" value={userName} onChange={e => setUserName(e.target.value)} placeholder="Full Name" className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-white placeholder:text-slate-600 shadow-inner" />
+                        <input required type="text" value={userName} onChange={e => setUserName(e.target.value)} placeholder="Full Name" className="w-full pl-14 pr-6 py-5 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl focus:bg-[var(--crm-bg)]/40 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] shadow-inner" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                      <label className="block text-xs font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Email Address</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                           <Mail size={18} />
                         </div>
-                        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@domain.com" className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-white placeholder:text-slate-600 shadow-inner" />
+                        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@domain.com" className="w-full pl-14 pr-6 py-5 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl focus:bg-[var(--crm-bg)]/40 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] shadow-inner" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Password</label>
+                      <label className="block text-xs font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Password</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-5 flex items-center text-slate-500 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                           <Lock size={18} />
                         </div>
-                        <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 6 characters" minLength={6} className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-2xl focus:bg-white/[0.07] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-white placeholder:text-slate-600 shadow-inner" />
+                        <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 6 characters" minLength={6} className="w-full pl-14 pr-6 py-5 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl focus:bg-[var(--crm-bg)]/40 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] shadow-inner" />
                       </div>
                     </div>
                   </div>
@@ -249,7 +249,7 @@ export default function RegisterCompany() {
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 rounded-2xl py-5 font-black text-sm uppercase tracking-widest transition-all active:scale-95"
+                      className="flex-1 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] border border-[var(--crm-border)] rounded-2xl py-5 font-black text-sm uppercase tracking-widest transition-all active:scale-95"
                     >
                       Back
                     </button>
@@ -268,17 +268,17 @@ export default function RegisterCompany() {
             </AnimatePresence>
           </form>
 
-          <div className="mt-14 pt-10 border-t border-white/5 flex flex-col items-center gap-6">
-            <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">
+          <div className="mt-14 pt-10 border-t border-[var(--crm-border)] flex flex-col items-center gap-6">
+            <p className="text-xs font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">
               Already Registered?
             </p>
             <button
               onClick={handleGoToLogin}
-              className="group flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-95"
+              className="group flex items-center gap-3 px-8 py-4 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-95"
             >
-              <Lock size={18} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
-              <span className="text-sm font-black text-white uppercase tracking-widest">Sign in</span>
-              <ArrowRight size={16} className="text-slate-500 group-hover:translate-x-1 transition-transform" />
+              <Lock size={18} className="text-[var(--crm-text-muted)] group-hover:text-indigo-400 transition-colors" />
+              <span className="text-sm font-black text-[var(--crm-text)] uppercase tracking-widest">Sign in</span>
+              <ArrowRight size={16} className="text-[var(--crm-text-muted)] group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
@@ -292,18 +292,18 @@ export default function RegisterCompany() {
 
         <div className="mt-auto py-10 flex flex-col items-center gap-4 relative z-10">
           <div className="flex items-center gap-6 opacity-40">
-            <div className="h-px w-8 bg-gradient-to-r from-transparent to-white"></div>
-            <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] whitespace-nowrap">
+            <div className="h-px w-8 bg-gradient-to-r from-transparent to-[var(--crm-text)]"></div>
+            <p className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.3em] whitespace-nowrap">
               Secure Onboarding Protocol v1.9
             </p>
-            <div className="h-px w-8 bg-gradient-to-l from-transparent to-white"></div>
+            <div className="h-px w-8 bg-gradient-to-l from-transparent to-[var(--crm-text)]"></div>
           </div>
-          <p className="text-white text-[10px]   tracking-[0.2em]">HandyCRM.AI Powered By Handysolver.com</p>
+          <p className="text-[var(--crm-text)] text-[10px]   tracking-[0.2em]">HandyCRM.AI Powered By Handysolver.com</p>
         </div>
       </div>
 
       {/* Right Area - Visual Display */}
-      <div className="hidden lg:flex flex-1 relative bg-[#030014] overflow-hidden items-center justify-center border-l border-white/5">
+      <div className="hidden lg:flex flex-1 relative bg-[var(--crm-bg)] overflow-hidden items-center justify-center border-l border-[var(--crm-border)]">
 
         {/* Animated Grid / Pattern */}
         <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
@@ -364,7 +364,7 @@ export default function RegisterCompany() {
             <span className="text-indigo-200 text-[10px] font-black tracking-[0.3em] uppercase">Multi-Tenant Intelligence</span>
           </motion.div>
 
-          <h2 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tightest">
+          <h2 className="text-5xl lg:text-6xl font-black text-[var(--crm-text)] leading-[1.1] mb-5 tracking-tightest">
             Streamline.<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 animate-gradient-x">
               Manage. Connect.
@@ -375,11 +375,11 @@ export default function RegisterCompany() {
           </p>
 
           {/* Floating UI Mockup element */}
-          <div className="glass-card !bg-black/30 !border-white/10 !rounded-[2rem] p-10 shadow-3xl relative overflow-hidden flex items-end gap-3 h-56 group/graph pt-16 mt-8">
+          <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[2rem] p-10 shadow-3xl relative overflow-hidden flex items-end gap-3 h-56 group/graph pt-16 mt-8">
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"></div>
             <div className="absolute top-4 left-6 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Network Visualization active</span>
+              <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Network Visualization active</span>
             </div>
 
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-20 group-hover/graph:opacity-40 transition-opacity"></div>

@@ -118,7 +118,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
           <div className="w-20 h-20 bg-rose-500/20 text-rose-400 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-rose-500/10 border border-rose-500/30">
             <Lock size={32} />
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Access Restricted</h2>
+          <h2 className="text-2xl font-black text-[var(--crm-text)] tracking-tight">Access Restricted</h2>
           <p className="text-slate-400 mt-4 leading-relaxed font-medium">Authentication context for your organization is missing or invalid. Contact your system administrator.</p>
         </motion.div>
       </div>
@@ -135,7 +135,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <Users size={14} className="animate-pulse" /> Team Settings
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-none">Team Members</h1>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">Team Members</h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3">
@@ -182,12 +182,12 @@ export default function Team({ user, companyId }: { user: any, companyId: string
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="glass-card !bg-slate-900/40 !border-white/10 !rounded-[2.5rem] overflow-hidden relative"
+              className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[2.5rem] overflow-hidden relative"
             >
               <div className="p-6 sm:p-12 space-y-10">
                 <div className="flex items-center gap-4 pb-6 border-b border-white/10">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner border border-indigo-500/30"><Key size={22} /></div>
-                  <h2 className="text-2xl font-black text-white tracking-tight">{editingUserId ? 'Edit Member' : 'Add New User'}</h2>
+                  <h2 className="text-2xl font-black text-[var(--crm-text)] tracking-tight">{editingUserId ? 'Edit Member' : 'Add New User'}</h2>
                 </div>
 
                 <form onSubmit={handleSaveUser} className="space-y-10">
@@ -297,7 +297,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <div className="glass-card !bg-transparent !p-0 !rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
+              <div className="glass-card !bg-transparent !p-0 !rounded-[2.5rem] overflow-hidden border border-[var(--crm-border)] shadow-2xl">
                 <div className="p-6 sm:px-10 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/5">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] flex items-center gap-3">
                     <Briefcase size={16} /> Team Members
@@ -359,7 +359,7 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                                   {member.active !== false && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-4 border-white shadow-sm" />}
                                 </div>
                                 <div className="min-w-0">
-                                  <div className="font-extrabold text-white group-hover:text-indigo-400 transition-colors truncate">{member.displayName}</div>
+                                  <div className="font-extrabold text-[var(--crm-text)] group-hover:text-indigo-400 transition-colors truncate">{member.displayName}</div>
                                   <div className="text-xs font-semibold text-slate-400 truncate">{member.email}</div>
                                 </div>
                               </div>
