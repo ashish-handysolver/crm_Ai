@@ -4,7 +4,7 @@ import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, L
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
 import {
   collection,
   doc,
@@ -473,12 +473,8 @@ const RecordingView = () => {
     if (!recording || !recording.audioUrl || isSyncing || !id) return;
     setIsSyncing(true);
     try {
-      const apiKey = [
-        (process.env as any).GEMINI_API_KEY,
-        (import.meta as any).env.VITE_GEMINI_API_KEY,
-        (import.meta as any).env.GEMINI_API_KEY
-      ].find(k => k && k !== 'undefined' && k !== 'null') || '';
-      if (!apiKey) throw new Error("Gemini API Key is missing (VITE_GEMINI_API_KEY).");
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error("Gemini API Key is missing. Set VITE_GEMINI_API_KEY in Vercel environment variables.");
       let audioBlob: Blob | null = null;
       try {
         const storagePath = getStoragePathFromUrl(recording.audioUrl);
@@ -1006,15 +1002,11 @@ const GlobalRecorder = () => {
       const audioUrl = await getDownloadURL(storageRef);
 
       setStatusText('Transcribing & Analyzing...');
-      const apiKey = [
-        (process.env as any).GEMINI_API_KEY,
-        (import.meta as any).env.VITE_GEMINI_API_KEY,
-        (import.meta as any).env.GEMINI_API_KEY
-      ].find(k => k && k !== 'undefined' && k !== 'null') || '';
+      const apiKey = getGeminiApiKey();
       
       if (!apiKey) {
         console.error("CRITICAL_ERROR: Gemini API Key is missing. Transcription aborted.");
-        alert("Transcription Failed: Gemini API Key is not configured. Please check your environment variables.");
+        alert("Transcription Failed: VITE_GEMINI_API_KEY is not set in Vercel environment variables.");
         setIsProcessing(false);
         setStatusText('');
         return;
