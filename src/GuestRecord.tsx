@@ -159,41 +159,31 @@ export default function GuestRecord() {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
         if (apiKey) {
           const fileUri = await uploadFileToGemini(blob, apiKey);
-          const ai = new GoogleGenAI({ apiKey });
-
-          const validModels = [
-            'gemini-2.5-flash',
-            'gemini-2.0-flash',
-            'gemini-2.0-flash-lite',
-            'gemini-2.0-pro-exp'
-          ];
+          const genAI = new GoogleGenAI(apiKey);
+          const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
 
           let success = false;
           for (const modelName of validModels) {
             try {
               console.log(`Attempting transcription with model: ${modelName}`);
 
-              const prompt = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
-
-              const response = await ai.models.generateContent({
+              const model = genAI.getGenerativeModel({ 
                 model: modelName,
-                config: {
-                  // CRITICAL for 25-minute audio:
+                generationConfig: {
                   maxOutputTokens: 250000,
-                  responseMimeType: "application/json",
-                },
-                contents: [
-                  {
-                    role: 'user',
-                    parts: [
-                      { text: prompt },
-                      { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
-                    ]
-                  }
-                ]
+                  responseMimeType: "application/json"
+                }
               });
 
-              const rawText = response.text || "{}";
+              const prompt = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
+
+              const result = await model.generateContent([
+                { text: prompt },
+                { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
+              ]);
+
+              const response = await result.response;
+              const rawText = response.text() || "{}";
               const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
               try {
                 const parsed = JSON.parse(jsonStr);
@@ -213,7 +203,7 @@ export default function GuestRecord() {
               } else if (status === 404) {
                 continue;
               }
-              throw err;
+              console.warn(`Model ${modelName} failed, trying next…`, err);
             }
           }
           if (!success) throw new Error("All Gemini models exhausted or unavailable.");

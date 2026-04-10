@@ -115,7 +115,7 @@ export default function LeadInsights({ user }: { user: any }) {
         const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
         if (!apiKey) return;
 
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI(apiKey);
         const prompt = `
           Analyze this sales call transcript and extract actionable intelligence. 
           Respond ONLY in strict JSON format. 
@@ -143,39 +143,33 @@ export default function LeadInsights({ user }: { user: any }) {
           }
         `;
 
-        const validModels = [
-          'gemini-2.5-flash',
-          'gemini-2.0-flash',
-          'gemini-2.0-flash-lite',
-          'gemini-2.0-pro-exp'
-        ];
-
+        const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
         let success = false;
         let parsed = null;
 
         for (const modelName of validModels) {
           try {
             console.log(`Attempting intelligence generation with model: ${modelName}`);
-            const response = await ai.models.generateContent({
+            const model = ai.getGenerativeModel({ 
               model: modelName,
-              config: { responseMimeType: "application/json" },
-              contents: [{ role: 'user', parts: [{ text: prompt }] }]
+              generationConfig: {
+                maxOutputTokens: 8192,
+                responseMimeType: "application/json"
+              }
             });
 
-            const rawText = response.text || "{}";
+            const result = await model.generateContent([{ text: prompt }]);
+            const response = await result.response;
+            const rawText = response.text() || "{}";
             const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
             parsed = JSON.parse(jsonStr);
             success = true;
             break;
           } catch (err: any) {
-            const status = err?.status || err?.code;
-            if (status === 429) {
+            console.warn(`Model ${modelName} failed:`, err);
+            if (err?.status === 429) {
               await new Promise(resolve => setTimeout(resolve, 3000));
-              continue;
-            } else if (status === 404) {
-              continue;
             }
-            throw err;
           }
         }
 
@@ -245,22 +239,21 @@ export default function LeadInsights({ user }: { user: any }) {
       const blob = new Blob([buffer], { type: 'audio/webm' });
 
       const fileUri = await uploadFileToGemini(blob, apiKey);
-      const ai = new GoogleGenAI({ apiKey });
-
-      const genResult = await ai.models.generateContent({
+      const genAI = new GoogleGenAI(apiKey);
+      const model = genAI.getGenerativeModel({ 
         model: "gemini-2.0-flash",
-        config: {
+        generationConfig: {
           responseMimeType: "application/json",
-        },
-        contents: [{
-          role: 'user', parts: [
-            { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
-            { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
-          ]
-        }]
+        }
       });
 
-      const rawContent = genResult.text || "{}";
+      const result = await model.generateContent([
+        { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
+        { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
+      ]);
+
+      const response = await result.response;
+      const rawContent = response.text() || "{}";
       const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(jsonStr);
 

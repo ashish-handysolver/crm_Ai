@@ -188,7 +188,7 @@ export default function Dashboard({ user }: { user: any }) {
                   <motion.div
                     key={i}
                     variants={itemVariants}
-                    onClick={() => kpi.link && navigate(kpi.link, { state: kpi.filter })}
+                    onClick={() => kpi.link && navigate(kpi.link, { state: (kpi as any).filter })}
                     className={`glass-card p-4 sm:p-8 group hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between min-h-[140px] sm:min-h-0 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] ${kpi.link ? 'cursor-pointer' : ''}`}
                   >
                     <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-indigo-500 rounded-full -translate-y-1/2 translate-x-1/2" style={{ opacity: 'var(--crm-glow-opacity)' }} />

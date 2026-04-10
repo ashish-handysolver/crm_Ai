@@ -232,38 +232,48 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       let transcriptText = "No info generated.";
       let transcriptData = null;
       try {
-        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || (process.env as any).GEMINI_API_KEY || '';
+        const apiKey = [
+          (import.meta as any).env.VITE_GEMINI_API_KEY,
+          (process.env as any).GEMINI_API_KEY,
+          (import.meta as any).env.GEMINI_API_KEY
+        ].find(k => k && k !== 'undefined' && k !== 'null' && k !== '') || '';
+
         if (apiKey) {
           const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-          const ai = new GoogleGenAI({ apiKey });
-          const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
-            config: {
-              responseMimeType: "application/json",
-            },
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
-                  { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
-                ]
-              }
-            ]
-          });
-
-          // Robust parsing for unified SDK
+          const genAI = new GoogleGenAI(apiKey);
+          
+          const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+          let success = false;
           let rawText = "{}";
-          const resAny = response as any;
-          if (resAny.text && typeof resAny.text === 'string') {
-            rawText = resAny.text;
-          } else if (resAny.text && typeof resAny.text === 'function') {
-            rawText = resAny.text();
-          } else if (resAny.response?.text && typeof resAny.response.text === 'function') {
-            rawText = resAny.response.text();
-          } else if (resAny.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-            rawText = resAny.response.candidates[0].content.parts[0].text;
+
+          for (const modelName of validModels) {
+            try {
+              const model = genAI.getGenerativeModel({ 
+                model: modelName,
+                generationConfig: {
+                  responseMimeType: "application/json",
+                }
+              });
+
+              const result = await model.generateContent([
+                { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
+                { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
+              ]);
+
+              const response = await result.response;
+              rawText = response.text();
+              success = true;
+              break;
+            } catch (modelErr: any) {
+              console.warn(`Model ${modelName} failed, trying next...`, modelErr);
+              if (modelErr?.status === 429) {
+                // Wait briefly on rate limit before trying next model
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+            }
           }
+
+          if (!success) throw new Error("All transcription models failed.");
 
           const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
