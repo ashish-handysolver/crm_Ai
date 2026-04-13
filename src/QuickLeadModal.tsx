@@ -1,20 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  X, Camera, Mic, Upload, Building2, User, Phone, Mail, 
+import {
+  X, Camera, Mic, Upload, Building2, User, Phone, Mail,
   Sparkles, Loader2, CheckCircle2, AlertCircle, FileAudio, MapPin, Square,
   Play, Pause, Trash2, RotateCcw
 } from 'lucide-react';
 import { extractLeadFromCard } from './utils/ai-service';
-import { 
-  doc, 
-  setDoc, 
-  Timestamp 
+import {
+  doc,
+  setDoc,
+  Timestamp
 } from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL 
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
 } from 'firebase/storage';
 import { db, storage } from './firebase';
 import { useAuth } from './contexts/AuthContext';
@@ -73,8 +73,8 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
   const startMemoRecording = async () => {
     try {
       if (previewUrl) {
-         URL.revokeObjectURL(previewUrl);
-         setPreviewUrl(null);
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -92,10 +92,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioFile = new File([audioBlob], `quick_memo_${Date.now()}.webm`, { type: 'audio/webm' });
         const url = URL.createObjectURL(audioBlob);
-        
+
         setFiles(prev => ({ ...prev, audio: audioFile }));
         setPreviewUrl(url);
-        
+
         // Stop all tracks
         stream.getTracks().forEach(track => track.stop());
       };
@@ -115,7 +115,7 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
 
   const pauseResumeRecording = () => {
     if (!mediaRecorderRef.current) return;
-    
+
     if (isPausedMemo) {
       mediaRecorderRef.current.resume();
       setIsPausedMemo(false);
@@ -140,7 +140,7 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
 
   const togglePreviewPlayback = () => {
     if (!playbackRef.current) return;
-    
+
     if (isPlayingPreview) {
       playbackRef.current.pause();
       setIsPlayingPreview(false);
@@ -170,7 +170,7 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
       reader.onloadend = async () => {
         const base64 = reader.result as string;
         setPreviews(prev => ({ ...prev, vCard: base64 }));
-        
+
         // Trigger AI Scan
         setIsScanning(true);
         try {
@@ -208,30 +208,30 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
 
     // --- Offline Fallback Logic ---
     if (!navigator.onLine) {
-        try {
-            await idbService.addPendingLead({
-                id: leadId,
-                data: { ...formData },
-                vCardBlob: files.vCard,
-                audioBlob: files.audio,
-                timestamp,
-                status: 'PENDING'
-            });
-            setSuccess(true);
-            setTimeout(() => {
-                if (closeAfter) {
-                  onClose();
-                  resetForm();
-                } else {
-                  resetForm();
-                }
-            }, 2000);
-            return;
-        } catch (err: any) {
-            setError('Local storage failure: Logic vector corrupted.');
-            setLoading(false);
-            return;
-        }
+      try {
+        await idbService.addPendingLead({
+          id: leadId,
+          data: { ...formData },
+          vCardBlob: files.vCard,
+          audioBlob: files.audio,
+          timestamp,
+          status: 'PENDING'
+        });
+        setSuccess(true);
+        setTimeout(() => {
+          if (closeAfter) {
+            onClose();
+            resetForm();
+          } else {
+            resetForm();
+          }
+        }, 2000);
+        return;
+      } catch (err: any) {
+        setError('Local storage failure: Logic vector corrupted.');
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -296,7 +296,7 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
-    
+
     setFormData({ name: '', company: '', email: '', phone: '', address: '' });
     setFiles({ vCard: null, audio: null });
     setPreviews({ vCard: null });
@@ -315,15 +315,15 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
           className="absolute inset-0 bg-[var(--crm-bg)]/60 backdrop-blur-md"
         />
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -337,8 +337,8 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                 <Sparkles size={20} className="text-indigo-500" />
               </div>
               <div>
-                <h2 className="text-lg font-black text-[var(--crm-text)] tracking-tight">Quick Capture</h2>
-                <p className="text-[10px] text-[var(--crm-text-muted)] font-bold uppercase tracking-widest">Neural Lead Injection</p>
+                <h2 className="text-lg font-black text-[var(--crm-text)] tracking-tight">Quick Lead Creation</h2>
+                <p className="text-[10px] text-[var(--crm-text-muted)] font-bold uppercase tracking-widest">Add New Leads</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-[var(--crm-bg)]/20 rounded-xl transition-all text-[var(--crm-text-muted)]">
@@ -356,27 +356,27 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                   {navigator.onLine ? 'Target Synchronized' : 'Lead Locked Locally'}
                 </h3>
                 <p className="text-sm text-[var(--crm-text-muted)] font-medium">
-                  {navigator.onLine 
-                    ? 'Lead successfully added to your pipeline vector.' 
+                  {navigator.onLine
+                    ? 'Lead successfully added to your pipeline vector.'
                     : 'System offline. Lead cached for automatic neural sync.'}
                 </p>
               </div>
             ) : (
               <div className="space-y-6">
-                
+
                 {/* 1. Visiting Card Upload (Large, Top) */}
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
                   className={`h-48 rounded-[2rem] border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 group relative overflow-hidden ${files.vCard ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-[var(--crm-border)] hover:border-indigo-500/30 hover:bg-[var(--crm-bg)]/20'}`}
                 >
                   {previews.vCard ? (
                     <img src={previews.vCard} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Preview" />
                   ) : null}
-                  
+
                   {isScanning && (
                     <div className="absolute inset-0 bg-indigo-500/20 flex items-center justify-center backdrop-blur-[4px] z-10">
-                      <motion.div 
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} 
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
                         transition={{ repeat: Infinity, duration: 1.5 }}
                         className="flex flex-col items-center gap-2"
                       >
@@ -404,10 +404,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                       <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Full Name</label>
                       <div className="relative group">
                         <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={formData.name}
-                          onChange={e => setFormData({...formData, name: e.target.value})}
+                          onChange={e => setFormData({ ...formData, name: e.target.value })}
                           placeholder="John Wick"
                           className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-[var(--crm-text)] focus:outline-none focus:border-indigo-500 transition-all placeholder:opacity-50"
                         />
@@ -417,10 +417,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                       <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Organization</label>
                       <div className="relative group">
                         <Building2 size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={formData.company}
-                          onChange={e => setFormData({...formData, company: e.target.value})}
+                          onChange={e => setFormData({ ...formData, company: e.target.value })}
                           placeholder="Continental Corp"
                           className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-[var(--crm-text)] focus:outline-none focus:border-indigo-500 transition-all placeholder:opacity-50"
                         />
@@ -433,10 +433,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                       <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Email ID</label>
                       <div className="relative group">
                         <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                          type="email" 
+                        <input
+                          type="email"
                           value={formData.email}
-                          onChange={e => setFormData({...formData, email: e.target.value})}
+                          onChange={e => setFormData({ ...formData, email: e.target.value })}
                           placeholder="john@wick.com"
                           className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-[var(--crm-text)] focus:outline-none focus:border-indigo-500 transition-all placeholder:opacity-50"
                         />
@@ -446,10 +446,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                       <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Mobile Number</label>
                       <div className="relative group">
                         <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                          type="tel" 
+                        <input
+                          type="tel"
                           value={formData.phone}
-                          onChange={e => setFormData({...formData, phone: e.target.value})}
+                          onChange={e => setFormData({ ...formData, phone: e.target.value })}
                           placeholder="+1 234 567 890"
                           className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-[var(--crm-text)] focus:outline-none focus:border-indigo-500 transition-all placeholder:opacity-50"
                         />
@@ -461,10 +461,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                     <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Office Address</label>
                     <div className="relative group">
                       <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={formData.address}
-                        onChange={e => setFormData({...formData, address: e.target.value})}
+                        onChange={e => setFormData({ ...formData, address: e.target.value })}
                         placeholder="123 Silicon Valley, CA"
                         className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-[var(--crm-text)] focus:outline-none focus:border-indigo-500 transition-all placeholder:opacity-50"
                       />
@@ -473,7 +473,7 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                 </div>
 
                 {/* 3. Audio Note (Above Buttons) */}
-                <div 
+                <div
                   className={`p-4 rounded-2xl border-2 border-dashed transition-all relative overflow-hidden ${isRecordingMemo ? 'border-red-500 bg-red-500/5' : files.audio ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20'}`}
                 >
                   <div className="flex items-center justify-between relative z-10">
@@ -490,10 +490,10 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
-                       {!isRecordingMemo && !files.audio && (
-                         <>
+                      {!isRecordingMemo && !files.audio && (
+                        <>
                           <button
                             type="button"
                             onClick={startMemoRecording}
@@ -508,11 +508,11 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                           >
                             <Upload size={16} />
                           </button>
-                         </>
-                       )}
+                        </>
+                      )}
 
-                       {isRecordingMemo && (
-                         <>
+                      {isRecordingMemo && (
+                        <>
                           <button
                             type="button"
                             onClick={pauseResumeRecording}
@@ -527,11 +527,11 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                           >
                             <Square size={16} />
                           </button>
-                         </>
-                       )}
+                        </>
+                      )}
 
-                       {files.audio && !isRecordingMemo && (
-                         <>
+                      {files.audio && !isRecordingMemo && (
+                        <>
                           <button
                             type="button"
                             onClick={togglePreviewPlayback}
@@ -546,13 +546,13 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                           >
                             <Trash2 size={16} />
                           </button>
-                         </>
-                       )}
+                        </>
+                      )}
                     </div>
                   </div>
-                  
+
                   {isRecordingMemo && !isPausedMemo && (
-                    <motion.div 
+                    <motion.div
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: 1 }}
                       className="absolute bottom-0 left-0 h-1 bg-red-500 w-full origin-left"
@@ -561,14 +561,14 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                   )}
 
                   {previewUrl && (
-                    <audio 
-                      ref={playbackRef} 
-                      src={previewUrl} 
+                    <audio
+                      ref={playbackRef}
+                      src={previewUrl}
                       onEnded={() => setIsPlayingPreview(false)}
-                      className="hidden" 
+                      className="hidden"
                     />
                   )}
-                  
+
                   <input type="file" ref={audioInputRef} onChange={e => handleFileChange(e, 'audio')} accept="audio/*" className="hidden" />
                 </div>
 
@@ -580,7 +580,16 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-4">
-                  <button 
+                  <button
+                    type="button"
+                    onClick={(e) => handleSubmit(e, true)}
+                    disabled={loading}
+                    className="h-14 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                    Save
+                  </button>
+                  <button
                     type="button"
                     onClick={(e) => handleSubmit(e, false)}
                     disabled={loading}
@@ -590,26 +599,13 @@ export default function QuickLeadModal({ isOpen, onClose }: QuickLeadModalProps)
                     Save & Next
                   </button>
 
-                  <button 
-                    type="button"
-                    onClick={(e) => handleSubmit(e, true)}
-                    disabled={loading}
-                    className="h-14 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {loading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                    Final Save
-                  </button>
+
                 </div>
               </div>
             )}
           </div>
 
-          {/* Footer Warning */}
-          {!success && (
-            <div className="p-6 bg-[var(--crm-bg)]/20 text-center">
-              <p className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">Neural Intelligence Active • End-to-End Secure</p>
-            </div>
-          )}
+
         </motion.div>
       </div>
     </AnimatePresence>

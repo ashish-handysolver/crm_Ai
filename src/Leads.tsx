@@ -1438,7 +1438,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                       >
                                         <History size={14} />
                                       </button>
-                                      {lead.phone && (
+                                      {/* {lead.phone && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1450,7 +1450,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                         >
                                           <MessageSquare size={16} />
                                         </button>
-                                      )}
+                                      )} */}
                                       <button
                                         onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
                                         className={`p-2 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500 bg-rose-500/5' : 'text-cyan-500 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] hover:border-[var(--crm-border)]'}`}
@@ -1828,8 +1828,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         >
                           {/* Marker */}
                           <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border z-10 shadow-lg ${log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
-                              log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
-                                'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
+                            log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
+                              'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
                             }`}>
                             {log.type === 'MANUAL_NOTE' ? <MessageSquare size={10} /> :
                               log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={10} /> :
