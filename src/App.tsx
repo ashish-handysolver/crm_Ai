@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
-import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode } from 'lucide-react';
+import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -56,6 +56,13 @@ import TranscriptPlayer from './TranscriptPlayer';
 import DownloadApp from './DownloadApp';
 import ThemeToggle from './components/ThemeToggle';
 import { NotificationWatcher } from './components/NotificationWatcher';
+import QuickLeadModal from './QuickLeadModal';
+import { SyncManager } from './components/SyncManager';
+import { Plus } from 'lucide-react';
+import { transcribeWithChirp } from './utils/stt-service';
+import { analyzeWithGroq } from './utils/ai-service';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
@@ -91,7 +98,7 @@ const NotificationBell = () => {
   useEffect(() => {
     if (!companyId || !user) return;
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
-    
+
     // Track seen meetings to avoid duplicate alerts upon initial load
     const seenMeetings = new Set<string>();
     let isInitialLoad = true;
@@ -99,14 +106,14 @@ const NotificationBell = () => {
     const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const now = new Date();
-      
+
       const filtered = (role === 'admin' || role === 'super_admin' || role === 'management')
         ? data
         : data.filter((m: any) => m.ownerUid === user.uid || (m.assignedTo || []).includes(user.uid));
 
       const upcoming = filtered.filter((m: any) => m.scheduledAt?.toDate?.() > now)
         .sort((a: any, b: any) => a.scheduledAt.toMillis() - b.scheduledAt.toMillis());
-      
+
       setMeetings(upcoming);
 
       // --- Push Notification Engine ---
@@ -114,7 +121,7 @@ const NotificationBell = () => {
         if (change.type === 'added' || change.type === 'modified') {
           const m = { id: change.doc.id, ...change.doc.data() } as any;
           const isAssigned = (m.assignedTo || []).includes(user.uid);
-          
+
           if (!isInitialLoad && isAssigned && !seenMeetings.has(m.id)) {
             seenMeetings.add(m.id);
             // Trigger native notification
@@ -227,7 +234,7 @@ const NotificationBell = () => {
   );
 };
 
-const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: User, onMenuClick: () => void, onInstall: () => void, showInstallButton: boolean }) => {
+const Navbar = ({ user, onMenuClick, onInstall, showInstallButton, onQuickLead }: { user: User, onMenuClick: () => void, onInstall: () => void, showInstallButton: boolean, onQuickLead: () => void }) => {
   const { companyName, companyId } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showQrModal, setShowQrModal] = useState(false);
@@ -240,7 +247,7 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           <button onClick={onMenuClick} className="lg:hidden p-2.5 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)] rounded-xl transition-all shadow-sm active:scale-95 border border-[var(--crm-border)]">
             <Menu size={20} />
           </button>
-          
+
           <Link to="/" className="flex items-center gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--crm-text)] rounded-xl flex items-center justify-center shadow-lg border border-[var(--crm-border)] p-1.5 overflow-hidden">
               <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
@@ -263,12 +270,19 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton }: { user: Use
           <div className="flex items-center gap-3 pl-2 border-l border-[var(--crm-border)]">
             <ThemeToggle />
             <button
+              onClick={onQuickLead}
+              title="Quick Capture"
+              className="relative p-2.5 rounded-xl transition-all active:scale-95 text-indigo-500 hover:bg-indigo-500/10"
+            >
+              <Camera size={20} />
+            </button>
+            <button
               onClick={() => setShowQrModal(true)}
-            title="Lead Capture QR"
-            className="relative p-2.5 rounded-xl transition-all active:scale-95 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)]"
-          >
-            <QrCode size={20} />
-          </button>
+              title="Lead Capture QR"
+              className="relative p-2.5 rounded-xl transition-all active:scale-95 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)]"
+            >
+              <QrCode size={20} />
+            </button>
           </div>
           <NotificationBell />
           <div className="h-8 w-[1px] bg-[var(--crm-border)] mx-1 hidden md:block"></div>
@@ -431,434 +445,251 @@ const HistoryView = ({ user }: { user: User }) => {
   );
 };
 
-
-
-
-
-
-
-
 const RecordingView = () => {
   const { id } = useParams();
-  const { role, user } = useAuth();
+  const { user, role } = useAuth();
   const [recording, setRecording] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  const getStoragePathFromUrl = (audioUrl: string): string | null => {
-    if (!audioUrl) return null;
-    if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('gs://')) {
-      return audioUrl;
-    }
+  useEffect(() => {
+    if (!id || !user) return;
+    const docRef = doc(db, 'recordings', id);
+    const unsub = onSnapshot(docRef, (docSnap) => {
+      if (!docSnap.exists()) {
+        setRecording(null);
+      } else {
+        const data = docSnap.data();
+        if (role === 'team_member' && data.authorUid !== user.uid) {
+          setRecording('UNAUTHORIZED');
+        } else {
+          setRecording({ id: docSnap.id, ...data });
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [id, user, role]);
+
+  const performSync = async () => {
+    if (!recording) return;
+    const aiInsights = await analyzeWithGroq(recording.transcript);
+    await updateDoc(doc(db, 'recordings', recording.id), {
+      aiInsights,
+      updatedAt: Timestamp.now()
+    });
+    return aiInsights;
+  };
+
+  const handleExportPDF = async () => {
+    if (!recording || isSyncing) return;
+    setIsSyncing(true);
     try {
-      if (audioUrl.startsWith('gs://')) {
-        const withoutPrefix = audioUrl.replace(/^gs:\/\//, '');
-        const slash = withoutPrefix.indexOf('/');
-        return slash >= 0 ? withoutPrefix.substring(slash + 1) : null;
-      }
-      const parsed = new URL(audioUrl);
-      const pathParts = parsed.pathname.split('/').filter(Boolean);
-      const oIndex = pathParts.indexOf('o');
-      if (oIndex >= 0 && pathParts.length > oIndex + 1) {
-        return decodeURIComponent(pathParts[oIndex + 1]);
-      }
-      return null;
-    } catch (urlErr) {
-      console.warn('Invalid audio URL:', urlErr);
-      return null;
+      // Auto-regenerate before export
+      await performSync();
+      
+      // Brief pause to allow React to flush the update to the DOM
+      await new Promise(r => setTimeout(r, 500)); 
+
+      const element = contentRef.current;
+      if (!element) return;
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#030014',
+        logging: false,
+        onclone: (clonedDoc) => {
+          const styleTags = clonedDoc.getElementsByTagName('style');
+          for (let i = 0; i < styleTags.length; i++) {
+            styleTags[i].innerHTML = styleTags[i].innerHTML
+              .replace(/oklch\([^)]+\)/g, '#6366f1')
+              .replace(/oklab\([^)]+\)/g, '#6366f1');
+          }
+          
+          const safeStyle = clonedDoc.createElement('style');
+          safeStyle.innerHTML = `
+            * { color-interpolation: sRGB !important; }
+            body { background: #030014 !important; }
+            .glass-card { background: rgba(255, 255, 255, 0.05) !important; border: none !important; }
+          `;
+          clonedDoc.head.appendChild(safeStyle);
+        }
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Intelligence_${recording.id.slice(0, 8)}.pdf`);
+    } catch (err) {
+      console.error("PDF Export failed", err);
+      alert("PDF Export failed. Check console for details.");
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const handleSync = async () => {
-    if (!recording || !recording.audioUrl || isSyncing || !id) return;
+    if (!recording || isSyncing) return;
     setIsSyncing(true);
     try {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("Gemini API Key is missing. Set VITE_GEMINI_API_KEY in Vercel environment variables.");
-      let audioBlob: Blob | null = null;
-      try {
-        const storagePath = getStoragePathFromUrl(recording.audioUrl);
-        if (storagePath) {
-          const storageRef = ref(storage, storagePath);
-          const buffer = await getBytes(storageRef);
-          audioBlob = new Blob([buffer], { type: 'audio/webm' });
-        }
-      } catch (readErr) { console.warn("Firebase Storage failed, trying direct fetch."); }
-      if (!audioBlob) {
-        try {
-          const response = await fetch(recording.audioUrl);
-          if (!response.ok) throw new Error(`Direct fetch failed (${response.status})`);
-          audioBlob = await response.blob();
-        } catch (directErr) {
-          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(recording.audioUrl)}`;
-          const response = await fetch(proxyUrl);
-          if (!response.ok) throw new Error(`Proxy fetch failed (${response.status})`);
-          audioBlob = await response.blob();
-        }
-      }
-      if (!audioBlob) throw new Error("Unable to retrieve audio stream.");
-      const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-      const ai = new GoogleGenAI({ apiKey });
-      const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-      let success = false;
-      let finalTranscriptData = null;
-      for (const modelName of validModels) {
-        try {
-          const prompt = "Transcribe this audio recording into English with timestamps. Return a JSON object with a 'fullText' string and a 'segments' array ({text: string, startTime: float, endTime: float}). Provide ONLY the raw JSON.";
-          
-          const model = ai.getGenerativeModel({ 
-            model: modelName,
-            generationConfig: {
-              maxOutputTokens: 8192,
-              responseMimeType: "application/json"
-            }
-          });
-
-          const result = await model.generateContent([
-            { text: prompt },
-            { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
-          ]);
-
-          const response = await result.response;
-          const rawText = response.text() || "{}";
-          const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-          finalTranscriptData = JSON.parse(jsonStr);
-          success = true;
-          break;
-        } catch (err: any) {
-          if (err?.status === 429) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            continue;
-          }
-          console.warn(`Model ${modelName} failed:`, err);
-        }
-      }
-      if (!success) throw new Error("Intelligence services temporarily unavailable or quota exceeded.");
-
-      let aiInsights = null;
-      const genAI = new GoogleGenAI(apiKey);
-      for (const modelName of validModels) {
-        try {
-          const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${finalTranscriptData?.fullText || ''}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
-          
-          const model = genAI.getGenerativeModel({ 
-            model: modelName,
-            generationConfig: {
-              maxOutputTokens: 8192,
-              responseMimeType: "application/json"
-            }
-          });
-
-          const result = await model.generateContent([{ text: prompt2 }]);
-          const res2 = await result.response;
-          const rawText2 = res2.text() || "{}";
-          const jsonStr2 = rawText2.replace(/```json/g, '').replace(/```/g, '').trim();
-          aiInsights = JSON.parse(jsonStr2);
-          break;
-        } catch (e: any) {
-          if (e?.status === 429) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            continue;
-          }
-          console.warn(`Analytics failed on ${modelName}`, e);
-        }
-      }
-      await updateDoc(doc(db, 'recordings', id), {
-        transcript: String(finalTranscriptData.fullText || recording.transcript || ''),
-        transcriptData: finalTranscriptData.segments || [],
-        ...(aiInsights ? { aiInsights } : {}),
-        updatedAt: Timestamp.now()
-      });
-      setRecording((prev: any) => ({ ...prev, transcript: finalTranscriptData.fullText, transcriptData: finalTranscriptData.segments, ...(aiInsights ? { aiInsights } : {}) }));
-    } catch (err: any) { 
-      if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
-        alert(GEMINI_FALLBACK_MESSAGE);
-      } else {
-        alert(err.message || "Protocol transmission failed.");
-      }
-    } finally { 
-      setIsSyncing(false); 
+      await performSync();
+    } catch (err: any) {
+      alert("Regeneration failed: " + (err.message || "Unknown error"));
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  useEffect(() => {
-    const fetchRec = async () => {
-      if (!id) return;
-      try {
-        const snap = await getDoc(doc(db, 'recordings', id));
-        if (snap.exists()) {
-          const data = snap.data();
-          // Role-based check
-          if (role === 'team_member' && data.authorUid !== user?.uid) {
-            // Check if lead is assigned to user
-            if (data.leadId) {
-              const leadSnap = await getDoc(doc(db, 'leads', data.leadId));
-              if (leadSnap.exists()) {
-                const leadData = leadSnap.data();
-                if (leadData.assignedTo !== user?.uid && leadData.authorUid !== user?.uid) {
-                  setRecording('UNAUTHORIZED');
-                  return;
-                }
-              } else {
-                setRecording('UNAUTHORIZED');
-                return;
-              }
-            } else {
-              setRecording('UNAUTHORIZED');
-              return;
-            }
-          }
-          setRecording({ ...data, id: snap.id });
-        }
-      } catch (err) { console.error(err); } finally { setLoading(false); }
-    };
-    fetchRec();
-  }, [id, role, user?.uid]);
-
-  const [showTemplates, setShowTemplates] = useState(false);
-
-  const handleShareWhatsApp = (templateId?: string) => {
+  const handleShareWhatsApp = () => {
     if (!recording) return;
-
-    const template = templateId 
-      ? WHATSAPP_TEMPLATES.find(t => t.id === templateId) 
-      : WHATSAPP_TEMPLATES[0];
-
-    if (!template) return;
-
+    const template = WHATSAPP_TEMPLATES[0];
     const text = template.generate({
       leadName: recording.leadName || recording.lead?.name,
       company: recording.company || recording.lead?.company,
       aiInsights: recording.aiInsights,
       meetingUrl: `${window.location.origin}/r/${recording.id}`
     });
-
-    // We don't have the phone here directly usually, but we can try to find it from the lead if linked
-    // For now, open empty contact picker if no phone
     const phone = recording.lead?.phone || '';
     openWhatsApp(phone, text);
-    setShowTemplates(false);
   };
 
   if (loading) return (
     <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
-      <div className="relative">
-        <Loader2 className="animate-spin text-indigo-500 w-16 h-16" />
-        <div className="absolute inset-0 bg-indigo-500/20 blur-3xl animate-pulse"></div>
-      </div>
+      <Loader2 className="animate-spin text-indigo-500 w-12 h-12" />
     </div>
   );
 
   if (recording === 'UNAUTHORIZED') return (
-    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
-      <div className="text-rose-500 font-black uppercase tracking-[0.4em] text-xs flex flex-col items-center gap-6">
-        <ShieldCheck size={48} className="text-rose-600" />
-        Transmission Intercepted: Access Forbidden
-      </div>
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center text-rose-500 font-bold uppercase tracking-widest text-xs flex flex-col items-center gap-4">
+      <ShieldCheck size={32} /> Access Forbidden
     </div>
   );
 
   if (!recording) return (
-    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center">
-      <div className="text-[var(--crm-text-muted)] font-black uppercase tracking-[0.4em] text-xs flex items-center gap-4">
-        <Sparkles size={20} className="text-[var(--crm-text-muted)]" /> Logic Vector Depleted
-      </div>
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen flex items-center justify-center text-[var(--crm-text-muted)] font-bold uppercase tracking-widest text-xs">
+      Recording Not Found
     </div>
   );
 
   return (
-    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen overflow-y-auto selection:bg-indigo-500 selection:text-white font-sans">
-      <div className="absolute top-0 right-0 w-[60rem] h-[60rem] bg-indigo-500 blur-[160px] -translate-y-1/2 translate-x-1/2 pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }}></div>
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen overflow-y-auto overflow-x-hidden pt-8 pb-32 font-sans hide-scrollbar">
+      <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-indigo-500/10 blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-      <div className="max-w-5xl mx-auto p-4 sm:p-12 lg:p-20 space-y-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card !bg-[var(--crm-card-bg)] !backdrop-blur-3xl !border-[var(--crm-border)] !p-12 sm:!p-20 !rounded-[4rem] relative overflow-hidden shadow-3xl"
-        >
-          {/* Top Decorative bar */}
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 relative z-10" ref={contentRef}>
 
-          <header className="mb-20 pb-12 border-b border-[var(--crm-border)] flex flex-col xl:flex-row justify-between items-start gap-12">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] shadow-lg">
-                <Sparkles size={14} className="animate-pulse" /> Intelligence Hub
+        <header className="flex flex-col lg:flex-row justify-between items-start gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-indigo-500/10 text-indigo-400 rounded-[1.5rem] flex items-center justify-center border-none shadow-2xl backdrop-blur-xl">
+                <History size={28} />
               </div>
-              <h1 className="text-5xl sm:text-7xl font-black text-[var(--crm-text)] tracking-tightest leading-[0.9] uppercase">
-                Interaction <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Metadata</span>
-              </h1>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 text-slate-500 font-black uppercase tracking-widest text-[10px]">
-                  <Calendar size={14} className="text-indigo-500/50" />
-                  {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false }) || 'RECENT'}
-                </div>
-                <div className="h-4 w-px bg-white/10"></div>
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Activity size={14} className="text-cyan-500/50" /> Sync Active
+              <div className="space-y-1">
+                <h1 className="text-4xl font-black text-[var(--crm-text)] tracking-tightest leading-none uppercase">
+                  Interaction <span className="text-indigo-500">Intelligence</span>
+                </h1>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">
+                    ID: {recording.id.slice(0, 8)}
+                  </span>
+                  <div className="w-1 h-1 rounded-full bg-[var(--crm-border)]"></div>
+                  <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">
+                    {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                  </span>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full xl:w-auto overflow-visible">
-              <div className="relative group/wa">
-                <button
-                  onClick={() => setShowTemplates(!showTemplates)}
-                  className="w-full px-8 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-emerald-900/10 active:scale-95 flex items-center justify-center gap-3 group"
-                >
-                  <div className="p-1.5 bg-white/10 rounded-lg group-hover:rotate-12 transition-transform"><MessageSquare size={16} /></div>
-                  WhatsApp Share
-                </button>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={handleShareWhatsApp} className="px-6 py-4 bg-[#25D366] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/10 flex items-center gap-2.5">
+              Send
+            </button>
+            <button onClick={handleSync} disabled={isSyncing} className="px-6 py-4 glass-card border-none text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-2xl backdrop-blur-2xl">
+              <RotateCcw size={14} className={isSyncing ? "animate-spin text-cyan-500" : "text-indigo-500"} />
+              {isSyncing ? 'Thinking...' : 'Regenerate'}
+            </button>
+            <button onClick={handleExportPDF} className="px-6 py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase shadow-2xl flex items-center gap-2.5">
+              <Download size={14} /> PDF
+            </button>
+          </div>
+        </header>
 
-                <AnimatePresence>
-                  {showTemplates && (
-                    <>
-                      <motion.div 
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        onClick={() => setShowTemplates(false)}
-                        className="fixed inset-0 z-[110]"
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute bottom-full left-0 mb-4 w-72 bg-[var(--crm-glass-bg)] backdrop-blur-3xl border border-[var(--crm-border)] rounded-[2rem] shadow-2xl z-[120] overflow-hidden p-2"
-                      >
-                        <div className="px-5 py-3 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 mb-2">
-                          <span className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Select Narrative</span>
-                        </div>
-                        {WHATSAPP_TEMPLATES.map((t) => (
-                          <button
-                            key={t.id}
-                            onClick={() => handleShareWhatsApp(t.id)}
-                            className="w-full text-left px-5 py-3.5 rounded-xl hover:bg-[var(--crm-bg)]/20 transition-all flex flex-col gap-1 group/item"
-                          >
-                            <span className="text-xs font-black text-[var(--crm-text)] group-hover/item:text-emerald-500 transition-colors uppercase tracking-tight">{t.name}</span>
-                            <span className="text-[9px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest leading-none">Context: {t.category}</span>
-                          </button>
-                        ))}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-12 xl:col-span-7 space-y-8">
+            <div className="glass-card border-none rounded-[3rem] p-6 sm:p-10 shadow-2xl backdrop-blur-3xl relative overflow-hidden h-fit">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center border border-indigo-500/10"><Languages size={18} /></div>
+                <h2 className="text-xs font-black text-[var(--crm-text)] uppercase tracking-widest">Protocol Transcript</h2>
               </div>
-              <button
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="px-8 py-5 bg-[var(--crm-bg)]/5 border border-[var(--crm-border)] text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/10 hover:border-indigo-400 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-              >
-                {isSyncing ? <Loader2 size={16} className="animate-spin text-cyan-500" /> : <RotateCcw size={16} className="text-indigo-500" />}
-                {isSyncing ? 'Synchronizing' : 'Recalibrate Logic'}
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="col-span-1 sm:col-span-2 px-8 py-5 bg-slate-900 text-white dark:bg-white dark:text-black rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3"
-              >
-                <Download size={16} /> Export Core Signal
-              </button>
-            </div>
-          </header>
-
-          <section className="space-y-20">
-            {/* Transcript Area */}
-            <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/20 shadow-2xl"><Languages size={24} /></div>
-                <div>
-                  <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Dialect Decomposition</h2>
-                  <p className="text-[9px] text-[var(--crm-text-muted)] font-black uppercase tracking-widest mt-1">Multi-vector neural transcript</p>
-                </div>
-              </div>
-              <div className="bg-[var(--crm-bg)]/20 p-1 bg-gradient-to-b from-[var(--crm-text)]/5 to-transparent rounded-[3.5rem] border border-[var(--crm-border)] shadow-inner">
-                <div className="bg-transparent p-10 sm:p-14">
-                  {recording.transcript ? (
-                    <TranscriptPlayer
-                      audioUrl={recording.audioUrl}
-                      transcriptData={recording.transcriptData}
-                      fallbackText={recording.transcript}
-                    />
-                  ) : (
-                    <div className="text-center py-20">
-                      <Loader2 className="animate-spin text-slate-800 mx-auto mb-6" size={40} />
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] animate-pulse">Retrieving logic stream...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* AI Insights Area */}
-            {recording.aiInsights ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="lg:col-span-2 bg-gradient-to-br from-indigo-500/10 to-transparent p-12 rounded-[3.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden group/insight"
-                >
-                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-400/5 rounded-full blur-[40px] group-hover/insight:scale-150 transition-transform duration-1000"></div>
-                  <div className="flex items-center gap-3 mb-8">
-                    <Sparkles size={18} className="text-indigo-500" />
-                    <h4 className="font-black text-[var(--crm-text)] uppercase tracking-[0.4em] text-[11px]">Executive Matrix Summary</h4>
+              <div className="bg-black/20 rounded-[2.5rem] p-6 sm:p-8 border-none min-h-[400px] backdrop-blur-xl">
+                {recording.transcript ? (
+                  <TranscriptPlayer audioUrl={recording.audioUrl} transcriptData={recording.transcriptData} fallbackText={recording.transcript} />
+                ) : (
+                  <div className="py-24 text-center opacity-30 flex flex-col items-center gap-6">
+                    <Sparkles size={48} className="animate-pulse text-indigo-500" />
+                    <p className="text-[11px] font-black uppercase tracking-[0.4em]">Neural Synthesis Pending</p>
                   </div>
-                  <p className="text-[var(--crm-text-muted)] text-xl leading-[1.8] font-medium tracking-tight italic">
-                    <span className="text-4xl text-indigo-500/20">"</span>
-                    {recording.aiInsights.overview}
-                    <span className="text-4xl text-indigo-500/20">"</span>
-                  </p>
-                </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
 
-                <div className="bg-[var(--crm-bg)]/20 p-10 rounded-[3rem] border border-[var(--crm-border)] shadow-2xl space-y-8">
-                  <h4 className="font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
-                    Meeting Minutes Protocol
-                  </h4>
-                  <ul className="space-y-6">
-                    {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
-                      <li key={i} className="flex items-start gap-5 text-base text-[var(--crm-text-muted)] font-medium group/item">
-                        <div className="p-1 px-2.5 bg-[var(--crm-bg)]/20 rounded-lg text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-tighter mt-1 group-hover/item:text-indigo-500 transition-colors">0{i + 1}</div>
-                        <span className="group-hover/item:text-[var(--crm-text)] transition-colors">{pt}</span>
-                      </li>
-                    ))}
-                  </ul>
+          <div className="lg:col-span-12 xl:col-span-5 space-y-6">
+            {recording.aiInsights ? (
+              <>
+                <div className="glass-card border-none rounded-[2.5rem] p-8 space-y-6 shadow-2xl backdrop-blur-3xl relative overflow-hidden">
+                  <div className="flex items-center gap-3">
+                    <Sparkles size={16} className="text-indigo-400" />
+                    <h4 className="text-xs font-black text-[var(--crm-text)] uppercase tracking-widest">Executive Summary</h4>
+                  </div>
+                  <p className="text-[var(--crm-text-muted)] text-[15px] leading-relaxed font-medium italic relative z-10">"{recording.aiInsights.overview}"</p>
                 </div>
-
-                <div className="bg-[var(--crm-bg)]/20 p-10 rounded-[3rem] border border-[var(--crm-border)] shadow-2xl space-y-8">
-                  <h4 className="font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] text-[10px] flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
-                    Action Item Vectors
-                  </h4>
-                  <ul className="space-y-6">
+                <div className="glass-card border-none rounded-[2.5rem] p-8 space-y-8 shadow-2xl backdrop-blur-3xl">
+                  <div className="flex items-center gap-3 font-black text-[var(--crm-text)] uppercase tracking-widest text-[11px]">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Meeting Protocol
+                  </div>
+                  <div className="space-y-4">
+                    {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
+                      <div key={i} className="flex gap-4 p-5 bg-white/5 rounded-2xl shadow-lg transition-all hover:bg-white/10 group">
+                        <span className="text-[11px] font-black text-indigo-500/50 mt-1 group-hover:text-indigo-400 transition-colors">{String(i + 1).padStart(2, '0')}</span>
+                        <span className="text-[14px] text-[var(--crm-text-muted)] group-hover:text-[var(--crm-text)] transition-colors font-medium leading-snug">{pt}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="glass-card border-none rounded-[2.5rem] p-8 space-y-8 shadow-2xl backdrop-blur-3xl">
+                  <div className="flex items-center gap-3 font-black text-[var(--crm-text)] uppercase tracking-widest text-[11px]">
+                    <div className="w-2 h-2 rounded-full bg-cyan-500"></div> Action Items
+                  </div>
+                  <div className="space-y-4">
                     {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
-                      <li key={i} className="flex items-start gap-5 text-base text-[var(--crm-text-muted)] font-medium group/task">
-                        <div className={`p-2 rounded-xl transition-all ${t.completed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] border border-[var(--crm-border)]"}`}>
+                      <div key={i} className={`flex items-start gap-5 p-5 rounded-3xl border-none transition-all ${t.completed ? "bg-emerald-500/5" : "bg-white/5"} backdrop-blur-md shadow-lg`}>
+                        <div className={`p-1.5 rounded-xl ${t.completed ? "bg-emerald-500/20 text-emerald-500" : "bg-white/5 text-white/10"}`}>
                           <CheckCircle2 size={18} />
                         </div>
-                        <div className="space-y-1">
-                          <span className={t.completed ? "line-through opacity-50" : "group-hover/task:text-[var(--crm-text)] transition-colors"}>{t.title}</span>
-                          <div className="text-[9px] font-black uppercase text-indigo-500 tracking-[0.2em]">{t.assignee}</div>
+                        <div className="flex-1">
+                          <p className={`text-[15px] font-bold ${t.completed ? "line-through opacity-40 text-[var(--crm-text-muted)]" : "text-[var(--crm-text)]"}`}>{t.title}</p>
+                          <div className="flex justify-between items-center text-[10px] font-black uppercase text-indigo-400 mt-3">
+                            <span>{t.assignee}</span>
+                            <span>{t.dueDate}</span>
+                          </div>
                         </div>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div className="p-16 bg-indigo-500/5 rounded-[4rem] border border-indigo-500/10 border-dashed relative group/ai overflow-hidden">
-                <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/5 rounded-full blur-[60px] group-hover/ai:scale-110 transition-transform duration-1000"></div>
-                <div className="flex flex-col md:flex-row items-center gap-10 relative z-10 text-center md:text-left">
-                  <div className="p-8 bg-[var(--crm-bg)]/20 rounded-[2.5rem] text-indigo-500 shadow-3xl border border-[var(--crm-border)]"><Sparkles size={48} className="animate-pulse" /></div>
-                  <div className="space-y-4">
-                    <h3 className="font-black text-[var(--crm-text)] text-2xl uppercase tracking-[0.3em]">AI Synthesis Pending</h3>
-                    <p className="text-[11px] font-black text-indigo-500/70 uppercase tracking-[0.4em] leading-relaxed max-w-lg">Initiate the 'Recalibrate Logic' protocol to synthesize interaction intelligence and behavioral metrics.</p>
                   </div>
                 </div>
+              </>
+            ) : (
+              <div className="glass-card border-none rounded-[3rem] p-12 text-center space-y-8 shadow-2xl backdrop-blur-3xl">
+                <Sparkles size={32} className="text-indigo-500 mx-auto animate-pulse" />
+                <p className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest">Synthesis Pending</p>
               </div>
             )}
-          </section>
-        </motion.div>
-
-        <footer className="text-center py-10 opacity-20 hover:opacity-100 transition-opacity duration-1000">
-          <p className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.8em]">Handydash CRM AI &bull; Intelligence Framework v9.4</p>
-        </footer>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -866,7 +697,9 @@ const RecordingView = () => {
 
 
 
-const GlobalRecorder = () => {
+
+
+const GlobalRecorder = ({ onQuickLead }: { onQuickLead: () => void }) => {
   const { user, companyId } = useAuth();
   const { isDemoMode } = useDemo();
   const navigate = useNavigate();
@@ -1003,97 +836,26 @@ const GlobalRecorder = () => {
   const processAudio = async (blob: Blob) => {
     setIsProcessing(true);
     setStatusText('Uploading audio...');
+    let transcript = '';
+    let transcriptData: any[] = [];
+    let aiInsights: any = null;
+
     try {
       const recordId = uuidv4().slice(0, 8);
       const storageRef = ref(storage, `recordings/${recordId}/audio.webm`);
       await uploadBytes(storageRef, blob);
       const audioUrl = await getDownloadURL(storageRef);
 
-      setStatusText('Transcribing & Analyzing...');
-      const apiKey = getGeminiApiKey();
-      
-      if (!apiKey) {
-        console.error("CRITICAL_ERROR: Gemini API Key is missing. Transcription aborted.");
-        alert("Transcription Failed: VITE_GEMINI_API_KEY is not set in Vercel environment variables.");
-        setIsProcessing(false);
-        setStatusText('');
-        return;
-      }
-      let transcript = "No transcript generated.";
-      let transcriptData = null;
-      let aiInsights = null;
+      setStatusText('Transcribing with Groq Intelligence...');
+      try {
+        const { fullText, segments } = await transcribeWithChirp(blob);
+        transcript = fullText;
+        transcriptData = segments;
 
-      if (apiKey) {
-        const genAI = new GoogleGenAI({ apiKey });
-        const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-        const fileUri = await uploadFileToGemini(blob, apiKey);
-
-        // 1. Transcribe
-        const prompt1 = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
-
-        let text1 = "{}";
-
-        for (const modelName of validModels) {
-          try {
-            const model = genAI.getGenerativeModel({ 
-              model: modelName,
-              generationConfig: {
-                maxOutputTokens: 8192,
-                responseMimeType: "application/json"
-              }
-            });
-
-            const result = await model.generateContent([
-              { text: prompt1 }, 
-              { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
-            ]);
-            const response = await result.response;
-            text1 = response.text() || "{}";
-            break;
-          } catch (e: any) {
-            if (e?.status === 429) {
-              await new Promise(r => setTimeout(r, 3000));
-              continue;
-            }
-            console.warn(`Transcription failed on ${modelName}`, e);
-          }
-        }
-
-        try {
-          const p1 = JSON.parse(text1.replace(/```json/g, '').replace(/```/g, '').trim() || '{}');
-          transcript = p1.fullText || transcript;
-          transcriptData = p1.segments || [];
-        } catch (e) {
-          transcript = text1;
-        }
-
-        // 2. Analytics
-        setStatusText('Generating Analytics Report...');
-        const prompt2 = `Analyze this meeting transcript and extract actionable intelligence. Respond ONLY in strict JSON format.\nTranscript: "${transcript}"\nRequired JSON Structure:\n{\n"overview": "Concise executive summary of the meeting.",\n"meetingMinutes": ["Key discussion point...", "Decision made..."],\n"tasks": [\n{ "title": "...", "assignee": "Owner", "dueDate": "TBD", "completed": false }\n]\n}`;
-
-        for (const modelName of validModels) {
-          try {
-            const model = genAI.getGenerativeModel({ 
-              model: modelName,
-              generationConfig: {
-                maxOutputTokens: 8192,
-                responseMimeType: "application/json"
-              }
-            });
-
-            const result = await model.generateContent([{ text: prompt2 }]);
-            const response = await result.response;
-            const rawText = response.text() || "{}";
-            aiInsights = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
-            break;
-          } catch (e: any) {
-            if (e?.status === 429) {
-              await new Promise(r => setTimeout(r, 3000));
-              continue;
-            }
-            console.warn(`Analytics failed on ${modelName}`, e);
-          }
-        }
+        setStatusText('Generating MOM & Intelligence...');
+        aiInsights = await analyzeWithGroq(transcript);
+      } catch (aiErr: any) {
+        console.warn("Groq Intelligence Pipeline Failed:", aiErr);
       }
 
       setStatusText('Saving...');
@@ -1144,11 +906,13 @@ const GlobalRecorder = () => {
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[99]">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[130] flex items-center gap-3">
         {!isRecording && !isProcessing && (
-          <button onClick={startRecording} title="Record Meeting" className="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all group border border-indigo-500">
-            <Mic size={24} className="group-hover:animate-pulse" />
-          </button>
+          <>
+            <button onClick={startRecording} title="Record Meeting" className="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all group border border-indigo-500">
+              <Mic size={24} className="group-hover:animate-pulse" />
+            </button>
+          </>
         )}
         {isRecording && !isProcessing && (
           <div className="flex items-center gap-3 bg-slate-900 p-2.5 rounded-full shadow-2xl border border-slate-700">
@@ -1188,6 +952,7 @@ const AppContent = () => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isQuickLeadOpen, setIsQuickLeadOpen] = useState(false);
 
   // Global deactivation check
   useEffect(() => {
@@ -1301,8 +1066,9 @@ const AppContent = () => {
           onMenuClick={() => setIsSidebarOpen(true)}
           onInstall={handleInstall}
           showInstallButton={!!deferredPrompt}
+          onQuickLead={() => setIsQuickLeadOpen(true)}
         />
-        <main className="flex-1 w-full max-w-full overflow-y-auto scroll-smooth relative pb-12">
+        <main className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden scroll-smooth relative pb-12 hide-scrollbar">
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/r/:id" element={<RecordingView />} />
@@ -1320,8 +1086,13 @@ const AppContent = () => {
             <Route path="/download-app" element={<DownloadApp />} />
           </Routes>
         </main>
-        <GlobalRecorder />
+        <GlobalRecorder onQuickLead={() => setIsQuickLeadOpen(true)} />
         <NotificationWatcher />
+        <QuickLeadModal
+          isOpen={isQuickLeadOpen}
+          onClose={() => setIsQuickLeadOpen(false)}
+        />
+        <SyncManager />
       </div>
     </div>
   );

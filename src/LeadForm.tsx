@@ -34,7 +34,7 @@ export default function LeadForm({ user }: { user: any }) {
     source: 'DIRECT',
     leadType: String((import.meta as any).env.VITE_DEFAULT_LEAD_TYPE || 'B2B').trim().toUpperCase(),
     health: String((import.meta as any).env.VITE_DEFAULT_HEALTH || 'WARM').trim().toUpperCase(),
-    score: 50,
+    score: 0,
     phase: String((import.meta as any).env.VITE_DEFAULT_PHASE || 'DISCOVERY').trim().toUpperCase(),
     avatar: '',
     assignedTo: user?.uid || '',
@@ -293,21 +293,21 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="space-y-2">
                       <label className={labelClasses}>Full Name</label>
                       <div className="relative group">
-                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
                         <input required type="text" name="name" value={formData.name} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="e.g. John Smith" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Email Address</label>
                       <div className="relative group">
-                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
                         <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="john.s@example.com" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Phone Number</label>
                       <div className="relative group">
-                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
                         <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="+1 234 567 890" />
                       </div>
                     </div>
@@ -327,20 +327,20 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="space-y-2">
                       <label className={labelClasses}>Company Name</label>
                       <div className="relative group">
-                        <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
                         <input required type="text" name="company" value={formData.company} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="Acme Inc." />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Office Location</label>
                       <div className="relative group">
-                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
                         <input type="text" name="location" value={formData.location} onChange={handleChange} className={`${inputClasses} pl-14`} placeholder="San Francisco, CA" />
                       </div>
                     </div>
                   </div>
                 </section>
-                
+
                 {/* Assignment Section */}
                 {(role !== 'team_member' || !isEditing) && (
                   <section className="space-y-8">
@@ -354,10 +354,10 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-2">
                         <label className={labelClasses}>Assigned Representative</label>
-                        <select 
-                          name="assignedTo" 
-                          value={formData.assignedTo || ''} 
-                          onChange={handleChange} 
+                        <select
+                          name="assignedTo"
+                          value={formData.assignedTo || ''}
+                          onChange={handleChange}
                           disabled={role === 'team_member'}
                           className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}
                         >
@@ -436,8 +436,8 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="space-y-2">
                       <label className={labelClasses}>Capture Date</label>
                       <div className="relative group">
-                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                        <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-14 [color-scheme:dark]`} />
+                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
+                        <input type="date" name="createdAtStr" value={formData.createdAtStr || ''} onChange={handleChange} className={`${inputClasses} pl-14`} />
                       </div>
                     </div>
                   </div>
@@ -463,7 +463,7 @@ export default function LeadForm({ user }: { user: any }) {
                               {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                           ) : field.type === 'DATE' ? (
-                            <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses} [color-scheme:dark]`} />
+                            <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses}`} />
                           ) : (
                             <input type={field.type === 'NUMBER' ? 'number' : 'text'} name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={inputClasses} placeholder={`Enter ${field.name}...`} />
                           )}
