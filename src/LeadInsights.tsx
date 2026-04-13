@@ -11,11 +11,11 @@ import {
   CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2, ShieldAlert,
   ThumbsUp, ThumbsDown, MessageSquare as MessageIcon, History
 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
-import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
 import { logActivity } from './utils/activity';
+import { transcribeWithChirp } from './utils/stt-service';
+import { analyzeWithGroq } from './utils/ai-service';
 
 export default function LeadInsights({ user }: { user: any }) {
   const { id } = useParams();
@@ -112,68 +112,12 @@ export default function LeadInsights({ user }: { user: any }) {
       attemptedRecs.current.add(selectedRec.id);
       setGeneratingAI(true);
       try {
-        const apiKey = getGeminiApiKey();
-        if (!apiKey) return;
-
-        const ai = new GoogleGenAI({ apiKey });
-        const prompt = `
-          Analyze this sales call transcript and extract actionable intelligence. 
-          Respond ONLY in strict JSON format. 
-          ALL generated insights, summaries, and outputs MUST be written in English, regardless of the language spoken in the transcript.
-
-          Focus specifically on creating high-quality "meetingMinutes" which should be a comprehensive, bulleted summary of the discussion. 
-          Ensure every key topic, decision, and question from the meeting script is captured as a separate point in "meetingMinutes".
-          
-          Transcript: "${selectedRec.transcript}"
-          
-          Required JSON Structure:
-          {
-            "painPoints": ["point 1", "point 2", "point 3"],
-            "requirements": ["req 1", "req 2", "req 3"],
-            "nextActions": ["action 1", "action 2"],
-            "improvements": ["improvement 1", "improvement 2"],
-            "meetingMinutes": ["Key discussion point from call...", "Decision made regarding...", "Client asked about...", "Action agreed on..."],
-            "overview": "A concise 3-sentence executive summary of the prospect's situation and goals.",
-            "sentiment": "Positive",
-            "tasks": [
-              { "title": "...", "assignee": "Self", "dueDate": "Tomorrow", "completed": false }
-            ],
-            "recommendedPhase": "Evaluate the conversation and strictly return ONE of these exact strings: ${String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE')}",
-            "leadScore": "A number from 0 to 100 evaluating the lead's conversion probability based on the call."
-          }
-        `;
-
-        const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-        let success = false;
-        let parsed = null;
-
-        for (const modelName of validModels) {
-          try {
-            console.log(`Attempting intelligence generation with model: ${modelName}`);
-            const model = ai.getGenerativeModel({ 
-              model: modelName,
-              generationConfig: {
-                maxOutputTokens: 8192,
-                responseMimeType: "application/json"
-              }
-            });
-
-            const result = await model.generateContent([{ text: prompt }]);
-            const response = await result.response;
-            const rawText = response.text() || "{}";
-            const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-            parsed = JSON.parse(jsonStr);
-            success = true;
-            break;
-          } catch (err: any) {
-            console.warn(`Model ${modelName} failed:`, err);
-            if (err?.status === 429) {
-              await new Promise(resolve => setTimeout(resolve, 3000));
-            }
-          }
+        console.log("Analyzing interaction with Free AI Agent (Groq)...");
+        const parsed = await analyzeWithGroq(selectedRec.transcript);
+        
+        if (!parsed) {
+          throw new Error("Analytics retrieval failure.");
         }
-
-        if (!success || !parsed) throw new Error("All Gemini models exhausted or unavailable.");
 
         if (parsed.tasks && Array.isArray(parsed.tasks)) {
           parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
@@ -238,31 +182,18 @@ export default function LeadInsights({ user }: { user: any }) {
       const buffer = await getBytes(storageRef);
       const blob = new Blob([buffer], { type: 'audio/webm' });
 
-      const fileUri = await uploadFileToGemini(blob, apiKey);
-      const genAI = new GoogleGenAI({ apiKey });
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
-        generationConfig: {
-          responseMimeType: "application/json",
-        }
-      });
-
-      const result = await model.generateContent([
-        { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
-        { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
-      ]);
-
-      const response = await result.response;
-      const rawContent = response.text() || "{}";
-      const jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(jsonStr);
+      console.log("Transcribing with Google Chirp...");
+      const parsed = await transcribeWithChirp(blob);
 
       await updateDoc(doc(db, 'recordings', selectedRec.id), {
         transcript: parsed.fullText || selectedRec.transcript,
         transcriptData: parsed.segments || []
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Transcription sync failed:", err);
+      if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
+        alert(GEMINI_FALLBACK_MESSAGE);
+      }
     } finally {
       setSyncingTranscript(false);
     }
@@ -669,7 +600,7 @@ export default function LeadInsights({ user }: { user: any }) {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap sm:flex-nowrap gap-4 shrink-0">
-              <div className="glass-card !p-5 !rounded-2xl !bg-slate-900/40 border-white/5 shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
+              <div className="glass-card !p-5 !rounded-2xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
                 <div className="text-[9px] font-black text-indigo-400/60 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <Sparkles size={12} className="group-hover:animate-spin" /> Neural Score
                 </div>
@@ -679,7 +610,7 @@ export default function LeadInsights({ user }: { user: any }) {
                 </span>
               </div>
 
-              <div className="glass-card !p-5 !rounded-2xl !bg-slate-900/40 border-white/5 shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
+              <div className="glass-card !p-5 !rounded-2xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
                 <div className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-3 text-right">Phase Velocity</div>
                 <button
                   onClick={toggleInterest}
@@ -690,13 +621,13 @@ export default function LeadInsights({ user }: { user: any }) {
                 </button>
               </div>
 
-              <div className="glass-card !p-5 !rounded-2xl !bg-slate-900/40 border-white/5 shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
+              <div className="glass-card !p-5 !rounded-2xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
                 <div className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-3 text-right">Mood Signal</div>
                 <div className="relative w-full">
                   <select
                     value={insights.sentiment}
                     onChange={handleSentimentChange}
-                    className={`w-full px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-lg appearance-none cursor-pointer outline-none transition-all pr-10 ${insights.sentiment === 'Positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : insights.sentiment === 'Negative' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20' : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'}`}
+                    className={`w-full px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-lg appearance-none cursor-pointer outline-none transition-all pr-10 ${insights.sentiment === 'Positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : insights.sentiment === 'Negative' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20' : 'bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] border-[var(--crm-border)] hover:bg-[var(--crm-bg)]/40'}`}
                     disabled={!selectedRec}
                   >
                     <option value="Positive">Positive</option>
@@ -716,7 +647,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
         {/* Intelligence Timeline */}
         <div className="glass-card !p-3 !rounded-[2.5rem] !bg-[var(--crm-card-bg)] border-[var(--crm-border)] flex flex-nowrap items-center gap-4 overflow-x-auto shadow-2xl hide-scrollbar scroll-smooth">
-          <div className="pl-6 pr-8 shrink-0 hidden sm:flex items-center gap-3 border-r border-white/5 py-3">
+          <div className="pl-6 pr-8 shrink-0 hidden sm:flex items-center gap-3 border-r border-[var(--crm-border)] py-3">
             <Calendar size={18} className="text-cyan-400" />
             <span className="text-[10px] font-black text-[var(--crm-text-muted)] tracking-[0.3em] uppercase">Intelligence Stream</span>
           </div>
@@ -729,7 +660,7 @@ export default function LeadInsights({ user }: { user: any }) {
                   <button
                     key={rec.id}
                     onClick={() => setSelectedRecId(rec.id)}
-                    className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all shadow-xl border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-cyan-600 text-[var(--crm-text)] border-cyan-500 shadow-cyan-500/20' : 'bg-white/5 text-[var(--crm-text-muted)] hover:bg-white/10 border-white/10 hover:text-slate-200'}`}
+                    className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all shadow-xl border whitespace-nowrap active:scale-95 ${isSelected ? 'bg-cyan-600 text-[var(--crm-text)] border-cyan-500 shadow-cyan-500/20' : 'bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] hover:bg-[var(--crm-bg)]/40 border-[var(--crm-border)] hover:text-[var(--crm-text)]'}`}
                   >
                     {dateStr}
                   </button>
@@ -746,7 +677,7 @@ export default function LeadInsights({ user }: { user: any }) {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-end gap-5">
             <button
               onClick={handleExportPDF}
-              className="px-8 py-4 rounded-[1.5rem] bg-white/5 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-black text-[10px] uppercase tracking-widest shadow-2xl border border-white/10 hover:border-white/20 transition-all flex items-center gap-3 active:scale-95 backdrop-blur-md"
+              className="px-8 py-4 rounded-[1.5rem] bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-black text-[10px] uppercase tracking-widest shadow-2xl border border-[var(--crm-border)] hover:border-[var(--crm-text)]/20 transition-all flex items-center gap-3 active:scale-95 backdrop-blur-md"
             >
               <Download size={14} /> Intelligence Payload (PDF)
             </button>
@@ -765,7 +696,7 @@ export default function LeadInsights({ user }: { user: any }) {
         <AnimatePresence>
           {generatingAI && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-              <div className="p-6 bg-indigo-50/50 border border-indigo-100 rounded-3xl flex items-center justify-center gap-4 text-indigo-600 font-black text-xs shadow-inner uppercase tracking-widest">
+              <div className="p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl flex items-center justify-center gap-4 text-indigo-400 font-black text-xs shadow-inner uppercase tracking-widest">
                 <Sparkles size={18} className="animate-pulse" /> AI is analyzing the conversation...
               </div>
             </motion.div>

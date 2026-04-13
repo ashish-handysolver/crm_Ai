@@ -42,20 +42,6 @@ function NavItem({ to, icon, label, onClick }: { to: string, icon: React.ReactEl
   );
 }
 
-function NavButton({ icon, label, onClick }: { icon: React.ReactElement, label: string, onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="sidebar-item sidebar-item-inactive w-full text-left flex items-center"
-    >
-      <div className="relative z-10 transition-transform duration-300 group-hover:scale-110">
-        {React.cloneElement(icon, { size: 20, strokeWidth: 2 })}
-      </div>
-      <span className="relative z-10 font-bold transition-all">{label}</span>
-    </button>
-  );
-}
-
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { companyName, role, logout } = useAuth();
   const { isDemoMode, setDemoMode } = useDemo();
@@ -104,14 +90,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto hide-scrollbar relative z-10">
           <div className="flex items-center justify-between px-4 mb-4 mt-2">
             <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Menu</div>
-            {/* <ThemeToggle /> */}
           </div>
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" />
           <NavItem onClick={onClose} to="/clients" icon={<Users />} label="All Leads" />
-          {/* <NavItem onClick={onClose} to="/active-clients" icon={<Activity />} label="Active Leads" /> */}
           <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Import audio" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" />
-          {/* <NavItem onClick={onClose} to="/history" icon={<History />} label="Logs" /> */}
 
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4 mt-8">System</div>
           {role !== 'team_member' && <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Settings" />}

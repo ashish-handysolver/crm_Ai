@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
@@ -206,10 +206,17 @@ export default function GuestRecord() {
               console.warn(`Model ${modelName} failed, trying next…`, err);
             }
           }
-          if (!success) throw new Error("All Gemini models exhausted or unavailable.");
+          if (!success) {
+            console.warn("Guest transcription models exhausted.");
+            alert(GEMINI_FALLBACK_MESSAGE);
+            transcriptText = "Intelligence services temporarily unavailable. The recording is saved and ready for review.";
+          }
         }
       } catch (err: any) {
-        setError('Transcription failed: ' + (err.message || 'Unknown error') + '. Saving audio anyway…');
+        console.warn("Guest processing failed", err);
+        if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
+          alert(GEMINI_FALLBACK_MESSAGE);
+        }
       }
 
       const recordingDoc: any = {
