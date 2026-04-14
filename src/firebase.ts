@@ -18,8 +18,10 @@ const app = initializeApp(firebaseConfig);
 
 // Using the specific named database the user created, with modern persistence
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}),
+  experimentalForceLongPolling: true
 }, 'handydash-firestore');
+
 
 export const auth = getAuth();
 export const storage = getStorage(app);

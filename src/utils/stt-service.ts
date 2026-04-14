@@ -1,6 +1,7 @@
 /**
- * Frontend utility for Groq Whisper transcription
+ * Frontend utility for Audio transcription (Groq Whisper & Google Gemini)
  */
+import { uploadFileToGemini, extractJsonFromText } from './gemini';
 export interface TranscriptionResult {
   fullText: string;
   segments: Array<{
@@ -26,7 +27,7 @@ export async function transcribeWithChirp(blob: Blob): Promise<TranscriptionResu
   formData.append('model', 'whisper-large-v3');
   formData.append('response_format', 'verbose_json');
 
-  const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+  const response = await fetch('https://api.groq.com/openai/v1/audio/translations', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -34,13 +35,14 @@ export async function transcribeWithChirp(blob: Blob): Promise<TranscriptionResu
     body: formData,
   });
 
+
   if (!response.ok) {
     const err = await response.text();
     throw new Error(`Groq Transcription Error: ${response.status} ${err}`);
   }
 
   const data = await response.json();
-  
+
   // Map Groq's verbose_json to our internal segment format
   return {
     fullText: data.text,
@@ -48,6 +50,63 @@ export async function transcribeWithChirp(blob: Blob): Promise<TranscriptionResu
       text: s.text,
       startTime: s.start,
       endTime: s.end
+    }))
+  };
+}
+
+/**
+ * Transcribes audio via Google Gemini 1.5 Flash (Free Tier)
+ */
+export async function transcribeWithGemini(blob: Blob, apiKey: string): Promise<TranscriptionResult> {
+  if (!apiKey) {
+    throw new Error('Gemini API Key is missing.');
+  }
+
+  // 1. Upload file to Gemini File API
+  const fileUri = await uploadFileToGemini(blob, apiKey);
+
+  const promptText = `
+    Transcribe and translate this recording into English. 
+    Return a JSON object with:
+    - 'fullText': a string of the entire transcription translated to English.
+    - 'segments': an array of objects, each with 'text' (English), 'startTime' (float), and 'endTime' (float).
+    Provide ONLY JSON.
+  `;
+
+  // 2. Generate Content
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: promptText },
+          { fileData: { mimeType: blob.type || 'audio/webm', fileUri } }
+        ]
+      }],
+      generationConfig: { maxOutputTokens: 8192, responseMimeType: 'application/json' }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gemini Transcription Error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+
+  const parsed = extractJsonFromText(rawText);
+  if (!parsed || !parsed.fullText) {
+    throw new Error("Failed to extract valid transcription from Gemini response.");
+  }
+
+  return {
+    fullText: parsed.fullText,
+    segments: (parsed.segments || []).map((s: any) => ({
+      text: s.text,
+      startTime: Number(s.startTime) || 0,
+      endTime: Number(s.endTime) || 0
     }))
   };
 }

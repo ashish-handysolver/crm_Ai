@@ -5,9 +5,9 @@ import {
   Pause, Play, Clock, ShieldAlert, RotateCcw, Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
+import { getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
+import { transcribeWithGroq } from './utils/ai-service';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
@@ -156,67 +156,13 @@ export default function GuestRecord() {
       let transcriptText = 'No transcript generated.';
       let transcriptData = null;
       try {
-        const apiKey = getGeminiApiKey();
-        if (apiKey) {
-          const fileUri = await uploadFileToGemini(blob, apiKey);
-          const genAI = new GoogleGenAI({ apiKey });
-          const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-
-          let success = false;
-          for (const modelName of validModels) {
-            try {
-              console.log(`Attempting transcription with model: ${modelName}`);
-
-              const model = genAI.getGenerativeModel({ 
-                model: modelName,
-                generationConfig: {
-                  maxOutputTokens: 250000,
-                  responseMimeType: "application/json"
-                }
-              });
-
-              const prompt = "Transcribe this audio recording. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY the raw JSON.";
-
-              const result = await model.generateContent([
-                { text: prompt },
-                { fileData: { mimeType: blob.type || "audio/webm", fileUri } }
-              ]);
-
-              const response = await result.response;
-              const rawText = response.text() || "{}";
-              const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-              try {
-                const parsed = JSON.parse(jsonStr);
-                transcriptText = parsed.fullText || 'No transcript generated.';
-                transcriptData = parsed.segments || [];
-              } catch (e) {
-                console.error("JSON Parse Error on Transcript:", e);
-                transcriptText = rawText;
-              }
-              success = true;
-              break;
-            } catch (err: any) {
-              const status = err?.status || err?.code;
-              if (status === 429) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                continue;
-              } else if (status === 404) {
-                continue;
-              }
-              console.warn(`Model ${modelName} failed, trying next…`, err);
-            }
-          }
-          if (!success) {
-            console.warn("Guest transcription models exhausted.");
-            alert(GEMINI_FALLBACK_MESSAGE);
-            transcriptText = "Intelligence services temporarily unavailable. The recording is saved and ready for review.";
-          }
-        }
+        console.log("Transcribing Guest Audio with Groq...");
+        const groqResult = await transcribeWithGroq(blob);
+        transcriptText = groqResult.fullText || 'No transcript generated.';
+        transcriptData = groqResult.segments || [];
       } catch (err: any) {
         console.warn("Guest processing failed", err);
-        if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
-          alert(GEMINI_FALLBACK_MESSAGE);
-        }
+        transcriptText = "Intelligence services temporarily unavailable. The recording is saved and ready for review.";
       }
 
       const recordingDoc: any = {

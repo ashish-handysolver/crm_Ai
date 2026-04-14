@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE, extractJsonFromText } from './utils/gemini';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
+import { transcribeWithGroq } from './utils/ai-service';
 import { UploadCloud, FileAudio, FileText, Loader2, CheckCircle2, AlertCircle, Sparkles, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
@@ -79,74 +79,71 @@ export default function ManualUpload({ user }: { user: any }) {
 
       let transcriptData = null;
       if (uploadFile && !finalTranscript) {
-        const apiKey = getGeminiApiKey();
-
-        if (!apiKey) {
-          throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your Vercel environment variables.");
-        }
-
-        if (apiKey) {
-          const fileUri = await uploadFileToGemini(uploadFile, apiKey);
-          const genAI = new GoogleGenAI({ apiKey });
-          let promptText = 'Transcribe this recording. Return a JSON object with a \'fullText\' string and a \'segments\' array. Each segment must be an object with \'text\', \'startTime\' (float), and \'endTime\' (float). Provide ONLY JSON.';
-          if (isDoc) {
-            promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps. Return a JSON object with a 'fullText' string (the summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
-          }
-
-          const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-
-          let success = false;
-          let rawText = "{}";
-
-          for (const modelName of validModels) {
-            try {
-              console.log(`Attempting extraction with model: ${modelName}`);
-              const model = genAI.getGenerativeModel({ 
-                model: modelName,
-                generationConfig: {
-                  maxOutputTokens: 8192,
-                  responseMimeType: "application/json"
-                }
-              });
-
-              const result = await model.generateContent([
-                { text: promptText },
-                {
-                  fileData: {
-                    mimeType: uploadFile.type || (isPdf ? 'application/pdf' : isWord ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : isTxt ? 'text/plain' : 'audio/webm'),
-                    fileUri
-                  }
-                }
-              ]);
-              const res = await result.response;
-              rawText = res.text() || "{}";
-              success = true;
-              break;
-            } catch (err: any) {
-              const status = err?.status || err?.code;
-              if (status === 429) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                continue;
-              } else if (status === 404) {
-                continue;
-              }
-              console.warn(`Model ${modelName} failed, trying next…`, err);
-            }
-          }
-
-          if (!success) {
-            console.warn("Manual processing exhausted Gemini models.");
-            alert(GEMINI_FALLBACK_MESSAGE);
+        if (isAudio) {
+          try {
+            const groqResult = await transcribeWithGroq(uploadFile);
+            finalTranscript = groqResult.fullText;
+            transcriptData = groqResult.segments;
+          } catch (e) {
+            console.error("Groq Transcription failed", e);
             finalTranscript = "Intelligence services temporarily unavailable. Please try re-syncing this record later.";
           }
+        } else if (isDoc) {
+          const apiKey = getGeminiApiKey();
+          if (!apiKey) {
+            throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your Vercel environment variables.");
+          }
+          if (apiKey) {
+            const fileUri = await uploadFileToGemini(uploadFile, apiKey);
+            const promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps, and translate them into English. Return a JSON object with a 'fullText' string (the English summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
 
-          const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-          try {
-            const parsed = JSON.parse(jsonStr);
-            finalTranscript = String(parsed.fullText || 'No info extracted.');
-            transcriptData = parsed.segments || [];
-          } catch (e) {
-            finalTranscript = String(rawText || 'No info extracted.');
+            const validModels = ['gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-1.5-flash'];
+            let success = false;
+            let rawText = "{}";
+
+            for (const modelName of validModels) {
+              try {
+                console.log(`Attempting extraction with model: ${modelName}`);
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: promptText }, { fileData: { mimeType: uploadFile.type || (isPdf ? 'application/pdf' : isWord ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain'), fileUri } }] }],
+                    generationConfig: { maxOutputTokens: 8192, responseMimeType: "application/json" }
+                  })
+                });
+                if (!response.ok) {
+                  throw new Error(`Gemini API Error: ${response.status}`);
+                }
+                const data = await response.json();
+                rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+                success = true;
+                break;
+              } catch (err: any) {
+                const status = err?.status || err?.code;
+                if (status === 429) { await new Promise(resolve => setTimeout(resolve, 3000)); continue; }
+                else if (status === 404) continue;
+                console.warn(`Model ${modelName} failed, trying next…`, err);
+              }
+            }
+
+            if (!success) {
+              console.warn("Manual processing exhausted Gemini models.");
+              alert(GEMINI_FALLBACK_MESSAGE);
+              finalTranscript = "Intelligence services temporarily unavailable. Please try re-syncing this record later.";
+            } else {
+              try {
+                const parsed = extractJsonFromText(rawText);
+                if (parsed) {
+                  finalTranscript = String(parsed.fullText || 'No info extracted.');
+                  transcriptData = parsed.segments || [];
+                } else {
+                  finalTranscript = String(rawText || 'No info extracted.');
+                }
+              } catch (e) {
+                finalTranscript = String(rawText || 'No info extracted.');
+              }
+            }
           }
         }
       }

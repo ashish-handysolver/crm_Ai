@@ -86,3 +86,40 @@ export const uploadFileToGemini = async (blob: Blob, apiKey: string): Promise<st
   const fileInfo = await uploadResponse.json();
   return fileInfo.file.uri;
 };
+
+/**
+ * Robustly extracts JSON from a string that might contain extra text or markdown blocks.
+ */
+export const extractJsonFromText = (text: string): any => {
+  if (!text) return null;
+  
+  // 1. Try simple clean (already doing this in components, but centralizing)
+  let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+  try {
+    return JSON.parse(cleanText);
+  } catch (e) {
+    // 2. Regex approach if simple parse fails
+    try {
+      // Find the first '{' and the last '}'
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const jsonCandidate = text.substring(firstBrace, lastBrace + 1);
+        return JSON.parse(jsonCandidate);
+      }
+      
+      // Try finding the first '[' and last ']' if it might be an array
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        const jsonCandidate = text.substring(firstBracket, lastBracket + 1);
+        return JSON.parse(jsonCandidate);
+      }
+    } catch (innerE) {
+      console.warn("Regex JSON Extraction failed:", innerE);
+    }
+  }
+  
+  return null;
+};
+
