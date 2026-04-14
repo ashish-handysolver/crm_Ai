@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
 import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import {
@@ -59,8 +58,7 @@ import { NotificationWatcher } from './components/NotificationWatcher';
 import QuickLeadModal from './QuickLeadModal';
 import { SyncManager } from './components/SyncManager';
 import { Plus } from 'lucide-react';
-import { transcribeWithChirp } from './utils/stt-service';
-import { analyzeWithGroq } from './utils/ai-service';
+import { analyzeWithGroq, transcribeWithGroq } from './utils/ai-service';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -472,9 +470,11 @@ const RecordingView = () => {
     return () => unsub();
   }, [id, user, role]);
 
-  const performSync = async () => {
+  const performSync = async (transcriptToAnalyze?: string) => {
     if (!recording) return;
-    const aiInsights = await analyzeWithGroq(recording.transcript);
+    const text = transcriptToAnalyze || recording.transcript;
+    if (!text) throw new Error("No transcript available to analyze.");
+    const aiInsights = await analyzeWithGroq(text);
     await updateDoc(doc(db, 'recordings', recording.id), {
       aiInsights,
       updatedAt: Timestamp.now()
@@ -488,9 +488,9 @@ const RecordingView = () => {
     try {
       // Auto-regenerate before export
       await performSync();
-      
+
       // Brief pause to allow React to flush the update to the DOM
-      await new Promise(r => setTimeout(r, 500)); 
+      await new Promise(r => setTimeout(r, 500));
 
       const element = contentRef.current;
       if (!element) return;
@@ -507,7 +507,7 @@ const RecordingView = () => {
               .replace(/oklch\([^)]+\)/g, '#6366f1')
               .replace(/oklab\([^)]+\)/g, '#6366f1');
           }
-          
+
           const safeStyle = clonedDoc.createElement('style');
           safeStyle.innerHTML = `
             * { color-interpolation: sRGB !important; }
@@ -531,13 +531,39 @@ const RecordingView = () => {
     }
   };
 
-  const handleSync = async () => {
+  const handleRegenerateAnalytics = async () => {
     if (!recording || isSyncing) return;
     setIsSyncing(true);
     try {
       await performSync();
     } catch (err: any) {
-      alert("Regeneration failed: " + (err.message || "Unknown error"));
+      alert("Analytics regeneration failed: " + (err.message || "Unknown error"));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleRegenerateTranscriptAndAnalytics = async () => {
+    if (!recording || !recording.audioUrl || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const storageRef = ref(storage, recording.audioUrl);
+      const buffer = await getBytes(storageRef);
+      const blob = new Blob([buffer], { type: 'audio/webm' });
+
+      const parsed = await transcribeWithGroq(blob);
+      const newTranscript = parsed.fullText || recording.transcript;
+      const newTranscriptData = parsed.segments || recording.transcriptData;
+
+      await updateDoc(doc(db, 'recordings', recording.id), {
+        transcript: newTranscript,
+        transcriptData: newTranscriptData,
+        updatedAt: Timestamp.now()
+      });
+
+      await performSync(newTranscript);
+    } catch (err: any) {
+      alert("Transcription regeneration failed: " + (err.message || "Unknown error"));
     } finally {
       setIsSyncing(false);
     }
@@ -607,9 +633,13 @@ const RecordingView = () => {
             <button onClick={handleShareWhatsApp} className="px-6 py-4 bg-[#25D366] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/10 flex items-center gap-2.5">
               Send
             </button>
-            <button onClick={handleSync} disabled={isSyncing} className="px-6 py-4 glass-card border-none text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-2xl backdrop-blur-2xl">
+            <button onClick={handleRegenerateTranscriptAndAnalytics} disabled={isSyncing} className="px-6 py-4 glass-card border-none text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-2xl backdrop-blur-2xl">
               <RotateCcw size={14} className={isSyncing ? "animate-spin text-cyan-500" : "text-indigo-500"} />
-              {isSyncing ? 'Thinking...' : 'Regenerate'}
+              {isSyncing ? 'Processing...' : 'Regen All'}
+            </button>
+            <button onClick={handleRegenerateAnalytics} disabled={isSyncing} className="px-6 py-4 glass-card border-none text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-2xl backdrop-blur-2xl">
+              <Sparkles size={14} className={isSyncing ? "animate-pulse text-purple-500" : "text-purple-500"} />
+              {isSyncing ? 'Thinking...' : 'Regen Analytics'}
             </button>
             <button onClick={handleExportPDF} className="px-6 py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase shadow-2xl flex items-center gap-2.5">
               <Download size={14} /> PDF
@@ -848,7 +878,7 @@ const GlobalRecorder = ({ onQuickLead }: { onQuickLead: () => void }) => {
 
       setStatusText('Transcribing with Groq Intelligence...');
       try {
-        const { fullText, segments } = await transcribeWithChirp(blob);
+        const { fullText, segments } = await transcribeWithGroq(blob);
         transcript = fullText;
         transcriptData = segments;
 

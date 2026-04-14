@@ -5,7 +5,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
+import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE, extractJsonFromText } from './utils/gemini';
 import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
@@ -66,7 +66,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const [healthFilter, setHealthFilter] = useState((location.state as any)?.health || (import.meta as any).env.VITE_DEFAULT_HEALTH || 'ALL');
   const [interestFilter, setInterestFilter] = useState<'ALL' | 'INTERESTED' | 'NOT_INTERESTED'>(
     (location.state as any)?.isInterested === true ? 'INTERESTED' :
-      (location.state as any)?.isInterested === false ? 'NOT_INTERESTED' : 'INTERESTED'
+      (location.state as any)?.isInterested === false ? 'NOT_INTERESTED' : 'ALL'
   );
   const [selectedLeadForHistory, setSelectedLeadForHistory] = useState<any | null>(null);
   const [newActivityNote, setNewActivityNote] = useState('');
@@ -251,7 +251,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               });
 
               const result = await model.generateContent([
-                { text: "Transcribe this audio recording of a sales/lead call. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
+                { text: "Transcribe and translate this audio recording into English. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase translated to English), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
                 { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
               ]);
 
@@ -273,12 +273,14 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
             alert(GEMINI_FALLBACK_MESSAGE);
           }
 
-          const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-
           try {
-            const parsed = JSON.parse(jsonStr);
-            transcriptText = String(parsed.fullText || "No transcript generated.");
-            transcriptData = parsed.segments || [];
+            const parsed = extractJsonFromText(rawText);
+            if (parsed) {
+              transcriptText = String(parsed.fullText || "No transcript generated.");
+              transcriptData = parsed.segments || [];
+            } else {
+              transcriptText = String(rawText || "No transcript generated.");
+            }
           } catch (e) {
             console.error("JSON Parse Error on Transcript:", e);
             transcriptText = String(rawText || "No transcript generated."); // Fallback
@@ -1438,7 +1440,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                       >
                                         <History size={14} />
                                       </button>
-                                      {lead.phone && (
+                                      {/* {lead.phone && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1450,7 +1452,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                         >
                                           <MessageSquare size={16} />
                                         </button>
-                                      )}
+                                      )} */}
                                       <button
                                         onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
                                         className={`p-2 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500 bg-rose-500/5' : 'text-cyan-500 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] hover:border-[var(--crm-border)]'}`}
@@ -1828,8 +1830,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         >
                           {/* Marker */}
                           <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border z-10 shadow-lg ${log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
-                              log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
-                                'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
+                            log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
+                              'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
                             }`}>
                             {log.type === 'MANUAL_NOTE' ? <MessageSquare size={10} /> :
                               log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={10} /> :

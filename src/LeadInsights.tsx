@@ -14,9 +14,7 @@ import {
 import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
 import { logActivity } from './utils/activity';
-import { transcribeWithChirp } from './utils/stt-service';
-import { analyzeWithGroq } from './utils/ai-service';
-
+import { analyzeWithGroq, transcribeWithGroq } from './utils/ai-service';
 export default function LeadInsights({ user }: { user: any }) {
   const { id } = useParams();
   const { role } = useAuth();
@@ -114,7 +112,7 @@ export default function LeadInsights({ user }: { user: any }) {
       try {
         console.log("Analyzing interaction with Free AI Agent (Groq)...");
         const parsed = await analyzeWithGroq(selectedRec.transcript);
-        
+
         if (!parsed) {
           throw new Error("Analytics retrieval failure.");
         }
@@ -131,7 +129,7 @@ export default function LeadInsights({ user }: { user: any }) {
 
         // Auto-sync the Sales State Machine and Score
         const leadUpdates: any = {};
-        
+
         // Auto-transition DISCOVERY -> CONNECTED only if current phase is DISCOVERY
         if ((lead.phase || '').toUpperCase() === 'DISCOVERY') {
           leadUpdates.phase = 'CONNECTED';
@@ -139,7 +137,7 @@ export default function LeadInsights({ user }: { user: any }) {
         } else if (parsed.recommendedPhase && lead.phase !== parsed.recommendedPhase.toUpperCase()) {
           leadUpdates.phase = parsed.recommendedPhase.toUpperCase();
         }
-        
+
         if (parsed.leadScore !== undefined) {
           const newScore = Number(parsed.leadScore);
           if (!isNaN(newScore)) {
@@ -175,24 +173,19 @@ export default function LeadInsights({ user }: { user: any }) {
     if (!selectedRec || !selectedRec.audioUrl || syncingTranscript) return;
     setSyncingTranscript(true);
     try {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) return;
-
       const storageRef = ref(storage, selectedRec.audioUrl);
       const buffer = await getBytes(storageRef);
       const blob = new Blob([buffer], { type: 'audio/webm' });
-
-      console.log("Transcribing with Google Chirp...");
-      const parsed = await transcribeWithChirp(blob);
+      const parsed = await transcribeWithGroq(blob);
 
       await updateDoc(doc(db, 'recordings', selectedRec.id), {
         transcript: parsed.fullText || selectedRec.transcript,
-        transcriptData: parsed.segments || []
+        transcriptData: parsed.segments || selectedRec.transcriptData
       });
     } catch (err: any) {
       console.error("Transcription sync failed:", err);
       if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
-        alert(GEMINI_FALLBACK_MESSAGE);
+        alert("Intelligence services temporarily unavailable. Please try again later.");
       }
     } finally {
       setSyncingTranscript(false);
@@ -232,17 +225,17 @@ export default function LeadInsights({ user }: { user: any }) {
 
   const calculateIntelligenceScore = () => {
     if (!lead) return 0;
-    
+
     let score = 30; // Base baseline
-    
+
     // 1. Engagement Density (Recordings)
     const recordingWeight = Math.min(recordings.length * 10, 30);
     score += recordingWeight;
-    
+
     // 2. Commitment Pulse (Meetings)
     const meetingWeight = Math.min(meetings.length * 5, 15);
     score += meetingWeight;
-    
+
     // 3. Activity Recency
     if (activityLogs.length > 0) {
       const lastActivity = activityLogs[0].createdAt?.toMillis?.() || 0;
@@ -250,15 +243,15 @@ export default function LeadInsights({ user }: { user: any }) {
       if (hoursSince < 24) score += 10;
       else if (hoursSince < 168) score += 5;
     }
-    
+
     // 4. Sentiment Analysis
     const latestRec = recordings[0];
     if (latestRec?.aiInsights?.sentiment === 'Positive') score += 15;
-    
+
     // 5. Portfolio Health
     if (lead.health === 'HOT') score += 10;
     else if (lead.health === 'WARM') score += 5;
-    
+
     return Math.min(score, 100);
   };
 
@@ -266,7 +259,7 @@ export default function LeadInsights({ user }: { user: any }) {
     if (!lead || syncingTranscript || generatingAI) return;
     const newScore = calculateIntelligenceScore();
     try {
-      await updateDoc(doc(db, 'leads', lead.id), { 
+      await updateDoc(doc(db, 'leads', lead.id), {
         score: newScore,
         lastIntelligenceSync: Timestamp.now()
       });
@@ -282,7 +275,7 @@ export default function LeadInsights({ user }: { user: any }) {
     try {
       await updateDoc(doc(db, 'leads', lead.id), { isInterested: newStatus });
       setLead({ ...lead, isInterested: newStatus });
-      
+
       await logActivity({
         leadId: lead.id,
         companyId: lead.companyId,
@@ -747,7 +740,7 @@ export default function LeadInsights({ user }: { user: any }) {
                       ) : (
                         <li key={i} className="group/item relative pl-4 leading-relaxed bg-white/[0.03] hover:bg-white/[0.07] p-5 rounded-[1.8rem] border border-white/5 hover:border-white/10 transition-all shadow-sm flex items-start gap-3">
                           <div className={`mt-2 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')} shadow-[0_0_8px_currentColor]`}></div>
-                            <span className="text-xs font-semibold text-slate-300 pr-16 leading-relaxed">{item}</span>
+                          <span className="text-xs font-semibold text-slate-300 pr-16 leading-relaxed">{item}</span>
                           <div className="absolute top-5 right-5 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                             <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-2 text-[var(--crm-text-muted)] hover:text-cyan-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-lg shadow-lg transition-all"><Edit size={12} /></button>
                             <button onClick={() => handleArrayDelete(col.id, i)} className="p-2 text-[var(--crm-text-muted)] hover:text-rose-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-lg shadow-lg transition-all"><Trash2 size={12} /></button>
@@ -1054,6 +1047,17 @@ export default function LeadInsights({ user }: { user: any }) {
               <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-sm uppercase tracking-widest font-display">
                 <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-lg"><AlignLeft size={18} /></div> Audio Intelligence
               </h3>
+              {selectedRec && (
+                <button
+                  onClick={handleSyncTranscript}
+                  disabled={syncingTranscript || !selectedRec.audioUrl}
+                  className="p-2 text-purple-400 hover:text-[var(--crm-text)] bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+                  title="Force re-sync of audio transcription"
+                >
+                  {syncingTranscript ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+                  {syncingTranscript ? 'Syncing...' : 'Regenerate Transcript'}
+                </button>
+              )}
             </div>
             <div className="flex-1 bg-[var(--crm-bg)]/40 p-8 rounded-[2rem] border border-white/5 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover/transcript:bg-black/30 transition-all duration-500 scrollbar-hide">
               {selectedRec?.transcript ? (
@@ -1132,7 +1136,7 @@ export default function LeadInsights({ user }: { user: any }) {
                 </div>
                 <h3 className="font-black text-[var(--crm-text)] text-lg uppercase tracking-widest font-display">Append Intelligence</h3>
               </div>
-              
+
               <form onSubmit={handleAddNote} className="space-y-6">
                 <textarea
                   value={newNote}
@@ -1182,17 +1186,16 @@ export default function LeadInsights({ user }: { user: any }) {
                     {idx !== activityLogs.length - 1 && (
                       <div className="absolute top-10 left-3.5 w-[2px] h-[calc(100%+0.5rem)] bg-white/5 -translate-x-1/2"></div>
                     )}
-                    
+
                     {/* Log marker */}
-                    <div className={`absolute top-4 left-0 w-7 h-7 rounded-full flex items-center justify-center border shadow-xl z-20 ${
-                      log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
+                    <div className={`absolute top-4 left-0 w-7 h-7 rounded-full flex items-center justify-center border shadow-xl z-20 ${log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
                       log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
-                      'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
-                    }`}>
+                        'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
+                      }`}>
                       {log.type === 'MANUAL_NOTE' ? <MessageIcon size={12} /> :
-                       log.type === 'FIELD_CHANGE' ? <Edit size={12} /> :
-                       log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={12} /> :
-                       <Zap size={12} />}
+                        log.type === 'FIELD_CHANGE' ? <Edit size={12} /> :
+                          log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={12} /> :
+                            <Zap size={12} />}
                     </div>
 
                     <div className="glass-card !bg-slate-900/40 !p-6 !rounded-[2rem] border-white/5 hover:border-white/10 transition-all shadow-xl group-hover/log:bg-slate-900/60">
@@ -1212,10 +1215,10 @@ export default function LeadInsights({ user }: { user: any }) {
                         </div>
                       ) : log.type === 'FIELD_CHANGE' || log.type === 'INTEREST_CHANGE' ? (
                         <div className="flex items-center gap-4 text-xs font-bold text-[var(--crm-text-muted)] bg-white/[0.02] p-4 rounded-xl border border-white/5 shadow-inner">
-                           <span className="text-[var(--crm-text-muted)] uppercase text-[9px] tracking-widest">{log.details?.field}:</span>
-                           <span className="line-through opacity-40 px-2 py-1 bg-white/5 rounded-lg">{String(log.details?.oldValue)}</span>
-                           <ArrowUpRight size={14} className="text-cyan-500" />
-                           <span className="text-[var(--crm-text)] px-3 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20 shadow-md">{String(log.details?.newValue)}</span>
+                          <span className="text-[var(--crm-text-muted)] uppercase text-[9px] tracking-widest">{log.details?.field}:</span>
+                          <span className="line-through opacity-40 px-2 py-1 bg-white/5 rounded-lg">{String(log.details?.oldValue)}</span>
+                          <ArrowUpRight size={14} className="text-cyan-500" />
+                          <span className="text-[var(--crm-text)] px-3 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20 shadow-md">{String(log.details?.newValue)}</span>
                         </div>
                       ) : null}
                     </div>
