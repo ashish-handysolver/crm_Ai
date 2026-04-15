@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
-import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode, Camera } from 'lucide-react';
+import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode, Camera, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
@@ -14,7 +14,8 @@ import {
   orderBy,
   onSnapshot,
   updateDoc,
-  Timestamp
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
 import {
   ref,
@@ -87,11 +88,54 @@ interface FirestoreErrorInfo {
 const NotificationBell = () => {
   const { companyId, role, user } = useAuth();
   const [meetings, setMeetings] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(
     typeof Notification !== 'undefined' ? Notification.permission === 'granted' : true
   );
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!companyId || !user) return;
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid)
+    );
+
+    let isInitialLoad = true;
+    const seenNotifications = new Set<string>();
+
+    const unsub = onSnapshot(q, snap => {
+      const data = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as any))
+        .filter(n => n.companyId === companyId && n.read === false);
+      data.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+      setNotifications(data);
+
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const n = { id: change.doc.id, ...change.doc.data() } as any;
+          if (!isInitialLoad && !seenNotifications.has(n.id)) {
+            seenNotifications.add(n.id);
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(n.title || 'New Notification', {
+                body: n.message,
+                icon: '/logo.png',
+                tag: n.id
+              });
+            }
+          } else {
+            seenNotifications.add(n.id);
+          }
+        }
+      });
+      isInitialLoad = false;
+    }, (err) => {
+      console.error("Error fetching notifications:", err);
+    });
+    return unsub;
+  }, [companyId, user]);
 
   useEffect(() => {
     if (!companyId || !user) return;
@@ -158,8 +202,30 @@ const NotificationBell = () => {
     }
   };
 
-  const hasNotifications = meetings.length > 0 || !pushEnabled;
+  const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await updateDoc(doc(db, 'notifications', id), { read: true });
+    } catch (err) {
+      console.error('Failed to mark notification as read', err);
+    }
+  };
 
+  const handleClearNotifications = async () => {
+    if (notifications.length === 0) return;
+    try {
+      const batch = writeBatch(db);
+      notifications.forEach(n => {
+        batch.update(doc(db, 'notifications', n.id), { read: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error('Failed to clear notifications', err);
+    }
+  };
+
+  const hasUnread = notifications.length > 0;
+  const hasNotifications = hasUnread || meetings.length > 0 || !pushEnabled;
   return (
     <div className="relative" ref={dropdownRef}>
 
@@ -168,7 +234,7 @@ const NotificationBell = () => {
         className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${showDropdown ? 'bg-indigo-500/20 text-indigo-500 shadow-sm' : 'text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)]'}`}
       >
         <Bell size={20} />
-        {hasNotifications && (
+        {hasUnread && (
           <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white shadow-sm ring-2 ring-rose-500/20 animate-pulse"></span>
         )}
       </button>
@@ -183,7 +249,16 @@ const NotificationBell = () => {
           >
             <div className="p-5 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 flex justify-between items-center">
               <h3 className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.2em]">Notifications</h3>
-              <span className="px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[8px] font-black uppercase tracking-widest">{meetings.length} Upcoming</span>
+              <div className="flex items-center gap-3">
+                {notifications.length > 0 && (
+                  <button onClick={handleClearNotifications} className="text-[9px] font-bold text-slate-400 hover:text-rose-400 uppercase tracking-widest transition-colors">
+                    Clear All
+                  </button>
+                )}
+                {notifications.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[8px] font-black uppercase tracking-widest">{notifications.length} New</span>
+                )}
+              </div>
             </div>
 
             <div className="max-h-[400px] overflow-y-auto scrollbar-hide py-2">
@@ -193,13 +268,49 @@ const NotificationBell = () => {
                     <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 shadow-sm"><Bell size={14} /></div>
                     <div className="flex-1">
                       <div className="font-black text-[var(--crm-text)] text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
-                      <div className="text-[10px] text-slate-300 font-bold uppercase tracking-tight opacity-70">Get alerted for upcoming meetings</div>
+                      <div className="text-[10px] text-slate-300 font-bold uppercase tracking-tight opacity-70">Get alerted for upcoming meetings & leads</div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {meetings.length > 0 ? meetings.map((m, idx) => (
+              {notifications.length > 0 && notifications.map((n) => (
+                <div key={n.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group relative">
+                  <button
+                    onClick={(e) => handleMarkAsRead(n.id, e)}
+                    className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 hover:bg-rose-500/10 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <X size={14} />
+                  </button>
+                  <div className="font-bold text-[var(--crm-text)] text-sm mb-1 pr-6 group-hover:text-indigo-500 transition-colors">{n.title}</div>
+                  <div className="text-[11px] text-slate-400 font-medium mb-2 leading-snug">{n.message}</div>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500 font-black uppercase tracking-wider">
+                    <Clock size={10} className="text-indigo-500/50" />
+                    {n.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false }) || 'Just now'}
+                  </div>
+                  {(n.leadName || n.assignedByName) && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {n.leadName && (
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[9px] font-black uppercase tracking-widest">
+                          <Users size={10} /> {n.leadName}
+                        </div>
+                      )}
+                      {n.assignedByName && (
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--crm-border)] text-[var(--crm-text-muted)] text-[9px] font-black uppercase tracking-widest border border-white/5">
+                          Assigned by {n.assignedByName}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {meetings.length > 0 && (
+                <div className="px-4 py-2 bg-slate-800/30 border-y border-[var(--crm-border)] text-[10px] font-black tracking-widest uppercase text-slate-400">
+                  Upcoming Meetings
+                </div>
+              )}
+              {meetings.length > 0 && meetings.map((m, idx) => (
                 <div key={m.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group">
                   <div className="font-bold text-[var(--crm-text)] text-sm mb-1 group-hover:text-indigo-500 transition-colors">{m.title}</div>
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-wider">
@@ -212,7 +323,9 @@ const NotificationBell = () => {
                     </div>
                   )}
                 </div>
-              )) : (
+              ))}
+
+              {meetings.length === 0 && notifications.length === 0 && (
                 <div className="p-12 text-center space-y-4">
                   <div className="p-4 bg-slate-800 rounded-full w-fit mx-auto text-slate-400">
                     <History size={32} />
@@ -228,7 +341,7 @@ const NotificationBell = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
 
@@ -245,15 +358,6 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton, onQuickLead }
           <button onClick={onMenuClick} className="lg:hidden p-2.5 text-[var(--crm-text-muted)] hover:bg-[var(--crm-border)] rounded-xl transition-all shadow-sm active:scale-95 border border-[var(--crm-border)]">
             <Menu size={20} />
           </button>
-
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--crm-text)] rounded-xl flex items-center justify-center shadow-lg border border-[var(--crm-border)] p-1.5 overflow-hidden">
-              <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
-            </div>
-            <div className="hidden sm:flex flex-col">
-              <span className="text-base sm:text-lg font-black tracking-tighter text-[var(--crm-text)] lowercase leading-none">handydash.ai</span>
-            </div>
-          </Link>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-6">
@@ -266,7 +370,9 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton, onQuickLead }
             </button>
           )}
           <div className="flex items-center gap-3 pl-2 border-l border-[var(--crm-border)]">
-            <ThemeToggle />
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
             <button
               onClick={onQuickLead}
               title="Quick Capture"
@@ -284,15 +390,12 @@ const Navbar = ({ user, onMenuClick, onInstall, showInstallButton, onQuickLead }
           </div>
           <NotificationBell />
           <div className="h-8 w-[1px] bg-[var(--crm-border)] mx-1 hidden md:block"></div>
-          <div className="hidden md:flex flex-col items-end">
-            <span className="text-xs font-black text-[var(--crm-text)] leading-none mb-1 uppercase tracking-widest">{user.displayName || 'Entity'}</span>
-            <span className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{user.email?.split('@')[0]}</span>
-          </div>
+
           <Link to="/profile" className="relative group p-1 bg-[var(--crm-bg)]/5 border border-[var(--crm-border)] rounded-xl sm:rounded-[1.25rem] shadow-xl shadow-black/5 hover:border-indigo-500 transition-all">
             <img
               src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=6366f1&color=fff`}
               alt="Profile"
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover border border-[var(--crm-border)] group-hover:scale-105 transition-all group-active:scale-95"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-[1rem] object-cover object-center border border-[var(--crm-border)] group-hover:scale-105 transition-all group-active:scale-95"
             />
             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-[3px] border-[var(--crm-bg)] shadow-sm ring-1 ring-emerald-500/20"></div>
           </Link>
@@ -869,12 +972,14 @@ const GlobalRecorder = ({ onQuickLead }: { onQuickLead: () => void }) => {
     let transcript = '';
     let transcriptData: any[] = [];
     let aiInsights: any = null;
+    let recordId = '';
+    let audioUrl = '';
 
     try {
-      const recordId = uuidv4().slice(0, 8);
+      recordId = uuidv4().slice(0, 8);
       const storageRef = ref(storage, `recordings/${recordId}/audio.webm`);
       await uploadBytes(storageRef, blob);
-      const audioUrl = await getDownloadURL(storageRef);
+      audioUrl = await getDownloadURL(storageRef);
 
       setStatusText('Transcribing with Groq Intelligence...');
       try {

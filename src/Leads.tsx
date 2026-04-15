@@ -6,7 +6,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE, extractJsonFromText } from './utils/gemini';
-import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
 import { CustomFieldDef } from './CustomFields';
@@ -62,8 +62,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const autoSubmitRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const SAFETY_CHECK_SECONDS = (Number((import.meta as any).env.VITE_SAFETY_CHECK_DURATION_MINS) || 5) * 60;
-  const [selectedPhase, setSelectedPhase] = useState((location.state as any)?.phase || (import.meta as any).env.VITE_DEFAULT_PHASE || 'All');
-  const [healthFilter, setHealthFilter] = useState((location.state as any)?.health || (import.meta as any).env.VITE_DEFAULT_HEALTH || 'ALL');
+  const [selectedPhase, setSelectedPhase] = useState((location.state as any)?.phase || 'All');
+  const [healthFilter, setHealthFilter] = useState((location.state as any)?.health || 'ALL');
   const [interestFilter, setInterestFilter] = useState<'ALL' | 'INTERESTED' | 'NOT_INTERESTED'>(
     (location.state as any)?.isInterested === true ? 'INTERESTED' :
       (location.state as any)?.isInterested === false ? 'NOT_INTERESTED' : 'ALL'
@@ -72,12 +72,14 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const [newActivityNote, setNewActivityNote] = useState('');
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [submittingNote, setSubmittingNote] = useState(false);
-  const [teamMemberFilter, setTeamMemberFilter] = useState('');
+  const [teamMemberFilter, setTeamMemberFilter] = useState((location.state as any)?.assignedTo || '');
+  const [activeTodayFilter, setActiveTodayFilter] = useState((location.state as any)?.activeToday || false);
+  const [activePhasesFilter, setActivePhasesFilter] = useState<string[]>((location.state as any)?.activePhases || []);
 
   // Reset page on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, leadTypeFilter, activityFilter, selectedPhase, healthFilter, interestFilter, teamMemberFilter]);
+  }, [searchTerm, leadTypeFilter, activityFilter, selectedPhase, healthFilter, interestFilter, teamMemberFilter, activeTodayFilter, activePhasesFilter]);
 
   // Keep filter in sync if route changes
   useEffect(() => {
@@ -243,20 +245,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
           for (const modelName of validModels) {
             try {
-              const model = genAI.getGenerativeModel({
+              const result = await genAI.models.generateContent({
                 model: modelName,
-                generationConfig: {
+                config: {
                   responseMimeType: "application/json",
-                }
+                },
+                contents: [
+                  { text: "Transcribe and translate this audio recording into English. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase translated to English), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
+                  { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
+                ]
               });
 
-              const result = await model.generateContent([
-                { text: "Transcribe and translate this audio recording into English. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase translated to English), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
-                { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
-              ]);
-
-              const response = await result.response;
-              rawText = response.text();
+              rawText = result.text || '{}';
               success = true;
               break;
             } catch (modelErr: any) {
@@ -634,7 +634,26 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const handleAssignChange = async (leadId: string, assignedTo: string) => {
     if (isDemoMode) return;
     try {
+      if (!companyId) return;
+      const lead = leads.find(l => l.id === leadId);
+      const oldAssignee = lead?.assignedTo;
+
       await updateDoc(doc(db, 'leads', leadId), { assignedTo, updatedAt: Timestamp.now() });
+
+      if (assignedTo && assignedTo !== oldAssignee) {
+        await addDoc(collection(db, 'notifications'), {
+          companyId,
+          userId: assignedTo,
+          title: 'Lead Assigned',
+          message: `You have been assigned to lead: ${lead?.name || 'Unknown'}`,
+          createdAt: Timestamp.now(),
+          read: false,
+          type: 'lead',
+          link: `/leads`,
+          leadName: lead?.name || 'Unknown',
+          assignedByName: user.displayName || 'Admin'
+        });
+      }
     } catch (e) {
       console.error('Failed to update assignment', e);
     }
@@ -678,7 +697,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           action: newInterest ? 'Bulk Interest Recovery' : 'Bulk Interest Deprecation',
           authorUid: user.uid,
           authorName: user.displayName || 'System',
-          details: { field: 'isInterested', oldValue: !newInterest, newValue: newInterest, bulk: true }
+          details: { field: 'isInterested', oldValue: !newInterest, newValue: newInterest, note: 'Bulk update' }
         });
       }
       setSuccess(`Successfully updated ${selectedLeads.length} leads.`);
@@ -708,7 +727,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       (interestFilter === 'NOT_INTERESTED' && l.isInterested === false);
     const matchesTeamMember = !teamMemberFilter || l.assignedTo === teamMemberFilter;
 
-    if (matchesSearch && matchesType && matchesActivity && matchesHealth && matchesInterest && matchesTeamMember) {
+    let matchesToday = true;
+    if (activeTodayFilter) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const leadDateObj = l.updatedAt?.toDate ? l.updatedAt.toDate() : (l.updatedAt ? new Date(l.updatedAt) : new Date(0));
+      leadDateObj.setHours(0, 0, 0, 0);
+      matchesToday = leadDateObj.getTime() === today.getTime();
+    }
+
+    const lPhase = (l.phase || 'NEW').toUpperCase();
+    const matchesPhaseList = activePhasesFilter.length === 0 || activePhasesFilter.includes(lPhase);
+
+    if (matchesSearch && matchesType && matchesActivity && matchesHealth && matchesInterest && matchesTeamMember && matchesToday && matchesPhaseList) {
       const phase = l.phase || 'DISCOVERY';
       acc[phase] = (acc[phase] || 0) + 1;
       acc['All'] = (acc['All'] || 0) + 1;
@@ -735,7 +765,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
     const matchesTeamMember = !teamMemberFilter || l.assignedTo === teamMemberFilter;
 
-    return matchesSearch && matchesType && matchesActivity && matchesPhase && matchesHealth && matchesInterest && matchesTeamMember;
+    let matchesToday = true;
+    if (activeTodayFilter) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const leadDateObj = l.updatedAt?.toDate ? l.updatedAt.toDate() : (l.updatedAt ? new Date(l.updatedAt) : new Date(0));
+      leadDateObj.setHours(0, 0, 0, 0);
+      matchesToday = leadDateObj.getTime() === today.getTime();
+    }
+
+    const lPhase = (l.phase || 'NEW').toUpperCase();
+    const matchesPhaseList = activePhasesFilter.length === 0 || activePhasesFilter.includes(lPhase);
+
+    return matchesSearch && matchesType && matchesActivity && matchesPhase && matchesHealth && matchesInterest && matchesTeamMember && matchesToday && matchesPhaseList;
   });
 
   // Pagination logic
@@ -919,9 +960,9 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                               <MessageSquare size={16} />
                             </button>
                           )} */}
-                          <button onClick={(e) => { e.preventDefault(); onCopyLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
+                          {/* <button onClick={(e) => { e.preventDefault(); onCopyLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
                             {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                          </button>
+                          </button> */}
                           <button onClick={(e) => { e.preventDefault(); onShareLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
                             {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                           </button>
@@ -952,9 +993,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <Users size={14} /> Lead Management Protocol
+              <Users size={14} /> All leads
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">{isActiveOnlyRoute ? 'Active Leads' : 'All Leads'}</h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -1016,8 +1056,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
                 <div className="h-8 w-[1px] bg-[var(--crm-bg)]/40 mx-1 hidden lg:block"></div>
 
-                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                  <div className="relative flex-1 sm:flex-none">
+                <div className="grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-auto">
                     <select
                       value={leadTypeFilter}
                       onChange={(e) => setLeadTypeFilter(e.target.value)}
@@ -1030,12 +1070,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   </div>
 
                   {role !== 'team_member' && (
-                    <div className="flex-1 sm:flex-none min-w-[160px] sm:min-w-[200px]">
+                    <div className="w-full sm:w-auto min-w-[160px] sm:min-w-[200px]">
                       <SearchableSelect
                         options={teamMembers.map(tm => ({
                           id: tm.id,
-                          name: tm.name || tm.email || 'Untitled',
-                          company: tm.role === 'admin' ? 'Administrator' : 'Team Member',
+                          name: tm.displayName || 'Untitled',
+                          company: '',
                           avatar: tm.photoURL
                         }))}
                         value={teamMemberFilter}
@@ -1046,7 +1086,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     </div>
                   )}
 
-                  <div className="relative flex-1 sm:flex-none">
+                  <div className="relative w-full sm:w-auto">
                     <select
                       value={healthFilter}
                       onChange={(e) => setHealthFilter(e.target.value)}
@@ -1061,7 +1101,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   </div>
 
                   {!isActiveOnlyRoute && (
-                    <div className="relative flex-1 sm:flex-none">
+                    <div className="relative w-full sm:w-auto">
                       <select
                         value={activityFilter}
                         onChange={(e) => setActivityFilter(e.target.value as any)}
@@ -1075,7 +1115,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     </div>
                   )}
 
-                  <div className="relative flex-1 sm:flex-none">
+                  <div className="relative w-full sm:w-auto">
                     <select
                       value={interestFilter}
                       onChange={(e) => setInterestFilter(e.target.value as any)}
@@ -1312,9 +1352,9 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" />
                               </button>
                             )} */}
-                            <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
+                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                            </button>
+                            </button> */}
                             <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button>
@@ -1535,9 +1575,9 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                             </td>
                             <td className="py-5 px-8 text-right">
                               <div className="flex items-center justify-end gap-2 flex-wrap">
-                                <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Copy Link">
+                                {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Copy Link">
                                   {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                                </button>
+                                </button> */}
                                 <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Share Link">
                                   {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                                 </button>
@@ -1615,18 +1655,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                         {shareUrls[lead.id] ? (
                                           <div className="flex items-center gap-2 w-72 bg-black/20 rounded-xl shadow-inner border border-[var(--crm-border)] p-1">
                                             <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-300 outline-none text-ellipsis" />
-                                            <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
+                                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
                                               <Copy size={16} />
-                                            </button>
+                                            </button> */}
                                             <button onClick={() => onShareLink(lead.id, lead.name)} className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
                                               <Share2 size={16} />
                                             </button>
                                           </div>
                                         ) : (
                                           <div className="flex items-center gap-2">
-                                            <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
+                                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
                                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Copy size={14} />} Copy Link
-                                            </button>
+                                            </button> */}
                                             <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
                                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />} Share Link
                                             </button>

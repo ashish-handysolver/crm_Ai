@@ -192,12 +192,8 @@ export default function ManualUpload({ user }: { user: any }) {
 
         <header className="mb-8 md:mb-12 text-center md:text-left space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm mb-2">
-            <UploadCloud size={14} className="animate-pulse" /> Data Integration
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-tight uppercase tracking-tight">Add Audio / Docs / Text</h1>
-          <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-lg italic">
-            Upload recordings, documents, or manual context for your leads.
-          </p>
+            <UploadCloud size={14} className="animate-pulse" />  Add Audio / Docs / Text </div>
+
         </header>
 
         <AnimatePresence mode="wait">
@@ -241,14 +237,14 @@ export default function ManualUpload({ user }: { user: any }) {
                     value={selectedLeadId}
                     onChange={setSelectedLeadId}
                     label="Target Lead"
-                    placeholder="Search and select a lead..."
+                    placeholder="Search lead..."
                   />
                 </div>
 
                 {/* Upload Zones Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-6">
                   {/* Audio Upload Zone */}
-                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-indigo-500 bg-indigo-500/20' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
+                  <div className={`relative flex flex-col items-center justify-center p-4 sm:p-10 border-2 border-dashed rounded-[1.5rem] sm:rounded-3xl transition-all group ${uploadFile && isAudio ? 'border-indigo-500 bg-indigo-500/20' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
                     <input
                       type="file"
                       accept="audio/*"
@@ -258,21 +254,21 @@ export default function ManualUpload({ user }: { user: any }) {
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isAudio ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-[var(--crm-border)] shadow-inner'}`}>
-                      <FileAudio className={`w-7 h-7 ${uploadFile && isAudio ? 'text-white' : 'text-[var(--crm-text-muted)]'}`} />
+                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-all ${uploadFile && isAudio ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-[var(--crm-border)] shadow-inner'}`}>
+                      <FileAudio className={`w-5 h-5 sm:w-7 sm:h-7 ${uploadFile && isAudio ? 'text-white' : 'text-[var(--crm-text-muted)]'}`} />
                     </div>
                     <div className="text-center">
-                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isAudio ? 'text-indigo-300' : 'text-[var(--crm-text-muted)]'}`}>
+                      <p className={`font-black text-[10px] sm:text-xs uppercase tracking-widest mb-1 ${uploadFile && isAudio ? 'text-indigo-300' : 'text-[var(--crm-text-muted)]'}`}>
                         {uploadFile && isAudio ? 'Audio Loaded' : 'Upload Audio'}
                       </p>
-                      <p className="text-[9px] font-bold text-[var(--crm-text-muted)] tracking-tighter">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-[var(--crm-text-muted)] tracking-tighter hidden sm:block">
                         {uploadFile && isAudio ? uploadFile.name : 'MP3, WAV, WEBM'}
                       </p>
                     </div>
                   </div>
 
                   {/* Document Upload Zone */}
-                  <div className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-indigo-500 bg-indigo-500/20' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
+                  <div className={`relative flex flex-col items-center justify-center p-4 sm:p-10 border-2 border-dashed rounded-[1.5rem] sm:rounded-3xl transition-all group ${uploadFile && isDoc ? 'border-indigo-500 bg-indigo-500/20' : 'border-[var(--crm-border)] bg-[var(--crm-bg)]/20 hover:border-indigo-500 hover:bg-indigo-500/10'}`}>
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.txt"
@@ -282,14 +278,14 @@ export default function ManualUpload({ user }: { user: any }) {
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${uploadFile && isDoc ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-[var(--crm-border)] shadow-inner'}`}>
-                      <FileText className={`w-7 h-7 ${uploadFile && isDoc ? 'text-white' : 'text-[var(--crm-text-muted)]'}`} />
+                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-all ${uploadFile && isDoc ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-[var(--crm-border)] shadow-inner'}`}>
+                      <FileText className={`w-5 h-5 sm:w-7 sm:h-7 ${uploadFile && isDoc ? 'text-white' : 'text-[var(--crm-text-muted)]'}`} />
                     </div>
                     <div className="text-center">
-                      <p className={`font-black text-xs uppercase tracking-widest mb-1 ${uploadFile && isDoc ? 'text-indigo-300' : 'text-[var(--crm-text-muted)]'}`}>
+                      <p className={`font-black text-[10px] sm:text-xs uppercase tracking-widest mb-1 ${uploadFile && isDoc ? 'text-indigo-300' : 'text-[var(--crm-text-muted)]'}`}>
                         {uploadFile && isDoc ? 'Doc Encrypted' : 'Upload File'}
                       </p>
-                      <p className="text-[9px] font-bold text-[var(--crm-text-muted)] tracking-tighter">
+                      <p className="text-[8px] sm:text-[9px] font-bold text-[var(--crm-text-muted)] tracking-tighter hidden sm:block">
                         {uploadFile && isDoc ? uploadFile.name : 'Word, PDF, TXT'}
                       </p>
                     </div>
@@ -305,7 +301,7 @@ export default function ManualUpload({ user }: { user: any }) {
                     <textarea
                       value={manualText}
                       onChange={e => setManualText(e.target.value)}
-                      placeholder="Paste manual notes or context here..."
+                      placeholder="Add Notes"
                       className="w-full min-h-[180px] bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-[2rem] pl-14 pr-8 py-5 text-sm font-bold focus:bg-[var(--crm-bg)]/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] leading-relaxed shadow-inner"
                     />
                   </div>
@@ -314,7 +310,6 @@ export default function ManualUpload({ user }: { user: any }) {
 
               {/* Footer Actions */}
               <div className="mt-10 pt-8 border-t border-[var(--crm-border)] flex flex-col sm:flex-row items-center justify-between gap-4">
-                <span className="text-[9px] font-black text-[var(--crm-text-muted)] px-3 py-1 bg-[var(--crm-border)] rounded-lg uppercase tracking-widest">Protocol validation required</span>
                 <button
                   type="submit"
                   disabled={isSubmitting || isDemoMode}

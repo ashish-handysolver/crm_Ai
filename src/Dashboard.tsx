@@ -18,6 +18,7 @@ export default function Dashboard({ user }: { user: any }) {
   const { isDemoMode, demoData } = useDemo();
   const [activeTab, setActiveTab] = React.useState<'overview' | 'reports' | 'analytics'>('overview');
   const [leads, setLeads] = React.useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(!isDemoMode);
   const [customPhases, setCustomPhases] = React.useState<string[]>([]);
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function Dashboard({ user }: { user: any }) {
         updatedAt: { toMillis: () => l.updatedAt.seconds * 1000 }
       }));
       setLeads(formattedLeads);
+      setTeamMembers(demoData.team || []);
       setLoading(false);
       return;
     }
@@ -37,7 +39,7 @@ export default function Dashboard({ user }: { user: any }) {
 
     setLoading(true);
     const q = query(collection(db, 'leads'), where('companyId', '==', companyId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeLeads = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a: any, b: any) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
 
@@ -55,7 +57,15 @@ export default function Dashboard({ user }: { user: any }) {
       }
     }).catch(console.error);
 
-    return () => unsubscribe();
+    const qUsers = query(collection(db, 'users'), where('companyId', '==', companyId));
+    const unsubscribeUsers = onSnapshot(qUsers, (snapshot) => {
+      setTeamMembers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      unsubscribeLeads();
+      unsubscribeUsers();
+    };
   }, [companyId, isDemoMode, demoData]);
 
   const handleHealthChange = async (leadId: string, newHealth: string) => {
@@ -108,6 +118,40 @@ export default function Dashboard({ user }: { user: any }) {
     count: leads.filter(l => (l.health || 'WARM').toUpperCase() === health).length
   }));
 
+  const teamMetrics = React.useMemo(() => {
+    return teamMembers.map(member => {
+      const uId = member.uid || member.id;
+      const assignedLeads = leads.filter(l => l.assignedTo === uId);
+      const totalAssigned = assignedLeads.length;
+
+      const connectedCount = assignedLeads.filter(l => {
+        const ph = l.phase?.toUpperCase() || 'NEW';
+        return ['CONNECTED', 'NURTURING', 'QUALIFIED', 'WON'].includes(ph);
+      }).length;
+
+      const convertedCount = assignedLeads.filter(l =>
+        l.phase?.toUpperCase() === 'WON'
+      ).length;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const connectedTodayCount = assignedLeads.filter(l => {
+        if (!l.updatedAt) return false;
+        const date = l.updatedAt.toDate ? l.updatedAt.toDate() : new Date(l.updatedAt);
+        return date >= today;
+      }).length;
+
+      return {
+        ...member,
+        totalAssigned,
+        connectedCount,
+        convertedCount,
+        connectedTodayCount
+      };
+    }).sort((a, b) => b.totalAssigned - a.totalAssigned);
+  }, [teamMembers, leads]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -122,31 +166,25 @@ export default function Dashboard({ user }: { user: any }) {
     <div className="flex-1 bg-transparent min-h-full">
       <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-10">
 
-        {/* Header Section */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
-                <Activity className="text-indigo-500" size={18} />
-              </div>
-              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Operational Overview</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">
-              Welcome back, <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">{user.displayName || 'User'}</span>
-            </h1>
-          </motion.div>
+        {/* Header Section (Compact Mobile App Style) */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative glass-card bg-gradient-to-br from-[var(--crm-card-bg)] to-[var(--crm-bg)]/50 border border-[var(--crm-border)] p-4 sm:p-6 overflow-hidden rounded-[1.5rem] shadow-md"
+        >
+          {/* Decorative Glow Element */}
+          <div className="absolute top-1/2 right-0 w-48 h-48 bg-indigo-500/40 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3 pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }} />
 
-          {/* <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <div className="relative group flex-1 sm:flex-none">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-2xl w-full sm:w-64 focus:sm:w-80 transition-all outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm text-sm font-medium"
-              />
-            </div>
-          </motion.div> */}
-        </header>
+          {/* Content */}
+          <div className="relative z-10">
+            <h1 className="text-lg sm:text-2xl font-black tracking-tight text-[var(--crm-text)] flex items-center gap-1.5 truncate">
+              Welcome back,{' '}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 truncate">
+                {user.displayName?.split(' ')[0] || 'User'}
+              </span>
+            </h1>
+          </div>
+        </motion.header>
 
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1.5 bg-[var(--crm-border)] p-1.5 rounded-2xl w-full sm:w-fit border border-[var(--crm-border)] backdrop-blur-sm shadow-inner overflow-hidden">
@@ -179,7 +217,7 @@ export default function Dashboard({ user }: { user: any }) {
               {/* KPI Section */}
               <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-8">
                 {[
-                  { label: 'Total Clients', value: interestedCount, icon: <Users size={24} />, color: 'bg-indigo-500', link: '/clients' },
+                  { label: 'Total Leads', value: interestedCount, icon: <Users size={24} />, color: 'bg-indigo-500', link: '/clients' },
                   { label: 'Conversion', value: `${conversionRate}%`, icon: <Target size={24} />, color: 'bg-emerald-500', link: '/clients' },
                   // { label: 'Interested', value: totalClients, icon: <ThumbsUp size={24} />, color: 'bg-cyan-500', link: '/clients', filter: { isInterested: true } },
                   // { label: 'Not Interested', value: notInterestedCount, icon: <ThumbsDown size={24} />, color: 'bg-rose-500', link: '/clients', filter: { isInterested: false } },
@@ -248,7 +286,7 @@ export default function Dashboard({ user }: { user: any }) {
                 <motion.section variants={itemVariants} className="glass-card p-5 sm:p-8 bg-[var(--crm-card-bg)] border border-[var(--crm-border)]">
                   <h2 className="text-lg sm:text-2xl font-black text-[var(--crm-text)] mb-4 sm:mb-6 flex items-center gap-2">
                     <Flame size={20} className="text-rose-500" />
-                    Status Overview
+                    Lead Temperature
                   </h2>
                   <div className="grid grid-cols-3 gap-3">
                     {healthData.map(item => {
@@ -276,72 +314,59 @@ export default function Dashboard({ user }: { user: any }) {
                 </motion.section>
               </div>
 
-              {/* Recent Activity Table */}
+              {/* Team Performance Table */}
               <motion.section variants={itemVariants} className="glass-card overflow-hidden">
                 <div className="p-6 sm:p-10 border-b border-[var(--crm-border)] flex justify-between items-center bg-[var(--crm-bg)]/20">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-[var(--crm-text)]">Recent Activity</h2>
-                    <p className="hidden sm:block text-sm font-bold text-[var(--crm-text-muted)] mt-1">Latest client interactions and status updates</p>
+                    <h2 className="text-xl sm:text-2xl font-black text-[var(--crm-text)]">Team Performance</h2>
                   </div>
-                  <Link to="/clients" className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl bg-indigo-600 text-white text-[10px] sm:text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg active:scale-95">
-                    View All
-                    <ArrowUpRight size={14} />
-                  </Link>
+
                 </div>
                 <div className="overflow-x-auto">
                   {/* Desktop Table View */}
                   <table className="w-full text-left hidden md:table">
                     <thead>
                       <tr className="bg-[var(--crm-bg)]/20 text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest border-b border-[var(--crm-border)]">
-                        <th className="py-5 px-10">Lead Name</th>
-                        <th className="py-5 px-10">Pipeline</th>
-                        <th className="py-5 px-10">Recent Interaction</th>
-                        <th className="py-5 px-10">Status</th>
-                        <th className="py-5 px-10 text-right">Insights</th>
+                        <th className="py-5 px-10">Entity Name</th>
+                        <th className="py-5 px-10 text-center">Assigned Leads</th>
+                        <th className="py-5 px-10 text-center">Connected Till Date</th>
+                        <th className="py-5 px-10 text-center">Connected Today</th>
+                        <th className="py-5 px-10 text-center">Converted</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentLeads.map((item, idx) => (
-                        <tr key={item.id} className={`group hover:bg-[var(--crm-bg)]/20 transition-colors ${idx !== recentLeads.length - 1 ? 'border-b border-[var(--crm-border)]' : ''}`}>
+                      {teamMetrics.map((item, idx) => (
+                        <tr key={item.id || idx} className={`group hover:bg-[var(--crm-bg)]/20 transition-colors ${idx !== teamMetrics.length - 1 ? 'border-b border-[var(--crm-border)]' : ''}`}>
                           <td className="py-6 px-10">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 bg-[var(--crm-bg)]/20 rounded-xl flex items-center justify-center font-black text-[var(--crm-text)] group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors shadow-sm">
-                                {item.name?.charAt(0)}
+                                {item.displayName?.charAt(0) || <UserCircle size={18} />}
                               </div>
                               <div>
-                                <div className="font-extrabold text-[var(--crm-text)] group-hover:text-indigo-400 transition-colors uppercase text-xs tracking-tight">{item.name}</div>
-                                <div className="text-[10px] font-bold text-[var(--crm-text-muted)] lowercase">{item.email || 'No email provided'}</div>
+                                <div className="font-extrabold text-[var(--crm-text)] group-hover:text-indigo-400 transition-colors uppercase text-xs tracking-tight">{item.displayName || 'Unknown Entity'}</div>
+                                <div className="text-[10px] font-bold text-[var(--crm-text-muted)] lowercase">{item.email || 'No registry entry'}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-6 px-10">
-                            <div className="inline-flex px-3 py-1.5 rounded-full bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] text-[9px] font-black uppercase tracking-widest group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors border border-[var(--crm-border)]">
-                              {item.phase || 'NEW'}
+                          <td className="py-6 px-10 text-center">
+                            <div className="inline-flex px-4 py-2 rounded-xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] text-[var(--crm-text)] text-sm font-black transition-colors">
+                              {item.totalAssigned}
                             </div>
                           </td>
-                          <td className="py-6 px-10">
-                            <div className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-tighter">
-                              {item.createdAt?.toDate ? item.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Just now'}
+                          <td className="py-6 px-10 text-center">
+                            <div className="inline-flex px-4 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-black transition-colors">
+                              {item.connectedCount}
                             </div>
                           </td>
-                          <td className="py-6 px-10">
-                            <select
-                              value={item.health || 'WARM'}
-                              onChange={(e) => handleHealthChange(item.id, e.target.value)}
-                              className={`text-[9px] font-black px-4 py-2 rounded-xl uppercase tracking-widest outline-none cursor-pointer border appearance-none text-center transition-all ${item.health === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20' :
-                                item.health === 'COLD' ? 'bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)] hover:bg-[var(--crm-bg)]/20' :
-                                  'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
-                                }`}
-                            >
-                              <option value="HOT">HOT 🔥</option>
-                              <option value="WARM">WARM ☀️</option>
-                              <option value="COLD">COLD ❄️</option>
-                            </select>
+                          <td className="py-6 px-10 text-center">
+                            <div className="inline-flex px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-black transition-colors">
+                              {item.connectedTodayCount}
+                            </div>
                           </td>
-                          <td className="py-6 px-10 text-right">
-                            <Link to={`/analytics/${item.id}`} className="p-3 text-[var(--crm-text-muted)] hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all inline-block shadow-sm">
-                              <Sparkles size={18} />
-                            </Link>
+                          <td className="py-6 px-10 text-center">
+                            <div className="inline-flex px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-black transition-colors">
+                              {item.convertedCount}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -350,48 +375,46 @@ export default function Dashboard({ user }: { user: any }) {
 
                   {/* Mobile Card List View */}
                   <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
-                    {recentLeads.map((item) => (
-                      <div key={item.id} className="p-5 rounded-3xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] flex flex-col gap-5 group active:bg-[var(--crm-bg)]/40 transition-all">
+                    {teamMetrics.map((item, idx) => (
+                      <div key={item.id || idx} className="p-5 rounded-3xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] flex flex-col gap-5 group active:bg-[var(--crm-bg)]/40 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl flex items-center justify-center font-black text-indigo-400 shadow-sm text-sm">
-                              {item.name?.charAt(0)}
+                              {item.displayName?.charAt(0) || <UserCircle size={16} />}
                             </div>
                             <div>
-                              <div className="font-extrabold text-[var(--crm-text)] text-xs uppercase tracking-tight">{item.name}</div>
+                              <div className="font-extrabold text-[var(--crm-text)] text-xs uppercase tracking-tight">{item.displayName || 'Unknown'}</div>
                               <div className="text-[10px] font-bold text-[var(--crm-text-muted)] lowercase">{item.email}</div>
                             </div>
                           </div>
-                          <Link to={`/analytics/${item.id}`} className="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl shadow-sm">
-                            <Sparkles size={16} />
-                          </Link>
                         </div>
 
-                        <div className="flex items-center justify-between gap-2 border-t border-[var(--crm-border)] pt-4">
-                          <div className="px-2.5 py-1 rounded-lg bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] text-[var(--crm-text-muted)] text-[8px] font-black uppercase tracking-widest">
-                            {item.phase || 'NEW'}
+                        <div className="grid grid-cols-2 gap-2 border-t border-[var(--crm-border)] pt-4">
+                          <div className="px-3 py-2 rounded-xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] text-center flex flex-col items-center">
+                            <span className="text-[10px] font-black uppercase text-[var(--crm-text-muted)] tracking-widest mb-0.5">Assigned</span>
+                            <span className="text-sm font-black text-[var(--crm-text)]">{item.totalAssigned}</span>
                           </div>
-                          <select
-                            value={item.health || 'WARM'}
-                            onChange={(e) => handleHealthChange(item.id, e.target.value)}
-                            className={`text-[8px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest outline-none border appearance-none transition-all ${item.health === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                              item.health === 'COLD' ? 'bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]' :
-                                'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                              }`}
-                          >
-                            <option value="HOT">HOT</option>
-                            <option value="WARM">WARM</option>
-                            <option value="COLD">COLD</option>
-                          </select>
+                          <div className="px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-center flex flex-col items-center">
+                            <span className="text-[10px] font-black uppercase text-orange-400/70 tracking-widest mb-0.5">Connected</span>
+                            <span className="text-sm font-black text-orange-400">{item.connectedCount}</span>
+                          </div>
+                          <div className="px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center flex flex-col items-center">
+                            <span className="text-[10px] font-black uppercase text-cyan-400/70 tracking-widest mb-0.5">Today</span>
+                            <span className="text-sm font-black text-cyan-400">{item.connectedTodayCount}</span>
+                          </div>
+                          <div className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center flex flex-col items-center">
+                            <span className="text-[10px] font-black uppercase text-emerald-400/70 tracking-widest mb-0.5">Converted</span>
+                            <span className="text-sm font-black text-emerald-400">{item.convertedCount}</span>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {leads.length === 0 && !loading && (
+                  {teamMetrics.length === 0 && !loading && (
                     <div className="py-20 text-center">
                       <LayoutDashboard className="mx-auto text-[var(--crm-border)] mb-4" size={48} />
-                      <p className="font-bold text-[var(--crm-text-muted)] uppercase tracking-widest text-sm">No clients found in registry</p>
+                      <p className="font-bold text-[var(--crm-text-muted)] uppercase tracking-widest text-sm">No human resources found</p>
                     </div>
                   )}
                 </div>

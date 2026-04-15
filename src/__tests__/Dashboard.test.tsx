@@ -8,7 +8,25 @@ import { BrowserRouter } from 'react-router-dom';
 // Mocking Dependencies
 vi.mock('../firebase', () => ({
   db: {},
-  auth: { currentUser: { uid: 'test-user' } }
+  auth: { currentUser: { uid: 'test-user' } },
+  storage: {}
+}));
+
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(),
+  onAuthStateChanged: vi.fn((auth, cb) => {
+    cb({ uid: 'test-user', email: 'test@example.com' });
+    return () => {};
+  })
+}));
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  onSnapshot: vi.fn((q, cb) => { cb({ docs: [], docChanges: () => [] }); return () => {}; }),
+  getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({ role: 'user', companyId: 'test' }) }))
 }));
 
 const renderDashboard = (user = { uid: 'test-user' }, companyId = 'test-company') => {
@@ -16,7 +34,7 @@ const renderDashboard = (user = { uid: 'test-user' }, companyId = 'test-company'
     <BrowserRouter>
       <AuthProvider>
         <DemoProvider>
-          <Dashboard user={user} companyId={companyId} />
+          <Dashboard user={user} />
         </DemoProvider>
       </AuthProvider>
     </BrowserRouter>
@@ -59,7 +77,7 @@ describe('Dashboard Component', () => {
     renderDashboard();
     const searchInput = screen.getByPlaceholderText(/Search/i);
     fireEvent.change(searchInput, { target: { value: 'Alexander' } });
-    expect(searchInput.value).toBe('Alexander');
+    expect((searchInput as HTMLInputElement).value).toBe('Alexander');
   });
 });
 

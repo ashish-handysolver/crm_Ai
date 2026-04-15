@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, AlertCircle, Camera, User, Building2, Mail, Phone, MapPin, Globe, Sparkles, ChevronLeft, Zap, CalendarDays, ShieldAlert, UserCircle } from 'lucide-react';
-import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { CustomFieldDef } from './CustomFields';
 import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
@@ -145,6 +145,20 @@ export default function LeadForm({ user }: { user: any }) {
             });
           }
         }
+
+        // Send notification on assignment change
+        if (payload.assignedTo && payload.assignedTo !== originalLead.assignedTo && payload.assignedTo !== authUser.uid) {
+          await addDoc(collection(db, 'notifications'), {
+            companyId,
+            userId: payload.assignedTo,
+            title: 'Lead Assigned',
+            message: `You have been assigned to lead: ${payload.name || 'Unknown'}`,
+            createdAt: Timestamp.now(),
+            read: false,
+            type: 'lead',
+            link: `/clients`
+          });
+        }
       } else if (!isEditing) {
         await logActivity({
           leadId: leadId as string,
@@ -154,6 +168,19 @@ export default function LeadForm({ user }: { user: any }) {
           authorUid: authUser.uid,
           authorName: authUser.displayName || 'System'
         });
+        // Also send notification if assigned to someone other than creator
+        if (payload.assignedTo && payload.assignedTo !== authUser.uid) {
+          await addDoc(collection(db, 'notifications'), {
+            companyId,
+            userId: payload.assignedTo,
+            title: 'New Lead Assigned',
+            message: `A new lead has been assigned to you: ${payload.name || 'Unknown'}`,
+            createdAt: Timestamp.now(),
+            read: false,
+            type: 'lead',
+            link: `/clients`
+          });
+        }
       }
 
       await setDoc(doc(db, 'leads', leadId as string), payload);
