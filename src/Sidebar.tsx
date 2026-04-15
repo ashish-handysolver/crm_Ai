@@ -72,13 +72,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-purple-500 blur-[60px] rounded-full pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }}></div>
 
         <div className="px-6 py-8 flex items-center justify-between relative z-10">
-          <Link to="/" onClick={onClose} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/10 border border-white/10 p-1.5 overflow-hidden">
-              <img src="/logo.png" className="w-full h-full object-contain" alt="handycrm.ai" />
+          <Link to="/" onClick={onClose} className="flex items-center gap-3 group">
+            <div className="w-10 h-10 flex items-center justify-center p-0.5 relative group-hover:scale-105 transition-transform duration-300">
+              <img src="/logo.png" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter text-[var(--crm-text)] lowercase">handycrm.ai</span>
-              <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.3em] leading-none opacity-80">{companyName || 'handycrm.ai'}</span>
+              <span className="text-2xl font-black tracking-tighter text-[var(--crm-text)] lowercase leading-none">handycrm<span className="text-indigo-500">.ai</span></span>
+              <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] mt-0.5">{companyName || 'WORKSPACE'}</span>
             </div>
           </Link>
 
@@ -90,6 +90,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto hide-scrollbar relative z-10">
           <div className="flex items-center justify-between px-4 mb-4 mt-2">
             <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Menu</div>
+            <div className="md:hidden">
+              <ThemeToggle />
+            </div>
           </div>
           <NavItem onClick={onClose} to="/" icon={<LayoutDashboard />} label="Dashboard" />
           <NavItem onClick={onClose} to="/clients" icon={<Users />} label="All Leads" />

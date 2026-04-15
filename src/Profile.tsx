@@ -53,8 +53,8 @@ export default function Profile() {
         if (snap.exists()) {
           const data = snap.data();
           setUserRole(data.role);
-          setFormData(f => ({ 
-            ...f, 
+          setFormData(f => ({
+            ...f,
             defaultMeetUrl: data.defaultMeetUrl || '',
             notificationMinutes: data.notificationMinutes || 10,
             notificationSoundId: (data.notificationSoundId as SoundProfile) || 'high_intensity'
@@ -85,7 +85,7 @@ export default function Profile() {
       }
 
       // Update Notification Settings
-      await updateDoc(doc(db, 'users', user.uid), { 
+      await updateDoc(doc(db, 'users', user.uid), {
         defaultMeetUrl: formData.defaultMeetUrl,
         notificationMinutes: Number(formData.notificationMinutes),
         notificationSoundId: formData.notificationSoundId
@@ -165,11 +165,8 @@ export default function Profile() {
 
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-10">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-2 sm:space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-                <Sparkles size={14} className="animate-pulse" /> Access Authorization Verified
-              </div>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[var(--crm-text)] leading-none">Account Configuration</h1>
-              <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-lg italic leading-relaxed">Manage your neural identity and authentication vectors.</p>
+
+              <h3 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[var(--crm-text)] leading-none">Account Setting</h3>
             </motion.div>
 
             {/* <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 shrink-0">
@@ -255,15 +252,6 @@ export default function Profile() {
             {/* Security Summary */}
             <div className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-10 text-[var(--crm-text)] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
-
-              <div className="flex items-center gap-4 mb-6 sm:mb-8">
-                <div className="w-11 h-11 sm:w-12 h-12 rounded-xl sm:rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center border border-white/10 backdrop-blur-md shadow-xl"><ShieldCheck size={24} /></div>
-                <div className="space-y-0.5">
-                  <h3 className="text-xs sm:text-sm font-black text-[var(--crm-text)] tracking-[0.1em] uppercase">Security Matrix</h3>
-                  <div className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol Version 4.0.2</div>
-                </div>
-              </div>
-
               <div className="space-y-4 sm:space-y-6">
                 <div className="flex items-center justify-between p-3.5 sm:p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorization</span>
@@ -309,14 +297,13 @@ export default function Profile() {
                       <User size={28} className="hidden sm:block" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-xl sm:text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Personal Metadata</h3>
-                      <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Identity Verification</p>
+                      <h3 className="text-xl sm:text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Personal Details</h3>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-3">
-                      <label className={labelClasses}>Full Identification Name</label>
+                      <label className={labelClasses}>Full Name</label>
                       <div className="relative group/input">
                         <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
@@ -365,8 +352,7 @@ export default function Profile() {
                       <Bell size={28} />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Notification Protocols</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Neural Proximity Alert Configuration</p>
+                      <h3 className="text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Notification Setting</h3>
                     </div>
                   </div>
 
@@ -408,11 +394,10 @@ export default function Profile() {
                         type="button"
                         onClick={handleTestAudio}
                         disabled={isTestingAudio}
-                        className={`px-6 py-3 rounded-xl border text-indigo-300 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 ${
-                          isTestingAudio 
-                          ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                        className={`px-6 py-3 rounded-xl border text-indigo-300 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 ${isTestingAudio
+                          ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]'
                           : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-indigo-500/30'
-                        }`}
+                          }`}
                       >
                         {isTestingAudio ? (
                           <Activity size={14} className="text-indigo-400 animate-[pulse_1s_infinite]" />
@@ -433,14 +418,13 @@ export default function Profile() {
                       <Lock size={28} />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Security Protocols</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Credential Access Control</p>
+                      <h3 className="text-2xl font-black text-[var(--crm-text)] tracking-tight uppercase tracking-[0.05em]">Reset Password</h3>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-3">
-                      <label className={labelClasses}>New Access Token</label>
+                      <label className={labelClasses}>New Password</label>
                       <div className="relative group/input">
                         <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
@@ -453,7 +437,7 @@ export default function Profile() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <label className={labelClasses}>Confirm Token Vector</label>
+                      <label className={labelClasses}>Confirm Password</label>
                       <div className="relative group/input">
                         <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
@@ -467,14 +451,6 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 p-6 bg-indigo-500/10 rounded-[2rem] border border-indigo-500/20 group/tip transition-all hover:bg-white/5">
-                    <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-sm border border-indigo-500 group-hover:scale-110 transition-transform">
-                      <Sparkles size={16} />
-                    </div>
-                    <p className="text-[11px] text-indigo-200/80 font-bold leading-relaxed italic pr-4">
-                      Security Advisor: Leave the password fields null if you intend to maintain existing biometric and cryptographic access tokens.
-                    </p>
-                  </div>
                 </section>
 
                 <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-8">

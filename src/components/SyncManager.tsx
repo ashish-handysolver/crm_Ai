@@ -55,7 +55,7 @@ export const SyncManager = () => {
         let audioNoteUrl = '';
 
         // 1. Upload Blobs to Storage
-        if (lead.vCard) {
+        if (lead.vCardBlob) {
             // Need to convert base64 to blob if stored as string, but we store as Blob
             const vCardRef = ref(storage, `companies/${companyId}/vCards/${lead.id}_sync_vcard.png`);
             await uploadBytes(vCardRef, lead.vCardBlob as Blob);

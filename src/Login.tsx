@@ -90,7 +90,7 @@ export default function Login() {
               <img src="/logo.png" className="w-full h-full object-contain relative z-10" alt="handycrm.ai" />
             </div>
             <div className="flex flex-col">
-              <span className="text-3xl font-black tracking-tightest text-[var(--crm-text)] leading-none mb-1 lowercase">handycrm.ai</span>
+              <span className="text-3xl font-black tracking-tightest text-[var(--crm-text)] leading-none mb-1 lowercase">handycrm<span className="text-indigo-500">.ai</span></span>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] leading-none">Neural Hub</span>
                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>

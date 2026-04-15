@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import {
+  Edit2, Mic,
   ChevronLeft, ChevronRight, Plus, X, Bell, Loader2,
   Clock, User, Trash2, CalendarDays, AlertCircle, CheckCircle2, Sparkles, Zap, Calendar as CalendarIcon, Info, Video, MessageSquare, ShieldCheck, Users
 } from 'lucide-react';
@@ -48,12 +49,12 @@ export default function CalendarPage({ user }: { user: any }) {
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [leadSearch, setLeadSearch] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
-  
-  const [form, setForm] = useState({ 
-    title: '', 
-    leadId: '', 
-    leadName: '', 
-    time: '10:00', 
+
+  const [form, setForm] = useState({
+    title: '',
+    leadId: '',
+    leadName: '',
+    time: '10:00',
     notes: '',
     meetLink: '',
     assignedTo: [] as string[]
@@ -167,11 +168,11 @@ export default function CalendarPage({ user }: { user: any }) {
     const date = new Date(currentYear, currentMonth, day);
     setSelectedDate(date);
     setEditingMeetingId(null);
-    setForm({ 
-      title: '', 
-      leadId: '', 
-      leadName: '', 
-      time: '10:00', 
+    setForm({
+      title: '',
+      leadId: '',
+      leadName: '',
+      time: '10:00',
       notes: '',
       meetLink: userSettings.defaultMeetUrl || '',
       assignedTo: [user.uid]
@@ -222,10 +223,6 @@ export default function CalendarPage({ user }: { user: any }) {
     if (!template) return;
 
     const lead = leads.find(l => l.id === rec.leadId);
-    if (!lead?.phone) {
-      alert("No contact number associated with this lead vector.");
-      return;
-    }
 
     const d = rec.scheduledAt?.toDate?.() || new Date();
     const dateTimeStr = d.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short', hour12: false });
@@ -237,7 +234,7 @@ export default function CalendarPage({ user }: { user: any }) {
       meetingUrl: rec.meetLink
     });
 
-    openWhatsApp(lead.phone, text);
+    openWhatsApp(lead?.phone || '', text);
   };
 
   const handleSave = async () => {
@@ -264,11 +261,29 @@ export default function CalendarPage({ user }: { user: any }) {
       if (editingMeetingId) {
         await updateDoc(doc(db, 'meetings', editingMeetingId), meetingData);
       } else {
-        await addDoc(collection(db, 'meetings'), {
+        const meetingRef = await addDoc(collection(db, 'meetings'), {
           ...meetingData,
           ownerUid: user.uid,
           reminderSent: false,
         });
+
+        // Generate push notification for related users only
+        if (meetingData.assignedTo) {
+          for (const uid of meetingData.assignedTo) {
+            if (uid !== user.uid) {
+              await addDoc(collection(db, 'notifications'), {
+                userId: uid,
+                title: '📆 New Meeting',
+                message: `You were invited to meeting: ${meetingData.title}`,
+                type: 'meeting_invite',
+                link: '/calendar',
+                createdAt: Timestamp.now(),
+                read: false,
+                companyId: companyId
+              });
+            }
+          }
+        }
       }
       setShowModal(false);
     } catch (err: any) {
@@ -328,24 +343,19 @@ export default function CalendarPage({ user }: { user: any }) {
               <CalendarIcon size={14} className="fill-indigo-600 animate-pulse hidden md:block" />
               Meeting Scheduler
             </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--crm-text)] leading-none uppercase">Team Calendar</h1>
-            <p className="text-[var(--crm-text-muted)] mt-2 md:mt-4 text-sm md:text-lg font-medium max-w-xl leading-relaxed italic">
-              Coordinate client meetings and internal strategy sessions in real-time.
-            </p>
+
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
             <button
               onClick={() => {
                 Notification.requestPermission();
-                playPulseSound();
                 setSuccess('Notifications active: High-priority alerts tested.');
                 setTimeout(() => setSuccess(''), 4000);
               }}
               className="group flex items-center justify-center md:justify-start gap-3 w-full md:w-auto px-6 md:px-8 py-3.5 md:py-4 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-xs md:text-sm font-black hover:border-indigo-500/30 hover:bg-[var(--crm-card-bg)] shadow-sm transition-all active:scale-95 uppercase tracking-widest"
             >
               <Bell size={18} className="group-hover:rotate-12 transition-transform" />
-              Test Notifications
             </button>
           </motion.div>
         </header>
@@ -405,12 +415,12 @@ export default function CalendarPage({ user }: { user: any }) {
                     <div className="hidden sm:block space-y-1.5 overflow-hidden">
                       {dayMeetings.slice(0, 3).map(m => (
                         <div key={m.id} className="relative group/meeting">
-                          <div 
+                          <div
                             className="text-[9px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-lg truncate border border-indigo-500/30 shadow-sm transition-all group-hover/cell:scale-105"
                           >
                             {m.scheduledAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · {m.title}
                           </div>
-                          
+
                           {/* Quick Actions Hover */}
                           <div className="absolute inset-0 bg-indigo-600 rounded-lg opacity-0 group-hover/meeting:opacity-100 transition-opacity flex items-center justify-center gap-3 z-10">
                             <button onClick={(e) => { e.stopPropagation(); openEditModal(m); }} className="text-white hover:scale-125 transition-transform" title="Edit Meeting"><Sparkles size={10} /></button>
@@ -445,7 +455,7 @@ export default function CalendarPage({ user }: { user: any }) {
 
               <h3 className="text-xs font-black text-indigo-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center"><Clock size={16} /></div>
-                Agenda
+                Meeting
               </h3>
 
               {upcoming.length === 0 ? (
@@ -470,74 +480,93 @@ export default function CalendarPage({ user }: { user: any }) {
                           <Sparkles size={18} className="text-indigo-500" />
                         </div>
                         <div className="flex items-start justify-between gap-3 relative z-10 pl-8">
-                          <div className="min-w-0">
-                            <div className="font-black text-[var(--crm-text)] text-sm truncate tracking-tight">{m.title}</div>
-                            <div className="flex items-center gap-2 text-[10px] text-indigo-400 font-black uppercase mt-1.5 tracking-widest">
+                          <div className="min-w-0 w-full space-y-2">
+                            {/* Title */}
+                            <div className="font-black text-[var(--crm-text)] text-sm truncate tracking-tight mb-1">{m.title}</div>
+
+                            {/* Date/Time */}
+                            <div className="flex items-center gap-2 text-[10px] text-indigo-400 font-black uppercase tracking-widest bg-indigo-500/10 px-2 py-1 w-fit rounded-lg border border-indigo-500/20">
                               <CalendarIcon size={12} />
-                              {d?.toLocaleDateString([], { month: 'short', day: 'numeric' })} · {d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                              {d?.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · {d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </div>
-                            {m.leadName && (
-                              <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold mt-1">
-                                <User size={10} /> Lead: {m.leadName}
-                              </div>
-                            )}
-                            {m.assignedTo && m.assignedTo !== m.ownerUid && (
-                              <div className="flex items-center gap-2 text-[10px] text-emerald-400/60 font-black uppercase tracking-widest mt-1">
-                                <Users size={10} /> Rep: {teamMembers.find(t => t.id === m.assignedTo)?.displayName || teamMembers.find(t => t.id === m.assignedTo)?.email?.split('@')[0] || 'Team'}
-                              </div>
-                            )}
+
+                            {/* Entity Tags */}
+                            <div className="flex flex-col gap-1.5 mt-2">
+                              {m.leadName && (
+                                <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
+                                  <User size={10} className="text-slate-400" />
+                                  <span className="opacity-70">Lead:</span>
+                                  <span className="text-[var(--crm-text)]">{m.leadName}</span>
+                                </div>
+                              )}
+
+                              {m.ownerUid && (
+                                <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
+                                  <ShieldCheck size={10} className="text-blue-400" />
+                                  <span className="opacity-70">Creator:</span>
+                                  <span className="text-blue-400">{teamMembers.find(t => t.id === m.ownerUid)?.displayName || 'Unknown'}</span>
+                                </div>
+                              )}
+
+                              {m.assignedTo && m.assignedTo.length > 0 && (
+                                <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
+                                  <Users size={10} className="text-emerald-400" />
+                                  <span className="opacity-70">Assignees:</span>
+                                  <span className="text-emerald-400 truncate">
+                                    {m.assignedTo.map(uid => teamMembers.find(t => t.id === uid)?.displayName || 'Unknown').join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex flex-wrap items-center gap-2 mt-5 relative z-10">
-                          <button
-                            onClick={() => openEditModal(m)}
-                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all active:scale-95 border border-white/5"
-                            title="Edit"
-                          >
-                            <Sparkles size={14} />
-                          </button>
-                          <button
-                            onClick={() => window.open(m.meetLink || `/m/${m.id}`, '_blank')}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95 border border-indigo-500/20"
-                          >
-                            <Video size={14} /> Join
-                          </button>
-                          
-                          <div className="relative">
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 mt-5 relative z-10 sm:pl-8">
+                          {/* Core Meeting Buttons */}
+                          <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
+                            {/* Meet Link */}
                             <button
-                              onClick={() => setShowShareTemplates(showShareTemplates === m.id ? null : m.id)}
-                              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 hover:text-white text-[10px] font-black tracking-widest uppercase transition-all active:scale-95 border border-emerald-500/20"
+                              onClick={() => window.open(m.meetLink, '_blank')}
+                              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-indigo-500 text-white text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all shadow-md shadow-indigo-500/20 hover:scale-105 active:scale-95 whitespace-nowrap"
                             >
-                              <MessageSquare size={14} /> Invite
+                              <Video size={12} /> Meet
                             </button>
-                            
-                            <AnimatePresence>
-                              {showShareTemplates === m.id && (
-                                <motion.div 
-                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                  className="absolute bottom-full left-0 mb-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 p-1"
-                                >
-                                  {WHATSAPP_TEMPLATES.filter(t => t.category === 'FORMAL').map(t => (
-                                    <button
-                                      key={t.id}
-                                      onClick={() => handleShareWhatsApp(m, t.id)}
-                                      className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-xl text-[9px] font-black text-white hover:text-emerald-400 transition-all uppercase tracking-tight"
-                                    >
-                                      {t.name}
-                                    </button>
-                                  ))}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+
+                            {/* Guest Recorder Link */}
+                            <button
+                              onClick={() => window.open(`/m/${m.id}`, '_blank')}
+                              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-purple-500/20 text-purple-400 text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all hover:bg-purple-500/30 active:scale-95 border border-purple-500/20 whitespace-nowrap"
+                            >
+                              <Mic size={12} />Record
+                            </button>
+
+                            {/* Invite Block */}
+                            <button
+                              onClick={() => handleQuickShare(m)}
+                              className="w-full h-full flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all active:scale-95 border border-emerald-500/20 whitespace-nowrap"
+                            >
+                              <MessageSquare size={12} /> Invite
+                            </button>
                           </div>
 
-                          <button onClick={() => handleDelete(m.id)} className="ml-auto p-2 text-white/10 hover:text-rose-400 transition-colors">
-                            <Trash2 size={14} />
-                          </button>
+                          {/* Utilities */}
+                          <div className="flex gap-2 ml-auto mt-2 sm:mt-0 right-0">
+                            <button
+                              onClick={() => openEditModal(m)}
+                              className="p-2 sm:p-2.5 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-[var(--crm-bg)] hover:text-indigo-400 transition-all active:scale-95 border border-[var(--crm-border)]"
+                              title="Edit Meeting"
+                            >
+                              <Edit2 size={12} className="text-[var(--crm-text-muted)]" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(m.id)}
+                              className="p-2 sm:p-2.5 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-rose-500/20 hover:text-rose-400 transition-all active:scale-95 border border-[var(--crm-border)]"
+                              title="Delete Meeting"
+                            >
+                              <Trash2 size={12} className="text-[var(--crm-text-muted)]" />
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -555,8 +584,8 @@ export default function CalendarPage({ user }: { user: any }) {
           <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 50 }} 
-              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              initial={{ scale: 0.9, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 50 }}
               className="bg-[var(--crm-sidebar-bg)] sm:rounded-[2.5rem] shadow-2xl w-full h-full sm:h-auto sm:max-w-xl border-[var(--crm-border)] relative z-10 overflow-hidden flex flex-col"
             >
@@ -629,7 +658,7 @@ export default function CalendarPage({ user }: { user: any }) {
                     <div>
                       <label className={labelClasses}>Target Lead</label>
                       <div className="space-y-2">
-                        <input 
+                        <input
                           type="text"
                           placeholder="Search lead..."
                           value={leadSearch}
@@ -655,7 +684,7 @@ export default function CalendarPage({ user }: { user: any }) {
                     <div>
                       <label className={labelClasses}>Assigned Representatives</label>
                       <div className="space-y-3">
-                        <input 
+                        <input
                           type="text"
                           placeholder="Search member..."
                           value={memberSearch}
@@ -668,13 +697,13 @@ export default function CalendarPage({ user }: { user: any }) {
                             .map(m => {
                               const isSelected = form.assignedTo.includes(m.id);
                               return (
-                                <div 
-                                  key={m.id} 
+                                <div
+                                  key={m.id}
                                   onClick={() => {
                                     if (role === 'team_member' && m.id !== user.uid) return;
                                     setForm(f => ({
                                       ...f,
-                                      assignedTo: isSelected 
+                                      assignedTo: isSelected
                                         ? f.assignedTo.filter(id => id !== m.id)
                                         : [...f.assignedTo, m.id]
                                     }));
@@ -697,19 +726,10 @@ export default function CalendarPage({ user }: { user: any }) {
                         </div>
                       </div>
                     </div>
-
-                    <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/30">
-                        <Bell size={16} />
-                      </div>
-                      <p className="text-[10px] font-bold text-indigo-300 leading-relaxed uppercase tracking-widest">
-                        Smart notifications enabled. Assigned members will receive alerts across the matrix.
-                      </p>
-                    </div>
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className={labelClasses}>Agenda & Notes</label>
+                    <label className={labelClasses}>Notes</label>
                     <textarea
                       value={form.notes}
                       onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}

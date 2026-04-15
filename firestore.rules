@@ -138,5 +138,10 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow delete: if isSuperAdmin();
     }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isSuperAdmin());
+      allow write: if isAuthenticated();
+    }
   }
 }

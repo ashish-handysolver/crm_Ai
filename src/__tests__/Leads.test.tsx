@@ -12,6 +12,23 @@ vi.mock('../firebase', () => ({
   storage: {}
 }));
 
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(),
+  onAuthStateChanged: vi.fn((auth, cb) => {
+    cb({ uid: 'test-user', email: 'test@example.com' });
+    return () => {};
+  })
+}));
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  onSnapshot: vi.fn((q, cb) => { cb({ docs: [], docChanges: () => [] }); return () => {}; }),
+  getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({ role: 'user', companyId: 'test' }) }))
+}));
+
 const renderLeads = (user = { uid: 'test-user' }) => {
   return render(
     <BrowserRouter>
