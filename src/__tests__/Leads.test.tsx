@@ -107,13 +107,13 @@ describe('Leads Module', () => {
   it('renders lead list with search bar', async () => {
     renderLeads();
 
-    expect(screen.getByPlaceholderText(/Filter leads/i)).toBeDefined();
+    expect(screen.getByPlaceholderText(/Search leads/i)).toBeDefined();
     expect((await screen.findAllByText(/Alexander Sterling/i)).length).toBeGreaterThan(0);
   });
 
   it('filters leads based on search input', async () => {
     renderLeads();
-    fireEvent.change(screen.getByPlaceholderText(/Filter leads/i), { target: { value: 'Elena' } });
+    fireEvent.change(screen.getByPlaceholderText(/Search leads/i), { target: { value: 'Elena' } });
     
     expect((await screen.findAllByText(/Elena Thorne/i)).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Alexander Sterling/i)).toBeNull();
@@ -121,7 +121,7 @@ describe('Leads Module', () => {
 
   it('switches between List and Kanban view', async () => {
     renderLeads();
-    const kanbanBtn = screen.getByText(/Card View/i);
+    const kanbanBtn = screen.getByTitle(/Kanban View/i);
     fireEvent.click(kanbanBtn);
     
     expect((await screen.findAllByText(/QUALIFIED/i)).length).toBeGreaterThan(0);
@@ -130,7 +130,7 @@ describe('Leads Module', () => {
 
   it('opens Import Lead modal on button click', async () => {
     renderLeads();
-    const importBtn = screen.getByText(/Import Excel/i);
+    const importBtn = screen.getByTitle(/Import Excel/i);
     fireEvent.click(importBtn);
     
     expect(await screen.findByText(/Import Leads/i)).toBeDefined();
