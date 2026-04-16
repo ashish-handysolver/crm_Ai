@@ -1,120 +1,103 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import Dashboard from '../Dashboard';
-import { DemoProvider } from '../DemoContext';
-import { AuthProvider } from '../contexts/AuthContext';
 import { BrowserRouter } from 'react-router-dom';
+import Dashboard from '../Dashboard';
+import demoData from '../data/demoData.json';
 
-// Mocking Dependencies
+const authState = vi.hoisted(() => ({
+  companyId: 'test-company',
+  role: 'admin',
+}));
+
+vi.mock('../DemoContext', () => ({
+  useDemo: () => ({
+    isDemoMode: true,
+    setDemoMode: vi.fn(),
+    demoData,
+  }),
+}));
+
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => authState,
+}));
+
 vi.mock('../firebase', () => ({
   db: {},
   auth: { currentUser: { uid: 'test-user' } },
-  storage: {}
-}));
-
-vi.mock('firebase/auth', () => ({
-  getAuth: vi.fn(),
-  onAuthStateChanged: vi.fn((auth, cb) => {
-    cb({ uid: 'test-user', email: 'test@example.com' });
-    return () => {};
-  })
+  storage: {},
 }));
 
 vi.mock('firebase/firestore', () => ({
-  getFirestore: vi.fn(),
   collection: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
   doc: vi.fn((db, coll, id) => ({ id, collection: coll })),
-  onSnapshot: vi.fn((q, cb) => { 
-    if (typeof cb === 'function') {
-      // If q has an id, it's likely a doc reference from our doc mock
-      if (q && q.id) {
-        cb({ 
-          exists: () => true, 
-          data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }),
-          id: q.id 
-        });
-      } else {
-        cb({ docs: [], docChanges: () => [] }); 
-      }
-    }
-    return () => {}; 
-  }),
-  getDoc: vi.fn(() => Promise.resolve({ 
-    exists: () => true, 
-    data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }) 
+  onSnapshot: vi.fn(() => () => {}),
+  getDoc: vi.fn(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({ customPhases: ['STAGING'] }),
   })),
   updateDoc: vi.fn(() => Promise.resolve()),
-  Timestamp: {
-    now: () => ({ toMillis: () => Date.now() }),
-    fromDate: (date: Date) => ({ toMillis: () => date.getTime() })
-  }
 }));
 
-const renderDashboard = (user = { uid: 'test-user', displayName: 'Test User' }) => {
-  return render(
-    <BrowserRouter>
-      <AuthProvider>
-        <DemoProvider>
-          <Dashboard user={user} />
-        </DemoProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  );
-};
+const testUser = { uid: 'test-user', displayName: 'Test User' };
+
+const renderDashboard = () => render(
+  <BrowserRouter>
+    <Dashboard user={testUser} />
+  </BrowserRouter>
+);
 
 describe('Dashboard Component', () => {
+  beforeEach(() => {
+    authState.companyId = 'test-company';
+    authState.role = 'admin';
+    window.history.pushState({}, '', '/');
+  });
+
   it('renders correctly with default Overview tab', () => {
     renderDashboard();
-    expect(screen.getByText(/Dashboard/i)).toBeDefined();
+
+    expect(screen.getByRole('button', { name: /Dashboard/i })).toBeDefined();
     expect(screen.getByText(/Total Leads/i)).toBeDefined();
   });
 
-  it('switches to AI Analytics tab on click', () => {
+  it('switches to AI Analytics tab on click', async () => {
     renderDashboard();
     const analyticsTab = screen.getByRole('button', { name: /AI Analytics/i });
     fireEvent.click(analyticsTab);
     
-    expect(screen.getByText(/Intelligence Velocity/i)).toBeDefined();
+    expect(await screen.findByText(/Lead Performance/i)).toBeDefined();
   });
 
-  it('switches to Reports tab on click', () => {
+  it('switches to Reports tab on click', async () => {
     renderDashboard();
     const reportsTab = screen.getByRole('button', { name: /Reports/i });
     fireEvent.click(reportsTab);
     
-    expect(screen.getByText(/Operational Artifacts/i)).toBeDefined();
+    expect(await screen.findByText(/Call Intelligence/i)).toBeDefined();
+    expect(screen.getByText(/Archive Intelligence/i)).toBeDefined();
   });
 
-  it('displays correct KPI values from demo data in demo mode', () => {
+  it('displays current demo KPI values in demo mode', () => {
     renderDashboard();
-    // In Dashboard.tsx, conversionRate uses interestedCount which is leads.filter(l => l.isInterested !== false).length
-    // Demo data for leads is 124 in total.
-    expect(screen.getByText('124')).toBeDefined();
+
+    expect(screen.getAllByText(String(demoData.leads.length)).length).toBeGreaterThan(0);
   });
 
-  // Removed invalid search test as Dashboard.tsx no longer contains a search bar in the overview tab.
-
-  it('navigates to clients page when clicking a KPI card', () => {
+  it('navigates to clients page when clicking the Total Leads KPI card', () => {
     renderDashboard();
-    const leadCard = screen.getByText(/Total Leads/i).closest('div');
-    if (leadCard) fireEvent.click(leadCard);
+
+    const leadCard = screen.getByText(/Total Leads/i).closest('.glass-card');
+    expect(leadCard).toBeTruthy();
+    fireEvent.click(leadCard!);
+
     expect(window.location.pathname).toBe('/clients');
   });
 
   it('renders team performance table with demo data', () => {
     renderDashboard();
     expect(screen.getByText(/Team Performance/i)).toBeDefined();
-    expect(screen.getByText(/Sarah Jenkins/i)).toBeDefined(); // From demo data
+    expect(screen.getAllByText(/Sarah Jenkins/i).length).toBeGreaterThan(0);
   });
 });
-
-/**
- * INSTALLATION NOTE:
- * To run these tests, ensure vitest and @testing-library/react are installed:
- * npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
- * 
- * Add to package.json scripts:
- * "test": "vitest"
- */

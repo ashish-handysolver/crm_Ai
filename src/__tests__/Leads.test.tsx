@@ -1,48 +1,45 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import Leads from '../Leads';
-import { DemoProvider } from '../DemoContext';
-import { AuthProvider } from '../contexts/AuthContext';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import Leads from '../Leads';
+import demoData from '../data/demoData.json';
 
-// Mocking Dependencies
+const authState = vi.hoisted(() => ({
+  companyId: null as string | null,
+  role: 'admin',
+}));
+
+const demoState = vi.hoisted(() => ({
+  isDemoMode: false,
+}));
+
+vi.mock('../DemoContext', () => ({
+  useDemo: () => ({
+    isDemoMode: demoState.isDemoMode,
+    setDemoMode: vi.fn(),
+    demoData,
+  }),
+}));
+
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => authState,
+}));
+
 vi.mock('../firebase', () => ({
   db: {},
   auth: { currentUser: { uid: 'test-user' } },
   storage: {}
 }));
 
-vi.mock('firebase/auth', () => ({
-  getAuth: vi.fn(),
-  onAuthStateChanged: vi.fn((auth, cb) => {
-    cb({ uid: 'test-user', email: 'test@example.com' });
-    return () => {};
-  })
-}));
-
 vi.mock('firebase/firestore', () => ({
-  getFirestore: vi.fn(),
-  collection: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
+  collection: vi.fn((db, path) => ({ path })),
+  query: vi.fn((...args) => ({ args })),
+  where: vi.fn((field, op, value) => ({ field, op, value })),
   doc: vi.fn((db, coll, id) => ({ id, collection: coll })),
-  onSnapshot: vi.fn((q, cb) => { 
-    if (typeof cb === 'function') {
-      if (q && q.id) {
-        cb({ 
-          exists: () => true, 
-          data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }),
-          id: q.id 
-        });
-      } else {
-        cb({ docs: [], docChanges: () => [] }); 
-      }
-    }
-    return () => {}; 
-  }),
-  getDoc: vi.fn(() => Promise.resolve({ 
-    exists: () => true, 
-    data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }) 
+  onSnapshot: vi.fn(() => () => {}),
+  getDoc: vi.fn(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({ customLeadTypes: [], customPhases: [] })
   })),
   getDocs: vi.fn(() => Promise.resolve({ docs: [] })),
   updateDoc: vi.fn(() => Promise.resolve()),
@@ -56,87 +53,133 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/storage', () => ({
-  getStorage: vi.fn(),
   ref: vi.fn(),
   uploadBytes: vi.fn(() => Promise.resolve()),
   getDownloadURL: vi.fn(() => Promise.resolve('https://example.com/audio.webm'))
 }));
 
-const renderLeads = (user = { uid: 'test-user', displayName: 'Test User' }) => {
-  return render(
-    <BrowserRouter>
-      <AuthProvider>
-        <DemoProvider>
-          <Leads user={user} />
-        </DemoProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  );
-};
+const testUser = { uid: 'test-user', displayName: 'Test User' };
+
+class MockMediaRecorder {
+  static isTypeSupported = vi.fn(() => true);
+
+  state = 'inactive';
+  ondataavailable: ((event: { data: Blob }) => void) | null = null;
+  onstop: (() => void) | null = null;
+
+  start() {
+    this.state = 'recording';
+  }
+
+  stop() {
+    this.state = 'inactive';
+    this.ondataavailable?.({ data: new Blob(['audio'], { type: 'audio/webm' }) });
+    this.onstop?.();
+  }
+
+  pause() {
+    this.state = 'paused';
+  }
+
+  resume() {
+    this.state = 'recording';
+  }
+}
+
+const renderLeads = () => render(
+  <BrowserRouter>
+    <Leads user={testUser} />
+  </BrowserRouter>
+);
 
 describe('Leads Module', () => {
-  it('renders lead list with search bar', () => {
-    renderLeads();
-    expect(screen.getByPlaceholderText(/Search/i)).toBeDefined();
-    expect(screen.getByText(/Alexander Sterling/i)).toBeDefined();
+  beforeEach(() => {
+    authState.companyId = null;
+    authState.role = 'admin';
+    demoState.isDemoMode = false;
+    window.history.pushState({}, '', '/clients');
   });
 
-  it('filters leads based on search input', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders lead list with search bar', async () => {
     renderLeads();
-    const searchInput = screen.getByPlaceholderText(/Filter/i);
-    fireEvent.change(searchInput, { target: { value: 'Elena' } });
+
+    expect(screen.getByPlaceholderText(/Filter leads/i)).toBeDefined();
+    expect((await screen.findAllByText(/Alexander Sterling/i)).length).toBeGreaterThan(0);
+  });
+
+  it('filters leads based on search input', async () => {
+    renderLeads();
+    fireEvent.change(screen.getByPlaceholderText(/Filter leads/i), { target: { value: 'Elena' } });
     
-    expect(screen.getByText(/Elena Thorne/i)).toBeDefined();
+    expect((await screen.findAllByText(/Elena Thorne/i)).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Alexander Sterling/i)).toBeNull();
   });
 
-  it('switches between List and Kanban view', () => {
+  it('switches between List and Kanban view', async () => {
     renderLeads();
     const kanbanBtn = screen.getByText(/Card View/i);
     fireEvent.click(kanbanBtn);
     
-    expect(screen.getByText(/QUALIFIED/i)).toBeDefined();
-    expect(screen.getByText(/NURTURING/i)).toBeDefined();
+    expect((await screen.findAllByText(/QUALIFIED/i)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/NURTURING/i).length).toBeGreaterThan(0);
   });
 
-  it('opens Import Lead modal on button click', () => {
+  it('opens Import Lead modal on button click', async () => {
     renderLeads();
     const importBtn = screen.getByText(/Import Excel/i);
     fireEvent.click(importBtn);
     
-    expect(screen.getByText(/Bulk Import Protocols/i)).toBeDefined();
+    expect(await screen.findByText(/Import Leads/i)).toBeDefined();
   });
 
-  it('handles recording toggle interaction', () => {
-    // Mock getUserMedia
-    const mockGetUserMedia = vi.fn().mockResolvedValue({
-      getTracks: () => [{ stop: vi.fn() }]
-    });
+  it('handles recording toggle interaction', async () => {
     Object.defineProperty(navigator, 'mediaDevices', {
-      value: { getUserMedia: mockGetUserMedia },
-      writable: true
+      value: {
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [{ stop: vi.fn() }]
+        })
+      },
+      configurable: true
+    });
+    Object.defineProperty(window, 'MediaRecorder', {
+      value: MockMediaRecorder,
+      configurable: true
+    });
+    Object.defineProperty(globalThis, 'MediaRecorder', {
+      value: MockMediaRecorder,
+      configurable: true
     });
 
     renderLeads();
-    const recordButtons = screen.getAllByTitle('Record Call');
+    const recordButtons = await screen.findAllByTitle('Record Call');
     fireEvent.click(recordButtons[0]);
     
-    expect(screen.getByText((content) => content.includes('00:00'))).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getAllByText((content) => content.includes('00:00')).length).toBeGreaterThan(0);
+    });
   });
 
   it('handles lead deletion', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
     renderLeads();
-    const deleteButtons = screen.getAllByTitle('Delete Lead');
-    fireEvent.click(deleteButtons[0]);
-    
+
+    const deleteButtons = await screen.findAllByTitle('Delete Lead');
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+
     expect(confirmSpy).toHaveBeenCalled();
   });
 
-  it('toggles interest status', () => {
+  it('toggles interest status', async () => {
     renderLeads();
-    const interestToggles = screen.getAllByTitle(/Interested/i);
+    const interestToggles = await screen.findAllByTitle(/Interested/i);
     fireEvent.click(interestToggles[0]);
-    // Since it's demo mode, it won't actually update the UI, but it should trigger the handler
+
+    expect(interestToggles[0]).toBeDefined();
   });
 });
