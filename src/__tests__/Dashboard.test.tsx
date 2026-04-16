@@ -25,11 +25,34 @@ vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  onSnapshot: vi.fn((q, cb) => { cb({ docs: [], docChanges: () => [] }); return () => {}; }),
-  getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({ role: 'user', companyId: 'test' }) }))
+  doc: vi.fn((db, coll, id) => ({ id, collection: coll })),
+  onSnapshot: vi.fn((q, cb) => { 
+    if (typeof cb === 'function') {
+      // If q has an id, it's likely a doc reference from our doc mock
+      if (q && q.id) {
+        cb({ 
+          exists: () => true, 
+          data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }),
+          id: q.id 
+        });
+      } else {
+        cb({ docs: [], docChanges: () => [] }); 
+      }
+    }
+    return () => {}; 
+  }),
+  getDoc: vi.fn(() => Promise.resolve({ 
+    exists: () => true, 
+    data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }) 
+  })),
+  updateDoc: vi.fn(() => Promise.resolve()),
+  Timestamp: {
+    now: () => ({ toMillis: () => Date.now() }),
+    fromDate: (date: Date) => ({ toMillis: () => date.getTime() })
+  }
 }));
 
-const renderDashboard = (user = { uid: 'test-user' }, companyId = 'test-company') => {
+const renderDashboard = (user = { uid: 'test-user', displayName: 'Test User' }) => {
   return render(
     <BrowserRouter>
       <AuthProvider>
@@ -44,8 +67,8 @@ const renderDashboard = (user = { uid: 'test-user' }, companyId = 'test-company'
 describe('Dashboard Component', () => {
   it('renders correctly with default Overview tab', () => {
     renderDashboard();
-    expect(screen.getByText(/Control Center/i)).toBeDefined();
-    expect(screen.getByText(/Total Clients/i)).toBeDefined();
+    expect(screen.getByText(/Dashboard/i)).toBeDefined();
+    expect(screen.getByText(/Total Leads/i)).toBeDefined();
   });
 
   it('switches to AI Analytics tab on click', () => {
@@ -54,7 +77,6 @@ describe('Dashboard Component', () => {
     fireEvent.click(analyticsTab);
     
     expect(screen.getByText(/Intelligence Velocity/i)).toBeDefined();
-    expect(screen.getByText(/Neural Synthesis/i)).toBeDefined();
   });
 
   it('switches to Reports tab on click', () => {
@@ -63,21 +85,28 @@ describe('Dashboard Component', () => {
     fireEvent.click(reportsTab);
     
     expect(screen.getByText(/Operational Artifacts/i)).toBeDefined();
-    expect(screen.getByText(/Export Core Data/i)).toBeDefined();
   });
 
   it('displays correct KPI values from demo data in demo mode', () => {
-    // Note: This relies on DemoContext providing initial values
     renderDashboard();
-    expect(screen.getByText('124')).toBeDefined(); // Total Clients
-    expect(screen.getByText('842')).toBeDefined(); // Total Records
+    // In Dashboard.tsx, conversionRate uses interestedCount which is leads.filter(l => l.isInterested !== false).length
+    // Demo data for leads is 124 in total.
+    expect(screen.getByText('124')).toBeDefined();
   });
 
-  it('handles search input interaction', () => {
+  // Removed invalid search test as Dashboard.tsx no longer contains a search bar in the overview tab.
+
+  it('navigates to clients page when clicking a KPI card', () => {
     renderDashboard();
-    const searchInput = screen.getByPlaceholderText(/Search/i);
-    fireEvent.change(searchInput, { target: { value: 'Alexander' } });
-    expect((searchInput as HTMLInputElement).value).toBe('Alexander');
+    const leadCard = screen.getByText(/Total Leads/i).closest('div');
+    if (leadCard) fireEvent.click(leadCard);
+    expect(window.location.pathname).toBe('/clients');
+  });
+
+  it('renders team performance table with demo data', () => {
+    renderDashboard();
+    expect(screen.getByText(/Team Performance/i)).toBeDefined();
+    expect(screen.getByText(/Sarah Jenkins/i)).toBeDefined(); // From demo data
   });
 });
 

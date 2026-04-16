@@ -69,10 +69,8 @@ export default function Analytics({ user }: { user: any }) {
         <header className="mb-6 sm:mb-10">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <BarChart3 size={14} className="animate-pulse" /> Strategic Intelligence Vector
+              <BarChart3 size={14} className="animate-pulse" /> Lead Performance
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-tight">Lead Performance</h1>
-            <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Visualizing conversion probability and AI-driven match scores across your lead pipeline.</p>
           </motion.div>
         </header>
 

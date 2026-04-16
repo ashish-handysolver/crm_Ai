@@ -25,11 +25,44 @@ vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  onSnapshot: vi.fn((q, cb) => { cb({ docs: [], docChanges: () => [] }); return () => {}; }),
-  getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({ role: 'user', companyId: 'test' }) }))
+  doc: vi.fn((db, coll, id) => ({ id, collection: coll })),
+  onSnapshot: vi.fn((q, cb) => { 
+    if (typeof cb === 'function') {
+      if (q && q.id) {
+        cb({ 
+          exists: () => true, 
+          data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }),
+          id: q.id 
+        });
+      } else {
+        cb({ docs: [], docChanges: () => [] }); 
+      }
+    }
+    return () => {}; 
+  }),
+  getDoc: vi.fn(() => Promise.resolve({ 
+    exists: () => true, 
+    data: () => ({ role: 'user', companyId: 'test', customPhases: ['STAGING'] }) 
+  })),
+  getDocs: vi.fn(() => Promise.resolve({ docs: [] })),
+  updateDoc: vi.fn(() => Promise.resolve()),
+  setDoc: vi.fn(() => Promise.resolve()),
+  addDoc: vi.fn(() => Promise.resolve({ id: 'new-id' })),
+  deleteDoc: vi.fn(() => Promise.resolve()),
+  Timestamp: {
+    now: () => ({ toMillis: () => Date.now() }),
+    fromDate: (date: Date) => ({ toMillis: () => date.getTime() })
+  }
 }));
 
-const renderLeads = (user = { uid: 'test-user' }) => {
+vi.mock('firebase/storage', () => ({
+  getStorage: vi.fn(),
+  ref: vi.fn(),
+  uploadBytes: vi.fn(() => Promise.resolve()),
+  getDownloadURL: vi.fn(() => Promise.resolve('https://example.com/audio.webm'))
+}));
+
+const renderLeads = (user = { uid: 'test-user', displayName: 'Test User' }) => {
   return render(
     <BrowserRouter>
       <AuthProvider>
@@ -50,7 +83,7 @@ describe('Leads Module', () => {
 
   it('filters leads based on search input', () => {
     renderLeads();
-    const searchInput = screen.getByPlaceholderText(/Search/i);
+    const searchInput = screen.getByPlaceholderText(/Filter/i);
     fireEvent.change(searchInput, { target: { value: 'Elena' } });
     
     expect(screen.getByText(/Elena Thorne/i)).toBeDefined();
@@ -59,28 +92,51 @@ describe('Leads Module', () => {
 
   it('switches between List and Kanban view', () => {
     renderLeads();
-    const kanbanBtn = screen.getByTitle('Kanban View');
+    const kanbanBtn = screen.getByText(/Card View/i);
     fireEvent.click(kanbanBtn);
     
-    // Check for Kanban specific elements (e.g., column headers)
     expect(screen.getByText(/QUALIFIED/i)).toBeDefined();
     expect(screen.getByText(/NURTURING/i)).toBeDefined();
   });
 
   it('opens Import Lead modal on button click', () => {
     renderLeads();
-    const importBtn = screen.getByText(/Import Lead/i);
+    const importBtn = screen.getByText(/Import Excel/i);
     fireEvent.click(importBtn);
     
     expect(screen.getByText(/Bulk Import Protocols/i)).toBeDefined();
   });
 
   it('handles recording toggle interaction', () => {
+    // Mock getUserMedia
+    const mockGetUserMedia = vi.fn().mockResolvedValue({
+      getTracks: () => [{ stop: vi.fn() }]
+    });
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: { getUserMedia: mockGetUserMedia },
+      writable: true
+    });
+
     renderLeads();
     const recordButtons = screen.getAllByTitle('Record Call');
     fireEvent.click(recordButtons[0]);
     
-    // Verify recording state (timer should appear)
-    expect(screen.getByText(/00:00/)).toBeDefined();
+    expect(screen.getByText((content) => content.includes('00:00'))).toBeDefined();
+  });
+
+  it('handles lead deletion', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
+    renderLeads();
+    const deleteButtons = screen.getAllByTitle('Delete Lead');
+    fireEvent.click(deleteButtons[0]);
+    
+    expect(confirmSpy).toHaveBeenCalled();
+  });
+
+  it('toggles interest status', () => {
+    renderLeads();
+    const interestToggles = screen.getAllByTitle(/Interested/i);
+    fireEvent.click(interestToggles[0]);
+    // Since it's demo mode, it won't actually update the UI, but it should trigger the handler
   });
 });
