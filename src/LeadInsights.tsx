@@ -576,20 +576,16 @@ export default function LeadInsights({ user }: { user: any }) {
             <div className="p-2 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl group-hover:border-cyan-500/50 group-hover:shadow-lg group-hover:shadow-cyan-500/10 transition-all backdrop-blur-md">
               <ChevronLeft size={14} />
             </div>
-            Back to Pipeline
+            Back to Leads
           </Link>
 
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 sm:gap-10">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-                <Zap size={14} className="animate-pulse" /> Neural Intelligence Matrix
-              </div>
+
               <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight text-[var(--crm-text)] leading-tight font-display overflow-hidden">
-                <span className="text-gradient-flow">{lead.company || lead.name}</span>
+                <span className="text-gradient-flow">{lead.name}</span>
               </h1>
-              <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-lg italic leading-relaxed">
-                Aggregated meeting heuristics and AI-generated insights.
-              </p>
+
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap sm:flex-nowrap gap-4 shrink-0">
@@ -672,7 +668,7 @@ export default function LeadInsights({ user }: { user: any }) {
               onClick={handleExportPDF}
               className="px-8 py-4 rounded-[1.5rem] bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-black text-[10px] uppercase tracking-widest shadow-2xl border border-[var(--crm-border)] hover:border-[var(--crm-text)]/20 transition-all flex items-center gap-3 active:scale-95 backdrop-blur-md"
             >
-              <Download size={14} /> Intelligence Payload (PDF)
+              <Download size={14} /> Download Pdf
             </button>
             <button
               onClick={handleRegenerate}
@@ -680,7 +676,7 @@ export default function LeadInsights({ user }: { user: any }) {
               className="px-8 py-4 rounded-[1.5rem] btn-primary text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50"
             >
               {generatingAI ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-              {generatingAI ? 'Synchronizing Vectors...' : 'Regenerate Neural Insights'}
+              {generatingAI ? 'Regenerating Insights...' : 'Regenerate Insights'}
             </button>
           </motion.div>
         )}
@@ -773,7 +769,7 @@ export default function LeadInsights({ user }: { user: any }) {
                 <div className="flex justify-between items-start">
                   <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-lg uppercase tracking-[0.3em] font-display">
                     <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 backdrop-blur-xl shadow-2xl shadow-cyan-500/10"><Sparkles className="text-cyan-400" size={24} /></div>
-                    AI Executive Summary
+                    AI Summary
                   </h3>
                   <div className="flex gap-3">
                     {editingOverview === null ? (
@@ -823,14 +819,14 @@ export default function LeadInsights({ user }: { user: any }) {
                       initial={{ width: 0 }}
                       animate={{ width: `${getPhaseProgress(lead.phase)}%` }}
                       transition={{ duration: 2, type: 'spring', bounce: 0.2 }}
-                      className="h-full bg-gradient-to-r from-cyan-600 via-emerald-500 to-cyan-400 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.4)] relative"
+                      className="h-full bg-gradient-to-r from-cyan-600 via-emerald-300 to-cyan-400 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.4)] relative"
                     >
                       <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.3)_50%,transparent_100%)] animate-shine bg-[length:200%_100%]"></div>
                     </motion.div>
                   </div>
 
                   <div className="flex items-end justify-between gap-4">
-                    <h2 className="text-4xl lg:text-5xl font-black tracking-tight text-[var(--crm-text)] uppercase truncate font-display">
+                    <h2 className="text-4xl lg:text-3xl font-black tracking-tight text-[var(--crm-text)] uppercase truncate font-display">
                       {lead.phase?.toLowerCase() || 'Deployment'}
                     </h2>
                     <div className="flex flex-col items-end shrink-0">
@@ -861,7 +857,7 @@ export default function LeadInsights({ user }: { user: any }) {
               onClick={() => setShowMeetingModal(true)}
               className="px-8 py-4 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] text-slate-300 hover:text-cyan-400 hover:border-cyan-500/50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl active:scale-95 flex items-center gap-2"
             >
-              <Plus size={14} /> Schedule Session
+              <Plus size={14} /> Schedule Meetings
             </button>
           </div>
 
@@ -905,7 +901,7 @@ export default function LeadInsights({ user }: { user: any }) {
               <div className="p-5 bg-white/5 rounded-full text-slate-600 border border-white/5">
                 <CalendarDays size={48} />
               </div>
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] italic">No active session schedules detected.</p>
+              <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] italic">No Meetings schedules.</p>
             </div>
           )}
         </motion.div>
@@ -1047,7 +1043,7 @@ export default function LeadInsights({ user }: { user: any }) {
               <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-sm uppercase tracking-widest font-display">
                 <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-lg"><AlignLeft size={18} /></div> Audio Intelligence
               </h3>
-              {selectedRec && (
+              {/* {selectedRec && (
                 <button
                   onClick={handleSyncTranscript}
                   disabled={syncingTranscript || !selectedRec.audioUrl}
@@ -1057,7 +1053,7 @@ export default function LeadInsights({ user }: { user: any }) {
                   {syncingTranscript ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
                   {syncingTranscript ? 'Syncing...' : 'Regenerate Transcript'}
                 </button>
-              )}
+              )} */}
             </div>
             <div className="flex-1 bg-[var(--crm-bg)]/40 p-8 rounded-[2rem] border border-white/5 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover/transcript:bg-black/30 transition-all duration-500 scrollbar-hide">
               {selectedRec?.transcript ? (
@@ -1080,25 +1076,7 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
         </div>
 
-        {/* Action Controls */}
-        {selectedRec && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-end gap-5">
-            <button
-              onClick={handleExportPDF}
-              className="px-8 py-4 rounded-[1.5rem] bg-white/5 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-black text-[10px] uppercase tracking-widest shadow-2xl border border-white/10 hover:border-white/20 transition-all flex items-center gap-3 active:scale-95 backdrop-blur-md"
-            >
-              <Download size={14} /> Intelligence Payload (PDF)
-            </button>
-            <button
-              onClick={handleRegenerate}
-              disabled={generatingAI}
-              className="px-8 py-4 rounded-[1.5rem] btn-primary text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50"
-            >
-              {generatingAI ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-              {generatingAI ? 'Synchronizing Vectors...' : 'Regenerate Neural Insights'}
-            </button>
-          </motion.div>
-        )}
+
 
         <div className="bg-slate-900/60 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl border border-white/5 backdrop-blur-3xl">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
@@ -1108,8 +1086,8 @@ export default function LeadInsights({ user }: { user: any }) {
               <img src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name || 'User'}&background=random`} className="object-cover w-full h-full rounded-[2.5rem]" alt={lead.name || 'Lead'} />
             </div>
             <div className="space-y-3">
-              <div className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase font-display">Neural Identity Profile</div>
-              <div className="font-black text-[var(--crm-text)] text-3xl md:text-5xl tracking-tight leading-none font-display">{lead.company || lead.name}</div>
+              <div className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase font-display">{lead.company}</div>
+              <div className="font-black text-[var(--crm-text)] text-3xl md:text-5xl tracking-tight leading-none font-display">{lead.name}</div>
               <div className="text-sm font-semibold text-[var(--crm-text-muted)] mt-4 flex flex-wrap justify-center md:justify-start gap-4 uppercase tracking-[0.2em] text-[9px]">
                 <span className="flex items-center gap-3 shadow-2xl bg-white/5 px-4 py-2 rounded-full border border-white/5 text-slate-300 backdrop-blur-md transition-all hover:bg-white/10">{lead.email || 'NO_EMAIL_VECTOR'}</span>
                 <span className="flex items-center gap-3 shadow-2xl bg-white/5 px-4 py-2 rounded-full border border-white/5 text-slate-300 backdrop-blur-md transition-all hover:bg-white/10">{lead.phone || 'NO_PHONETIC_LINK'}</span>
@@ -1124,110 +1102,6 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
         </div>
 
-        {/* Activity Timeline Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Quick Note Form */}
-          <div className="glass-card !bg-white/5 !rounded-[2.5rem] !p-10 border-white/10 shadow-2xl relative overflow-hidden group/note h-fit">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500"></div>
-            <div className="space-y-8 relative z-10">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-lg">
-                  <MessageIcon size={20} />
-                </div>
-                <h3 className="font-black text-[var(--crm-text)] text-lg uppercase tracking-widest font-display">Append Intelligence</h3>
-              </div>
-
-              <form onSubmit={handleAddNote} className="space-y-6">
-                <textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Record call summary, email outcome, or meeting notes..."
-                  className="w-full px-6 py-5 rounded-2xl bg-black/40 border border-white/10 text-[var(--crm-text)] font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all min-h-[160px] resize-none text-sm placeholder:text-slate-600 shadow-inner"
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmittingNote || !newNote.trim()}
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[var(--crm-text)] font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-3 font-display"
-                >
-                  {isSubmittingNote ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                  Capture Sync
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="lg:col-span-2 space-y-10">
-            <div className="flex items-center justify-between mb-2 px-2">
-              <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-sm uppercase tracking-widest font-display">
-                <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-lg"><History size={18} /></div> Interaction Archive
-              </h3>
-              <div className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">{activityLogs.length} Events Logged</div>
-            </div>
-
-            <div className="space-y-6 max-h-[700px] overflow-y-auto pr-4 scrollbar-hide">
-              {activityLogs.length === 0 ? (
-                <div className="glass-card !bg-white/5 !border-dashed !border-white/10 py-24 flex flex-col items-center justify-center text-center rounded-[2.5rem]">
-                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 opacity-40">
-                    <History size={32} className="text-[var(--crm-text-muted)]" />
-                  </div>
-                  <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest italic opacity-60">Initial state established. No interactions found.</p>
-                </div>
-              ) : (
-                activityLogs.map((log, idx) => (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    key={log.id}
-                    className="relative pl-10 group/log"
-                  >
-                    {/* Continuous vertical line */}
-                    {idx !== activityLogs.length - 1 && (
-                      <div className="absolute top-10 left-3.5 w-[2px] h-[calc(100%+0.5rem)] bg-white/5 -translate-x-1/2"></div>
-                    )}
-
-                    {/* Log marker */}
-                    <div className={`absolute top-4 left-0 w-7 h-7 rounded-full flex items-center justify-center border shadow-xl z-20 ${log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
-                      log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
-                        'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
-                      }`}>
-                      {log.type === 'MANUAL_NOTE' ? <MessageIcon size={12} /> :
-                        log.type === 'FIELD_CHANGE' ? <Edit size={12} /> :
-                          log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={12} /> :
-                            <Zap size={12} />}
-                    </div>
-
-                    <div className="glass-card !bg-slate-900/40 !p-6 !rounded-[2rem] border-white/5 hover:border-white/10 transition-all shadow-xl group-hover/log:bg-slate-900/60">
-                      <div className="flex justify-between items-start gap-4 mb-4">
-                        <div className="space-y-1">
-                          <div className="text-[9px] font-black text-cyan-400 uppercase tracking-[0.2em]">{log.action}</div>
-                          <div className="text-[11px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">by {log.authorName}</div>
-                        </div>
-                        <div className="text-[9px] font-black text-slate-600 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 uppercase tracking-widest shrink-0 shadow-inner">
-                          {log.createdAt?.toDate ? log.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false }) : 'Legacy Core'}
-                        </div>
-                      </div>
-
-                      {log.type === 'MANUAL_NOTE' ? (
-                        <div className="p-4 bg-black/30 rounded-xl border border-white/5 text-sm text-slate-300 font-medium leading-relaxed italic border-l-4 border-l-indigo-500 shadow-inner">
-                          "{log.details?.note}"
-                        </div>
-                      ) : log.type === 'FIELD_CHANGE' || log.type === 'INTEREST_CHANGE' ? (
-                        <div className="flex items-center gap-4 text-xs font-bold text-[var(--crm-text-muted)] bg-white/[0.02] p-4 rounded-xl border border-white/5 shadow-inner">
-                          <span className="text-[var(--crm-text-muted)] uppercase text-[9px] tracking-widest">{log.details?.field}:</span>
-                          <span className="line-through opacity-40 px-2 py-1 bg-white/5 rounded-lg">{String(log.details?.oldValue)}</span>
-                          <ArrowUpRight size={14} className="text-cyan-500" />
-                          <span className="text-[var(--crm-text)] px-3 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20 shadow-md">{String(log.details?.newValue)}</span>
-                        </div>
-                      ) : null}
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
 
         <AnimatePresence>
           {expandedSection && (
