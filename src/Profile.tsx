@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { playNotificationSound, SoundProfile, NOTIFICATION_SOUNDS } from './utils/sounds';
+import SearchableSelect from './components/SearchableSelect';
 
 
 const GRADIENTS = [
@@ -361,32 +362,26 @@ export default function Profile() {
                       <label className={labelClasses}>Alert Lead Time (Minutes)</label>
                       <div className="relative group/input">
                         <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
-                        <select
-                          value={formData.notificationMinutes}
-                          onChange={e => setFormData(f => ({ ...f, notificationMinutes: Number(e.target.value) }))}
-                          className={`${inputClasses} pl-16 appearance-none cursor-pointer`}
-                        >
-                          {[1, 5, 10, 15, 30, 60].map(min => (
-                            <option key={min} value={min} className="bg-slate-900 text-white">{min} Minutes Before</option>
-                          ))}
-                        </select>
-                        <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none rotate-90" size={16} />
+                        <SearchableSelect
+                          options={[1, 5, 10, 15, 30, 60].map(min => ({ id: String(min), name: `${min} Minutes Before` }))}
+                          value={String(formData.notificationMinutes)}
+                          onChange={val => setFormData(f => ({ ...f, notificationMinutes: Number(val) }))}
+                          placeholder="Select lead time"
+                          hideSearch={true}
+                        />
                       </div>
                     </div>
                     <div className="space-y-3">
                       <label className={labelClasses}>Audio Profile Identity</label>
                       <div className="relative group/input">
                         <Activity className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
-                        <select
+                        <SearchableSelect
+                          options={NOTIFICATION_SOUNDS.map(s => ({ id: s.id, name: s.name }))}
                           value={formData.notificationSoundId}
-                          onChange={e => setFormData(f => ({ ...f, notificationSoundId: e.target.value as SoundProfile }))}
-                          className={`${inputClasses} pl-16 appearance-none cursor-pointer`}
-                        >
-                          {NOTIFICATION_SOUNDS.map(s => (
-                            <option key={s.id} value={s.id} className="bg-slate-900 text-white">{s.name}</option>
-                          ))}
-                        </select>
-                        <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none rotate-90" size={16} />
+                          onChange={val => setFormData(f => ({ ...f, notificationSoundId: val as SoundProfile }))}
+                          placeholder="Select audio profile"
+                          hideSearch={true}
+                        />
                       </div>
                     </div>
                     <div className="md:col-span-2">

@@ -1031,8 +1031,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           )}
         </AnimatePresence>
 
-        {/* Toolbar */}
-        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
+        {/* Toolbar - Added overflow-visible to prevent select clipping */}
+        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !overflow-visible p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 relative z-50">
           <div className="relative w-full max-w-md group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
             <input
@@ -1060,17 +1060,19 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
                 <div className="h-8 w-[1px] bg-[var(--crm-bg)]/40 mx-1 hidden lg:block"></div>
 
-                <div className="grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                  <div className="relative w-full sm:w-auto">
-                    <select
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:flex md:flex-row md:flex-wrap items-center gap-2 sm:gap-4 w-full md:w-auto">
+                  <div className="w-full sm:w-auto min-w-[150px]">
+                    <SearchableSelect
+                      options={[
+                        { id: '', name: 'All Types' },
+                        ...availableLeadTypes.map(t => ({ id: t, name: t }))
+                      ]}
                       value={leadTypeFilter}
-                      onChange={(e) => setLeadTypeFilter(e.target.value)}
-                      className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
-                    >
-                      <option value="">All Types</option>
-                      {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                      onChange={setLeadTypeFilter}
+                      placeholder="All Types"
+                      compact={true}
+                      hideSearch={availableLeadTypes.length < 5}
+                    />
                   </div>
 
                   {role !== 'team_member' && (
@@ -1090,46 +1092,52 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     </div>
                   )}
 
-                  <div className="relative w-full sm:w-auto">
-                    <select
+                  <div className="w-full sm:w-auto min-w-[150px]">
+                    <SearchableSelect
+                      options={[
+                        { id: 'ALL', name: 'All Status' },
+                        { id: 'HOT', name: 'Hot 🔥' },
+                        { id: 'WARM', name: 'Warm ☀️' },
+                        { id: 'COLD', name: 'Cold ❄️' }
+                      ]}
                       value={healthFilter}
-                      onChange={(e) => setHealthFilter(e.target.value)}
-                      className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
-                    >
-                      <option value="ALL">All Status</option>
-                      <option value="HOT">Hot 🔥</option>
-                      <option value="WARM">Warm ☀️</option>
-                      <option value="COLD">Cold ❄️</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                      onChange={setHealthFilter}
+                      placeholder="All Status"
+                      compact={true}
+                      hideSearch={true}
+                    />
                   </div>
 
                   {!isActiveOnlyRoute && (
-                    <div className="relative w-full sm:w-auto">
-                      <select
+                    <div className="w-full sm:w-auto min-w-[150px]">
+                      <SearchableSelect
+                        options={[
+                          { id: 'ALL', name: 'All Activity' },
+                          { id: 'ACTIVE', name: 'Active (Connected)' },
+                          { id: 'INACTIVE', name: 'No Activity' }
+                        ]}
                         value={activityFilter}
-                        onChange={(e) => setActivityFilter(e.target.value as any)}
-                        className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
-                      >
-                        <option value="ALL">All Activity</option>
-                        <option value="ACTIVE">Active (Connected)</option>
-                        <option value="INACTIVE">No Activity</option>
-                      </select>
-                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                        onChange={(val) => setActivityFilter(val as any)}
+                        placeholder="All Activity"
+                        compact={true}
+                        hideSearch={true}
+                      />
                     </div>
                   )}
 
-                  <div className="relative w-full sm:w-auto">
-                    <select
+                  <div className="w-full sm:w-auto min-w-[150px]">
+                    <SearchableSelect
+                      options={[
+                        { id: 'ALL', name: 'All Interest' },
+                        { id: 'INTERESTED', name: 'Interested 👍' },
+                        { id: 'NOT_INTERESTED', name: 'Not Interested 👎' }
+                      ]}
                       value={interestFilter}
-                      onChange={(e) => setInterestFilter(e.target.value as any)}
-                      className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
-                    >
-                      <option value="ALL">All Interest</option>
-                      <option value="INTERESTED">Interested 👍</option>
-                      <option value="NOT_INTERESTED">Not Interested 👎</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                      onChange={(val) => setInterestFilter(val as any)}
+                      placeholder="All Interest"
+                      compact={true}
+                      hideSearch={true}
+                    />
                   </div>
                 </div>
               </motion.div>
