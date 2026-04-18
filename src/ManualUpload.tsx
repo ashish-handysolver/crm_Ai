@@ -97,14 +97,14 @@ export default function ManualUpload({ user }: { user: any }) {
             const fileUri = await uploadFileToGemini(uploadFile, apiKey);
             const promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps, and translate them into English. Return a JSON object with a 'fullText' string (the English summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
 
-            const validModels = ['gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-1.5-flash'];
+            const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
             let success = false;
             let rawText = "{}";
 
             for (const modelName of validModels) {
               try {
                 console.log(`Attempting extraction with model: ${modelName}`);
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

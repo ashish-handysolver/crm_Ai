@@ -14,6 +14,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 import ImportModal from './ImportModal';
+import { compressAudio } from './utils/audio-compression';
 import { logActivity } from './utils/activity';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import SearchableSelect from './components/SearchableSelect';
@@ -226,7 +227,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       let audioUrl = '';
 
       // 1. Upload to Firebase Storage
-      const storageRef = ref(storage, `recordings/${recordId}.webm`);
+      const storageRef = ref(storage, `recordings/${recordId}.${audioBlob.type.split('/')[1] || 'webm'}`);
       await uploadBytes(storageRef, audioBlob);
       audioUrl = await getDownloadURL(storageRef);
 
@@ -397,8 +398,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
       streamsRef.current = streams;
 
-      // Dynanamic mimeType for cross-browser support (Safari prefers mp4, Chrome prefers webm)
-      const options: any = { audioBitsPerSecond: 64000 };
+      // Dynamic mimeType for cross-browser support (Safari prefers mp4, Chrome prefers webm)
+      const options: any = { audioBitsPerSecond: 16000 };
       const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
       for (const type of types) {
         if (MediaRecorder.isTypeSupported(type)) {
@@ -412,15 +413,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      mediaRecorder.onstop = async () => {
+        const rawBlob = new Blob(audioChunksRef.current, { type: options.mimeType });
         streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
         if (audioContextRef.current) audioContextRef.current.close();
 
-        if (autoSubmitRef.current) {
-          performTranscription(blob, leadId);
-        } else {
-          performTranscription(blob, leadId);
+        // Compress audio before upload and transcription
+        try {
+          const compressedBlob = await compressAudio(rawBlob);
+          performTranscription(compressedBlob, leadId);
+        } catch (err) {
+          console.error("Audio compression failed, falling back to raw recording", err);
+          performTranscription(rawBlob, leadId);
         }
       };
 
