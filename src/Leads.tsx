@@ -1422,10 +1422,10 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               )}
             </div>
           </div>
-          <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
+          {/* <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
             <ArrowUpRight size={12} className="text-indigo-400" />
             Tap card for details
-          </div>
+          </div> */}
         </div>
       </div>
     );
@@ -1506,12 +1506,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   <div className="w-full sm:w-auto min-w-[150px]">
                     <SearchableSelect
                       options={[
-                        { id: '', name: 'All Types' },
+                        { id: '', name: 'Types' },
                         ...availableLeadTypes.map(t => ({ id: t, name: t }))
                       ]}
                       value={leadTypeFilter}
                       onChange={setLeadTypeFilter}
-                      placeholder="All Types"
+                      placeholder="Types"
                       compact={true}
                       hideSearch={availableLeadTypes.length < 5}
                     />
@@ -1528,7 +1528,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         }))}
                         value={teamMemberFilter}
                         onChange={setTeamMemberFilter}
-                        placeholder="All Team Members"
+                        placeholder="Team Members"
                         compact={true}
                       />
                     </div>
@@ -1537,14 +1537,14 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   <div className="w-full sm:w-auto min-w-[150px]">
                     <SearchableSelect
                       options={[
-                        { id: 'ALL', name: 'All Status' },
+                        { id: 'ALL', name: 'Status' },
                         { id: 'HOT', name: 'Hot 🔥' },
                         { id: 'WARM', name: 'Warm ☀️' },
                         { id: 'COLD', name: 'Cold ❄️' }
                       ]}
                       value={healthFilter}
                       onChange={setHealthFilter}
-                      placeholder="All Status"
+                      placeholder="Status"
                       compact={true}
                       hideSearch={true}
                     />
@@ -1554,13 +1554,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     <div className="w-full sm:w-auto min-w-[150px]">
                       <SearchableSelect
                         options={[
-                          { id: 'ALL', name: 'All Activity' },
+                          { id: 'ALL', name: 'Activity' },
                           { id: 'ACTIVE', name: 'Active (Connected)' },
-                          { id: 'INACTIVE', name: 'No Activity' }
+                          { id: 'INACTIVE', name: 'Not Active' }
                         ]}
                         value={activityFilter}
                         onChange={(val) => setActivityFilter(val as any)}
-                        placeholder="All Activity"
+                        placeholder="Activity"
                         compact={true}
                         hideSearch={true}
                       />
@@ -1570,13 +1570,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   <div className="w-full sm:w-auto min-w-[150px]">
                     <SearchableSelect
                       options={[
-                        { id: 'ALL', name: 'All Interest' },
+                        { id: 'ALL', name: 'All Leads' },
                         { id: 'INTERESTED', name: 'Interested 👍' },
                         { id: 'NOT_INTERESTED', name: 'Not Interested 👎' }
                       ]}
                       value={interestFilter}
                       onChange={(val) => setInterestFilter(val as any)}
-                      placeholder="All Interest"
+                      placeholder="All Leads"
                       compact={true}
                       hideSearch={true}
                     />
