@@ -96,7 +96,7 @@ export default function ManagementActivity({ user }: { user: any }) {
   const [logs, setLogs] = React.useState<ActivityLogRecord[]>([]);
   const [members, setMembers] = React.useState<TeamMember[]>([]);
   const [leads, setLeads] = React.useState<LeadSummary[]>([]);
-  const [selectedDate, setSelectedDate] = React.useState(toDateInputValue());
+  const [selectedDate, setSelectedDate] = React.useState('');
   const [selectedMember, setSelectedMember] = React.useState('ALL');
   const [selectedType, setSelectedType] = React.useState('ALL');
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -219,7 +219,7 @@ export default function ManagementActivity({ user }: { user: any }) {
     return logs
       .filter(log => {
         const date = getLogDate(log);
-        if (!date || toDateInputValue(date) !== selectedDate) return false;
+        if (selectedDate && (!date || toDateInputValue(date) !== selectedDate)) return false;
         if (selectedMember !== 'ALL' && getMemberKey(log) !== selectedMember) return false;
         if (selectedType !== 'ALL' && log.type !== selectedType) return false;
 
@@ -301,7 +301,15 @@ export default function ManagementActivity({ user }: { user: any }) {
             </button>
             <button
               type="button"
+              onClick={() => setSelectedDate('')}
+              className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-4 py-2 text-xs font-black uppercase tracking-wider text-[var(--crm-text)] transition hover:bg-[var(--crm-control-hover-bg)]"
+            >
+              All Dates
+            </button>
+            <button
+              type="button"
               onClick={() => {
+                setSelectedDate('');
                 setSelectedMember('ALL');
                 setSelectedType('ALL');
                 setSearchTerm('');
