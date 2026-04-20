@@ -14,6 +14,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 import ImportModal from './ImportModal';
+import { compressAudio } from './utils/audio-compression';
 import { logActivity } from './utils/activity';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import SearchableSelect from './components/SearchableSelect';
@@ -226,7 +227,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       let audioUrl = '';
 
       // 1. Upload to Firebase Storage
-      const storageRef = ref(storage, `recordings/${recordId}.webm`);
+      const storageRef = ref(storage, `recordings/${recordId}.${audioBlob.type.split('/')[1] || 'webm'}`);
       await uploadBytes(storageRef, audioBlob);
       audioUrl = await getDownloadURL(storageRef);
 
@@ -397,8 +398,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
       streamsRef.current = streams;
 
-      // Dynanamic mimeType for cross-browser support (Safari prefers mp4, Chrome prefers webm)
-      const options: any = { audioBitsPerSecond: 64000 };
+      // Dynamic mimeType for cross-browser support (Safari prefers mp4, Chrome prefers webm)
+      const options: any = { audioBitsPerSecond: 16000 };
       const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
       for (const type of types) {
         if (MediaRecorder.isTypeSupported(type)) {
@@ -412,15 +413,18 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      mediaRecorder.onstop = async () => {
+        const rawBlob = new Blob(audioChunksRef.current, { type: options.mimeType });
         streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop()));
         if (audioContextRef.current) audioContextRef.current.close();
 
-        if (autoSubmitRef.current) {
-          performTranscription(blob, leadId);
-        } else {
-          performTranscription(blob, leadId);
+        // Compress audio before upload and transcription
+        try {
+          const compressedBlob = await compressAudio(rawBlob);
+          performTranscription(compressedBlob, leadId);
+        } catch (err) {
+          console.error("Audio compression failed, falling back to raw recording", err);
+          performTranscription(rawBlob, leadId);
         }
       };
 
@@ -1003,16 +1007,16 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
             {!isDemoMode ? (
               <>
-                <button 
-                  onClick={() => setIsImportModalOpen(true)} 
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] text-[var(--crm-text)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--crm-border)] transition-all"
                   title="Import Excel"
                 >
-                  <UploadCloud size={16} /> 
+                  <UploadCloud size={16} />
                   <span className="hidden sm:inline">Import</span>
                 </button>
-                <Link 
-                  to="/clients/new" 
+                <Link
+                  to="/clients/new"
                   className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
                 >
                   <Plus size={18} />
@@ -1030,8 +1034,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         {/* Mobile FAB */}
         {!isDemoMode && (
           <div className="sm:hidden fixed bottom-6 right-6 z-[100]">
-            <Link 
-              to="/clients/new" 
+            <Link
+              to="/clients/new"
               className="w-14 h-14 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-indigo-500/40 border border-indigo-400/20 active:scale-90 transition-transform"
             >
               <Plus size={28} />
@@ -1050,326 +1054,323 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           )}
         </AnimatePresence>
 
-        {/* Combined Toolbar & Filters */}
-        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] p-2 sm:p-3 mb-6 flex flex-col gap-3">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
-            {/* Search - Always prominent */}
-            <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={16} />
-              <input
-                type="text"
-                placeholder="Search leads..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl py-2.5 pl-11 pr-4 text-xs font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-              />
-            </div>
-
-            <AnimatePresence mode="wait">
-              {selectedLeads.length === 0 ? (
-                <motion.div
-                  key="filters"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 lg:pb-0"
-                >
-                  {/* View Toggle - Compact */}
-                  <div className="flex items-center gap-1 p-1 bg-[var(--crm-bg)]/20 rounded-xl border border-[var(--crm-border)] shrink-0">
-                    <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`} title="List View"><List size={14} /></button>
-                    <button onClick={() => setViewMode('kanban')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`} title="Kanban View"><LayoutGrid size={14} /></button>
-                  </div>
-
-                  <div className="h-6 w-px bg-[var(--crm-border)] mx-1 shrink-0"></div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Compact Dropdowns */}
-                    <div className="relative">
-                      <select
-                        value={leadTypeFilter}
-                        onChange={(e) => setLeadTypeFilter(e.target.value)}
-                        className="pl-3 pr-8 py-2 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer min-w-[110px] [&>option]:bg-slate-900"
-                      >
-                        <option value="">All Types</option>
-                        {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
-                    </div>
-
-                    {role !== 'team_member' && (
-                      <div className="min-w-[140px]">
-                        <SearchableSelect
-                          options={teamMembers.map(tm => ({
-                            id: tm.id,
-                            name: tm.displayName || 'Untitled',
-                            company: '',
-                            avatar: tm.photoURL
-                          }))}
-                          value={teamMemberFilter}
-                          onChange={setTeamMemberFilter}
-                          placeholder="All Team"
-                          compact={true}
-                        />
-                      </div>
-                    )}
-
-                    <div className="relative">
-                      <select
-                        value={healthFilter}
-                        onChange={(e) => setHealthFilter(e.target.value)}
-                        className="pl-3 pr-8 py-2 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer min-w-[110px] [&>option]:bg-slate-900"
-                      >
-                        <option value="ALL">All Status</option>
-                        <option value="HOT">Hot 🔥</option>
-                        <option value="WARM">Warm ☀️</option>
-                        <option value="COLD">Cold ❄️</option>
-                      </select>
-                      <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
-                    </div>
-
-                    {!isActiveOnlyRoute && (
-                      <div className="relative">
-                        <select
-                          value={activityFilter}
-                          onChange={(e) => setActivityFilter(e.target.value as any)}
-                          className="pl-3 pr-8 py-2 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer min-w-[110px] [&>option]:bg-slate-900"
-                        >
-                          <option value="ALL">All Activity</option>
-                          <option value="ACTIVE">Active</option>
-                          <option value="INACTIVE">Inactive</option>
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
-                      </div>
-                    )}
-
-                    <div className="relative">
-                      <select
-                        value={interestFilter}
-                        onChange={(e) => setInterestFilter(e.target.value as any)}
-                        className="pl-3 pr-8 py-2 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer min-w-[110px] [&>option]:bg-slate-900"
-                      >
-                        <option value="ALL">All Interest</option>
-                        <option value="INTERESTED">Interested 👍</option>
-                        <option value="NOT_INTERESTED">Not Int. 👎</option>
-                      </select>
-                      <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="actions"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="flex items-center justify-between gap-3 w-full lg:w-auto"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">
-                      {selectedLeads.length} Selected
-                    </span>
-                    <button
-                      onClick={() => setSelectedLeads([])}
-                      className="text-[10px] font-black text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] uppercase tracking-widest transition-colors underline underline-offset-4"
-                    >
-                      Clear
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleBulkInterestUpdate(true)}
-                      className="p-2.5 bg-cyan-500/10 text-cyan-400 rounded-xl hover:bg-cyan-500/20 transition-all border border-cyan-500/20"
-                      title="Interested"
-                    >
-                      <ThumbsUp size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleBulkInterestUpdate(false)}
-                      className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all border border-rose-500/20"
-                      title="Not Interested"
-                    >
-                      <ThumbsDown size={14} />
-                    </button>
-                    <button
-                      onClick={handleBulkDelete}
-                      className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black hover:bg-rose-500 transition-all shadow-lg shadow-rose-500/20 uppercase tracking-widest"
-                    >
-                      <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Toolbar - Added overflow-visible to prevent select clipping */}
+        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !overflow-visible p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 relative z-50">
+          <div className="relative w-full max-w-md group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <input
+              type="text"
+              placeholder="Filter leads..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl py-3 sm:py-4 pl-14 pr-6 text-sm font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all shadow-inner"
+            />
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-4 -mx-1 px-1">
-          {['All', ...availablePhases].map((phase) => (
-            <button
-              key={phase}
-              onClick={() => setSelectedPhase(phase)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${selectedPhase === phase
-                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                : 'bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] border border-[var(--crm-border)] hover:border-white/20 hover:text-[var(--crm-text)]'
-                }`}
-            >
-              {phase} <span className="ml-1 opacity-50 text-[8px]">({phaseCounts[phase] || 0})</span>
-            </button>
-          ))}
-        </div>
-        {viewMode === 'kanban' ? <KanbanView /> : (
-          <>
+          <AnimatePresence mode="wait">
+            {selectedLeads.length === 0 ? (
+              <motion.div
+                key="filters"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 lg:pb-0"
+              >
+                {/* View Toggle - Compact */}
+                <div className="flex items-center gap-1 p-1 bg-[var(--crm-bg)]/20 rounded-xl border border-[var(--crm-border)] shrink-0">
+                  <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`} title="List View"><List size={14} /></button>
+                  <button onClick={() => setViewMode('kanban')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`} title="Kanban View"><LayoutGrid size={14} /></button>
+                </div>
 
+                <div className="h-6 w-px bg-[var(--crm-border)] mx-1 shrink-0"></div>
 
-            {/* Mobile View (Cards) */}
-            <div className="lg:hidden space-y-4">
-              {loadingLeads ? (
-                [...Array(4)].map((_, i) => (
-                  <div key={i} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] shadow-sm space-y-4 animate-pulse">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--crm-bg)]/40 shrink-0"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-[var(--crm-bg)]/40 rounded w-1/2"></div>
-                        <div className="h-3 bg-[var(--crm-bg)]/40 rounded w-1/3"></div>
-                      </div>
-                    </div>
-                    <div className="h-16 bg-black/20 rounded-xl"></div>
-                    <div className="h-10 bg-black/20 rounded-xl"></div>
+                <div className="grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-auto">
+                    <select
+                      value={leadTypeFilter}
+                      onChange={(e) => setLeadTypeFilter(e.target.value)}
+                      className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
+                    >
+                      <option value="">All Types</option>
+                      {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
                   </div>
-                ))
-              ) : paginatedLeads.map(lead => (
-                <div key={lead.id} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-orange-400 to-orange-500"></div>
-                  <div className="flex items-start justify-between mb-4 gap-4">
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.includes(lead.id)}
-                        onChange={() => toggleSelect(lead.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer shrink-0"
+
+                  {role !== 'team_member' && (
+                    <div className="min-w-[140px]">
+                      <SearchableSelect
+                        options={teamMembers.map(tm => ({
+                          id: tm.id,
+                          name: tm.displayName || 'Untitled',
+                          company: '',
+                          avatar: tm.photoURL
+                        }))}
+                        value={teamMemberFilter}
+                        onChange={setTeamMemberFilter}
+                        placeholder="All Team"
+                        compact={true}
                       />
-                      <div className="relative shrink-0">
-                        {lead.avatar ? (
-                          <img src={lead.avatar} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] object-cover ring-2 ring-slate-900/50" alt={lead.name} />
-                        ) : (
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] bg-[var(--crm-bg)]/40 flex items-center justify-center text-[var(--crm-text)] text-xs sm:text-sm font-black ring-2 ring-slate-900/50">
-                            {lead.name.split(' ').map((n: string) => n[0]).join('')}
-                          </div>
-                        )}
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-extrabold text-sm sm:text-base text-[var(--crm-text)] break-words leading-tight">{lead.name}</h3>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedLeadForHistory(lead);
-                              }}
-                              className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
-                            >
-                              <History size={12} />
-                            </button>
-                            <button
-                              onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
-                              className={`p-1.5 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
-                            >
-                              {lead.isInterested === false ? (
-                                <ThumbsDown size={14} className="shrink-0" />
-                              ) : (
-                                <ThumbsUp size={14} className="shrink-0" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="text-[var(--crm-text-muted)] text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
-                          <span className="break-words">{lead.company}</span>
-                          {lead.leadType && <span className="px-2 py-0.5 bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] rounded text-[9px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
-                        </div>
-                      </div>
                     </div>
-                    <div className="relative shrink-0 mt-1 max-w-[120px]">
+                  )}
+
+                  <div className="relative w-full sm:w-auto">
+                    <select
+                      value={healthFilter}
+                      onChange={(e) => setHealthFilter(e.target.value)}
+                      className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
+                    >
+                      <option value="ALL">All Status</option>
+                      <option value="HOT">Hot 🔥</option>
+                      <option value="WARM">Warm ☀️</option>
+                      <option value="COLD">Cold ❄️</option>
+                    </select>
+                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                  </div>
+
+                  {!isActiveOnlyRoute && (
+                    <div className="relative w-full sm:w-auto">
                       <select
-                        value={lead.health || 'WARM'}
-                        onChange={(e) => handleHealthChange(lead.id, e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
+                        value={activityFilter}
+                        onChange={(e) => setActivityFilter(e.target.value as any)}
+                        className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
                       >
-                        <option value="HOT">Hot 🔥</option>
-                        <option value="WARM">Warm ☀️</option>
-                        <option value="COLD">Cold ❄️</option>
+                        <option value="ALL">All Activity</option>
+                        <option value="ACTIVE">Active (Connected)</option>
+                        <option value="INACTIVE">No Activity</option>
                       </select>
-                      <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                    </div>
+                  )}
+
+                  <div className="relative w-full sm:w-auto">
+                    <select
+                      value={interestFilter}
+                      onChange={(e) => setInterestFilter(e.target.value as any)}
+                      className="w-full pl-3 sm:pl-5 pr-8 sm:pr-10 py-3 border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 rounded-2xl text-[10px] sm:text-xs font-bold text-[var(--crm-text)] outline-none hover:bg-[var(--crm-border)] transition-all appearance-none cursor-pointer shadow-sm sm:min-w-[140px] [&>option]:bg-[var(--crm-sidebar-bg)]"
+                    >
+                      <option value="ALL">All Interest</option>
+                      <option value="INTERESTED">Interested 👍</option>
+                      <option value="NOT_INTERESTED">Not Interested 👎</option>
+                    </select>
+                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] pointer-events-none" />
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="actions"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto"
+              >
+                <div className="flex items-center gap-3 mr-2 sm:mr-4">
+                  <span className="text-[10px] sm:text-xs font-black text-indigo-400 uppercase tracking-tighter">
+                    {selectedLeads.length} Selected
+                  </span>
+                  <button
+                    onClick={() => setSelectedLeads([])}
+                    className="text-[10px] font-black text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] uppercase tracking-widest transition-colors underline underline-offset-4"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkInterestUpdate(true)}
+                    className="p-2.5 bg-cyan-500/10 text-cyan-400 rounded-xl hover:bg-cyan-500/20 transition-all border border-cyan-500/20"
+                    title="Interested"
+                  >
+                    <ThumbsUp size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleBulkInterestUpdate(false)}
+                    className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all border border-rose-500/20"
+                    title="Not Interested"
+                  >
+                    <ThumbsDown size={14} />
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black hover:bg-rose-500 transition-all shadow-lg shadow-rose-500/20 uppercase tracking-widest"
+                  >
+                    <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-4 -mx-1 px-1">
+        {['All', ...availablePhases].map((phase) => (
+          <button
+            key={phase}
+            onClick={() => setSelectedPhase(phase)}
+            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${selectedPhase === phase
+              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+              : 'bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] border border-[var(--crm-border)] hover:border-white/20 hover:text-[var(--crm-text)]'
+              }`}
+          >
+            {phase} <span className="ml-1 opacity-50 text-[8px]">({phaseCounts[phase] || 0})</span>
+          </button>
+        ))}
+      </div>
+      {viewMode === 'kanban' ? <KanbanView /> : (
+        <>
+
+
+          {/* Mobile View (Cards) */}
+          <div className="lg:hidden space-y-4">
+            {loadingLeads ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] shadow-sm space-y-4 animate-pulse">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--crm-bg)]/40 shrink-0"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-[var(--crm-bg)]/40 rounded w-1/2"></div>
+                      <div className="h-3 bg-[var(--crm-bg)]/40 rounded w-1/3"></div>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5 p-3 sm:p-4 bg-[var(--crm-bg)]/20 rounded-xl sm:rounded-2xl border border-[var(--crm-border)]">
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Score</div>
-                      <div className="font-extrabold text-[var(--crm-text)]">{lead.score || 0}%</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Status</div>
-                      <div className="relative inline-block w-full max-w-[140px]">
-                        <select
-                          value={lead.phase || 'DISCOVERY'}
-                          onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
-                        >
-                          {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
-                      </div>
-                    </div>
-                    {(role === 'admin' || role === 'management' || role === 'super_admin') && (
-                      <div className="col-span-2 border-t border-white/5 pt-3 mt-1">
-                        <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5 flex items-center justify-between">
-                          <span>Assigned To</span>
+                  <div className="h-16 bg-black/20 rounded-xl"></div>
+                  <div className="h-10 bg-black/20 rounded-xl"></div>
+                </div>
+              ))
+            ) : paginatedLeads.map(lead => (
+              <div key={lead.id} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-orange-400 to-orange-500"></div>
+                <div className="flex items-start justify-between mb-4 gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedLeads.includes(lead.id)}
+                      onChange={() => toggleSelect(lead.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer shrink-0"
+                    />
+                    <div className="relative shrink-0">
+                      {lead.avatar ? (
+                        <img src={lead.avatar} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] object-cover ring-2 ring-slate-900/50" alt={lead.name} />
+                      ) : (
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] bg-[var(--crm-bg)]/40 flex items-center justify-center text-[var(--crm-text)] text-xs sm:text-sm font-black ring-2 ring-slate-900/50">
+                          {lead.name.split(' ').map((n: string) => n[0]).join('')}
                         </div>
-                        <div className="relative inline-block w-full">
-                          <select
-                            value={lead.assignedTo || ''}
-                            onChange={(e) => handleAssignChange(lead.id, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`w-full text-xs font-bold pl-2.5 pr-6 py-2 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]`}
+                      )}
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-extrabold text-sm sm:text-base text-[var(--crm-text)] break-words leading-tight">{lead.name}</h3>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLeadForHistory(lead);
+                            }}
+                            className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
                           >
-                            <option value="">Unassigned</option>
-                            {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
-                          </select>
-                          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-[var(--crm-text-muted)]" />
+                            <History size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                            className={`p-1.5 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
+                          >
+                            {lead.isInterested === false ? (
+                              <ThumbsDown size={14} className="shrink-0" />
+                            ) : (
+                              <ThumbsUp size={14} className="shrink-0" />
+                            )}
+                          </button>
                         </div>
                       </div>
-                    )}
+                      <div className="text-[var(--crm-text-muted)] text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
+                        <span className="break-words">{lead.company}</span>
+                        {lead.leadType && <span className="px-2 py-0.5 bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] rounded text-[9px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
+                      </div>
+                    </div>
                   </div>
+                  <div className="relative shrink-0 mt-1 max-w-[120px]">
+                    <select
+                      value={lead.health || 'WARM'}
+                      onChange={(e) => handleHealthChange(lead.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
+                    >
+                      <option value="HOT">Hot 🔥</option>
+                      <option value="WARM">Warm ☀️</option>
+                      <option value="COLD">Cold ❄️</option>
+                    </select>
+                    <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                  </div>
+                </div>
 
-                  <div className="flex flex-wrap items-center justify-between mt-2 pt-4 border-t border-[var(--crm-border)] gap-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {!isDemoMode && (
-                        <>
-                          {recordingId === lead.id ? (
-                            <div className="flex items-center gap-2">
-                              <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs">
-                                <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-pulse'}`} />
-                                {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
-                              </div>
-                              <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-2 sm:p-3 bg-amber-500/20 text-amber-300 rounded-lg sm:rounded-xl hover:bg-amber-500/30">
-                                {isPaused ? <Play size={16} /> : <Pause size={16} />}
-                              </button>
-                              <button onClick={stopRecording} className="p-2 sm:p-3 bg-rose-500/20 text-rose-300 rounded-lg sm:rounded-xl hover:bg-rose-500/30">
-                                <Square size={16} />
-                              </button>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5 p-3 sm:p-4 bg-[var(--crm-bg)]/20 rounded-xl sm:rounded-2xl border border-[var(--crm-border)]">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Score</div>
+                    <div className="font-extrabold text-[var(--crm-text)]">{lead.score || 0}%</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Status</div>
+                    <div className="relative inline-block w-full max-w-[140px]">
+                      <select
+                        value={lead.phase || 'DISCOVERY'}
+                        onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                      >
+                        {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                    </div>
+                  </div>
+                  {(role === 'admin' || role === 'management' || role === 'super_admin') && (
+                    <div className="col-span-2 border-t border-white/5 pt-3 mt-1">
+                      <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5 flex items-center justify-between">
+                        <span>Assigned To</span>
+                      </div>
+                      <div className="relative inline-block w-full">
+                        <select
+                          value={lead.assignedTo || ''}
+                          onChange={(e) => handleAssignChange(lead.id, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`w-full text-xs font-bold pl-2.5 pr-6 py-2 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]`}
+                        >
+                          <option value="">Unassigned</option>
+                          {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-[var(--crm-text-muted)]" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between mt-2 pt-4 border-t border-[var(--crm-border)] gap-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {!isDemoMode && (
+                      <>
+                        {recordingId === lead.id ? (
+                          <div className="flex items-center gap-2">
+                            <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs">
+                              <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-pulse'}`} />
+                              {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
                             </div>
-                          ) : (
-                            <button onClick={() => startRecording(lead.id)} className="p-2 sm:p-3 bg-indigo-500/20 text-indigo-300 rounded-lg sm:rounded-xl hover:bg-indigo-500/30 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-indigo-500/30" title="Start Session" disabled={!!recordingId}>
-                              <Mic size={16} /> Record
+                            <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-2 sm:p-3 bg-amber-500/20 text-amber-300 rounded-lg sm:rounded-xl hover:bg-amber-500/30">
+                              {isPaused ? <Play size={16} /> : <Pause size={16} />}
                             </button>
-                          )}
-                          <div className="flex items-center gap-1">
-                            {/* {lead.phone && (
+                            <button onClick={stopRecording} className="p-2 sm:p-3 bg-rose-500/20 text-rose-300 rounded-lg sm:rounded-xl hover:bg-rose-500/30">
+                              <Square size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => startRecording(lead.id)} className="p-2 sm:p-3 bg-indigo-500/20 text-indigo-300 rounded-lg sm:rounded-xl hover:bg-indigo-500/30 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-indigo-500/30" title="Start Session" disabled={!!recordingId}>
+                            <Mic size={16} /> Record
+                          </button>
+                        )}
+                        <div className="flex items-center gap-1">
+                          {/* {lead.phone && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -1382,135 +1383,135 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" />
                               </button>
                             )} */}
-                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
+                          {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button> */}
-                            <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
-                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                            </button>
-                          </div>
-                          <Link to={`/clients/${lead.id}/edit`} className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 rounded-lg sm:rounded-xl transition-all border border-transparent">
-                            <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                          </Link>
-                          {(role === 'admin' || role === 'super_admin') && (
-                            <button
-                              onClick={() => handleDeleteLead(lead.id)}
-                              className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg sm:rounded-xl transition-all border border-transparent"
-                              title="Delete Lead"
-                            >
-                              <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                      {isDemoMode && (
-                        <div className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest px-3 py-1 bg-[var(--crm-border)] rounded-lg">Readonly</div>
-                      )}
-                    </div>
-                    <Link to={`/analytics/${lead.id}`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
-                      <BarChart3 size={14} />
-                    </Link>
+                          <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
+                            {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                          </button>
+                        </div>
+                        <Link to={`/clients/${lead.id}/edit`} className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 rounded-lg sm:rounded-xl transition-all border border-transparent">
+                          <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        </Link>
+                        {(role === 'admin' || role === 'super_admin') && (
+                          <button
+                            onClick={() => handleDeleteLead(lead.id)}
+                            className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg sm:rounded-xl transition-all border border-transparent"
+                            title="Delete Lead"
+                          >
+                            <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {isDemoMode && (
+                      <div className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest px-3 py-1 bg-[var(--crm-border)] rounded-lg">Readonly</div>
+                    )}
                   </div>
+                  <Link to={`/analytics/${lead.id}`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
+                    <BarChart3 size={14} />
+                  </Link>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
 
-            {/* Desktop View (Premium Table) */}
-            <div className="hidden lg:block glass-card !bg-[var(--crm-card-bg)] !p-0 !rounded-[2.5rem] border border-[var(--crm-border)] shadow-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[900px]">
-                  <thead>
-                    <tr className="border-b border-[var(--crm-border)] text-[10px] font-extrabold text-[var(--crm-text-muted)] uppercase tracking-widest bg-[var(--crm-bg)]/20">
-                      <th className="py-6 px-6 relative w-12 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
-                        />
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div>
-                      </th>
-                      <th className="py-6 px-8 relative">Name <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-6 relative">Company <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-6 relative w-32">Status <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-6 relative w-32">Health <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-6 relative w-32">Assigned To <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-6 relative w-32">Lead Type <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-6 relative w-32">AI Score <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
-                      <th className="py-6 px-8 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {loadingLeads ? (
-                      [...Array(5)].map((_, i) => (
-                        <tr key={i} className="border-b border-white/5">
-                          <td className="py-5 px-6 text-center"><div className="w-4 h-4 rounded bg-[var(--crm-bg)]/40 animate-pulse mx-auto"></div></td>
-                          <td className="py-5 px-8">
+          {/* Desktop View (Premium Table) */}
+          <div className="hidden lg:block glass-card !bg-[var(--crm-card-bg)] !p-0 !rounded-[2.5rem] border border-[var(--crm-border)] shadow-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-[var(--crm-border)] text-[10px] font-extrabold text-[var(--crm-text-muted)] uppercase tracking-widest bg-[var(--crm-bg)]/20">
+                    <th className="py-6 px-6 relative w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div>
+                    </th>
+                    <th className="py-6 px-8 relative">Name <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-6 relative">Company <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-6 relative w-32">Status <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-6 relative w-32">Health <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-6 relative w-32">Assigned To <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-6 relative w-32">Lead Type <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-6 relative w-32">AI Score <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div></th>
+                    <th className="py-6 px-8 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {loadingLeads ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="border-b border-white/5">
+                        <td className="py-5 px-6 text-center"><div className="w-4 h-4 rounded bg-[var(--crm-bg)]/40 animate-pulse mx-auto"></div></td>
+                        <td className="py-5 px-8">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-[1rem] bg-[var(--crm-bg)]/40 animate-pulse shrink-0"></div>
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 bg-[var(--crm-bg)]/40 rounded animate-pulse w-3/4"></div>
+                              <div className="h-3 bg-[var(--crm-bg)]/40 rounded animate-pulse w-1/2"></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-5 px-6">
+                          <div className="space-y-2 w-full">
+                            <div className="h-4 bg-[var(--crm-bg)]/40 rounded animate-pulse w-2/3"></div>
+                            <div className="h-3 bg-[var(--crm-bg)]/40 rounded animate-pulse w-1/3"></div>
+                          </div>
+                        </td>
+                        <td className="py-5 px-6"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-24"></div></td>
+                        <td className="py-5 px-6"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-24"></div></td>
+                        <td className="py-5 px-6"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-24"></div></td>
+                        <td className="py-5 px-6"><div className="h-6 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-16"></div></td>
+                        <td className="py-5 px-6"><div className="h-6 bg-[var(--crm-bg)]/40 rounded-full animate-pulse w-full"></div></td>
+                        <td className="py-5 px-8"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-xl animate-pulse w-full"></div></td>
+                      </tr>
+                    ))
+                  ) : paginatedLeads.map((lead) => {
+                    const leadRecs = recordings.filter(r => r.meetingId === lead.id || r.leadId === lead.id);
+                    const isExp = expandedLeadId === lead.id;
+
+                    return (
+                      <React.Fragment key={lead.id}>
+                        <tr className={`border-b border-[var(--crm-border)] hover:bg-[var(--crm-border)] transition-all duration-300 group ${isExp ? 'bg-[var(--crm-bg)]/20 shadow-inner' : ''}`}>
+                          <td className="py-5 px-6 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedLeads.includes(lead.id)}
+                              onChange={() => toggleSelect(lead.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-5 px-8 min-w-[250px] whitespace-normal">
                             <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-[1rem] bg-[var(--crm-bg)]/40 animate-pulse shrink-0"></div>
-                              <div className="flex-1 space-y-2">
-                                <div className="h-4 bg-[var(--crm-bg)]/40 rounded animate-pulse w-3/4"></div>
-                                <div className="h-3 bg-[var(--crm-bg)]/40 rounded animate-pulse w-1/2"></div>
+                              <div className="relative shrink-0">
+                                {lead.avatar ? (
+                                  <img src={lead.avatar} className="w-12 h-12 rounded-[1rem] object-cover border-2 border-slate-900 shadow-sm group-hover:shadow-md transition-shadow" alt={lead.name} />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-[1rem] bg-[var(--crm-bg)]/40 flex items-center justify-center text-[var(--crm-text)] text-sm font-black border-2 border-slate-900 shadow-sm">
+                                    {lead.name.split(' ').map(n => n[0]).join('')}
+                                  </div>
+                                )}
+                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-5 px-6">
-                            <div className="space-y-2 w-full">
-                              <div className="h-4 bg-[var(--crm-bg)]/40 rounded animate-pulse w-2/3"></div>
-                              <div className="h-3 bg-[var(--crm-bg)]/40 rounded animate-pulse w-1/3"></div>
-                            </div>
-                          </td>
-                          <td className="py-5 px-6"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-24"></div></td>
-                          <td className="py-5 px-6"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-24"></div></td>
-                          <td className="py-5 px-6"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-24"></div></td>
-                          <td className="py-5 px-6"><div className="h-6 bg-[var(--crm-bg)]/40 rounded-lg animate-pulse w-16"></div></td>
-                          <td className="py-5 px-6"><div className="h-6 bg-[var(--crm-bg)]/40 rounded-full animate-pulse w-full"></div></td>
-                          <td className="py-5 px-8"><div className="h-8 bg-[var(--crm-bg)]/40 rounded-xl animate-pulse w-full"></div></td>
-                        </tr>
-                      ))
-                    ) : paginatedLeads.map((lead) => {
-                      const leadRecs = recordings.filter(r => r.meetingId === lead.id || r.leadId === lead.id);
-                      const isExp = expandedLeadId === lead.id;
-
-                      return (
-                        <React.Fragment key={lead.id}>
-                          <tr className={`border-b border-[var(--crm-border)] hover:bg-[var(--crm-border)] transition-all duration-300 group ${isExp ? 'bg-[var(--crm-bg)]/20 shadow-inner' : ''}`}>
-                            <td className="py-5 px-6 text-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedLeads.includes(lead.id)}
-                                onChange={() => toggleSelect(lead.id)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
-                              />
-                            </td>
-                            <td className="py-5 px-8 min-w-[250px] whitespace-normal">
-                              <div className="flex items-center gap-4">
-                                <div className="relative shrink-0">
-                                  {lead.avatar ? (
-                                    <img src={lead.avatar} className="w-12 h-12 rounded-[1rem] object-cover border-2 border-slate-900 shadow-sm group-hover:shadow-md transition-shadow" alt={lead.name} />
-                                  ) : (
-                                    <div className="w-12 h-12 rounded-[1rem] bg-[var(--crm-bg)]/40 flex items-center justify-center text-[var(--crm-text)] text-sm font-black border-2 border-slate-900 shadow-sm">
-                                      {lead.name.split(' ').map(n => n[0]).join('')}
-                                    </div>
-                                  )}
-                                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-3">
-                                    <div className="font-extrabold text-[var(--crm-text)] text-base break-words leading-tight">{lead.name}</div>
-                                    <div className="flex items-center gap-1.5">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedLeadForHistory(lead);
-                                        }}
-                                        className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
-                                      >
-                                        <History size={14} />
-                                      </button>
-                                      {/* {lead.phone && (
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-3">
+                                  <div className="font-extrabold text-[var(--crm-text)] text-base break-words leading-tight">{lead.name}</div>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedLeadForHistory(lead);
+                                      }}
+                                      className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
+                                    >
+                                      <History size={14} />
+                                    </button>
+                                    {/* {lead.phone && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1523,435 +1524,435 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                           <MessageSquare size={16} />
                                         </button>
                                       )} */}
-                                      <button
-                                        onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
-                                        className={`p-2 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500 bg-rose-500/5' : 'text-cyan-500 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] hover:border-[var(--crm-border)]'}`}
-                                        title={lead.isInterested === false ? "Mark as Interested" : "Mark as Not Interested"}
-                                      >
-                                        {lead.isInterested === false ? (
-                                          <ThumbsDown size={16} className="shrink-0" />
-                                        ) : (
-                                          <ThumbsUp size={16} className="shrink-0" />
-                                        )}
-                                      </button>
-                                    </div>
+                                    <button
+                                      onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                                      className={`p-2 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500 bg-rose-500/5' : 'text-cyan-500 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] hover:border-[var(--crm-border)]'}`}
+                                      title={lead.isInterested === false ? "Mark as Interested" : "Mark as Not Interested"}
+                                    >
+                                      {lead.isInterested === false ? (
+                                        <ThumbsDown size={16} className="shrink-0" />
+                                      ) : (
+                                        <ThumbsUp size={16} className="shrink-0" />
+                                      )}
+                                    </button>
                                   </div>
-                                  <div className="text-[var(--crm-text-muted)] font-medium text-xs mt-1 break-all">{lead.email}</div>
                                 </div>
+                                <div className="text-[var(--crm-text-muted)] font-medium text-xs mt-1 break-all">{lead.email}</div>
                               </div>
-                            </td>
-                            <td className="py-5 px-6 min-w-[200px] whitespace-normal">
-                              <div className="font-extrabold text-[var(--crm-text)] break-words leading-tight">{lead.company}</div>
-                              <div className="text-[var(--crm-text-muted)] font-semibold text-xs mt-1 flex items-start gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[var(--crm-border)] mt-1 shrink-0" /><span className="break-words">{lead.location}</span></div>
-                            </td>
-                            <td className="py-5 px-6 whitespace-nowrap">
+                            </div>
+                          </td>
+                          <td className="py-5 px-6 min-w-[200px] whitespace-normal">
+                            <div className="font-extrabold text-[var(--crm-text)] break-words leading-tight">{lead.company}</div>
+                            <div className="text-[var(--crm-text-muted)] font-semibold text-xs mt-1 flex items-start gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[var(--crm-border)] mt-1 shrink-0" /><span className="break-words">{lead.location}</span></div>
+                          </td>
+                          <td className="py-5 px-6 whitespace-nowrap">
+                            <div className="relative inline-block w-full max-w-[140px]">
+                              <select
+                                value={lead.phase || 'DISCOVERY'}
+                                onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                              >
+                                {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
+                              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                            </div>
+                          </td>
+                          <td className="py-5 px-6 whitespace-nowrap">
+                            <div className="relative inline-block w-full max-w-[140px]">
+                              <select
+                                value={lead.health || 'WARM'}
+                                onChange={(e) => handleHealthChange(lead.id, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
+                              >
+                                <option value="HOT">HOT</option>
+                                <option value="WARM">WARM</option>
+                                <option value="COLD">COLD</option>
+                              </select>
+                              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                            </div>
+                          </td>
+                          <td className="py-5 px-6 whitespace-nowrap">
+                            {(role === 'admin' || role === 'management' || role === 'super_admin') ? (
                               <div className="relative inline-block w-full max-w-[140px]">
                                 <select
-                                  value={lead.phase || 'DISCOVERY'}
-                                  onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                                  value={lead.assignedTo || ''}
+                                  onChange={(e) => handleAssignChange(lead.id, e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] bg-[var(--crm-border)] border-[var(--crm-border)] hover:border-[var(--crm-text)]/20`}
                                 >
-                                  {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                                  <option value="">Unassigned</option>
+                                  {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
                                 </select>
                                 <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
                               </div>
-                            </td>
-                            <td className="py-5 px-6 whitespace-nowrap">
-                              <div className="relative inline-block w-full max-w-[140px]">
-                                <select
-                                  value={lead.health || 'WARM'}
-                                  onChange={(e) => handleHealthChange(lead.id, e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
-                                >
-                                  <option value="HOT">HOT</option>
-                                  <option value="WARM">WARM</option>
-                                  <option value="COLD">COLD</option>
-                                </select>
-                                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                            ) : (
+                              <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-transparent">
+                                {teamMembers.find(m => m.uid === lead.assignedTo)?.displayName || 'Unassigned'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-5 px-6 whitespace-nowrap">
+                            {lead.leadType ? <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]">{lead.leadType}</span> : <span className="text-[var(--crm-text-muted)] text-xs font-bold">-</span>}
+                          </td>
+                          <td className="py-5 px-6 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-2.5 bg-[var(--crm-bg)]/40 rounded-full overflow-hidden shadow-inner">
+                                <div className={`h-full rounded-full transition-all duration-1000 ${lead.score >= 70 ? 'bg-emerald-500' : lead.score >= 40 ? 'bg-amber-500' : 'bg-red-400'}`} style={{ width: `${lead.score || 0}%` }} />
                               </div>
-                            </td>
-                            <td className="py-5 px-6 whitespace-nowrap">
-                              {(role === 'admin' || role === 'management' || role === 'super_admin') ? (
-                                <div className="relative inline-block w-full max-w-[140px]">
-                                  <select
-                                    value={lead.assignedTo || ''}
-                                    onChange={(e) => handleAssignChange(lead.id, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] bg-[var(--crm-border)] border-[var(--crm-border)] hover:border-[var(--crm-text)]/20`}
-                                  >
-                                    <option value="">Unassigned</option>
-                                    {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
-                                  </select>
-                                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
-                                </div>
-                              ) : (
-                                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-transparent">
-                                  {teamMembers.find(m => m.uid === lead.assignedTo)?.displayName || 'Unassigned'}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-5 px-6 whitespace-nowrap">
-                              {lead.leadType ? <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]">{lead.leadType}</span> : <span className="text-[var(--crm-text-muted)] text-xs font-bold">-</span>}
-                            </td>
-                            <td className="py-5 px-6 whitespace-nowrap">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 h-2.5 bg-[var(--crm-bg)]/40 rounded-full overflow-hidden shadow-inner">
-                                  <div className={`h-full rounded-full transition-all duration-1000 ${lead.score >= 70 ? 'bg-emerald-500' : lead.score >= 40 ? 'bg-amber-500' : 'bg-red-400'}`} style={{ width: `${lead.score || 0}%` }} />
-                                </div>
-                                <span className="font-black text-sm text-[var(--crm-text)]">{lead.score || 0}</span>
-                              </div>
-                            </td>
-                            <td className="py-5 px-8 text-right">
-                              <div className="flex items-center justify-end gap-2 flex-wrap">
-                                {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Copy Link">
+                              <span className="font-black text-sm text-[var(--crm-text)]">{lead.score || 0}</span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-8 text-right">
+                            <div className="flex items-center justify-end gap-2 flex-wrap">
+                              {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Copy Link">
                                   {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
                                 </button> */}
-                                <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Share Link">
-                                  {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                              <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} title="Share Link">
+                                {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+                              </button>
+
+                              <Link to={`/analytics/${lead.id}`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
+                                <BarChart3 size={14} />
+                              </Link>
+                              <Link to={`/clients/${lead.id}/edit`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
+                                <Edit2 size={16} />
+                              </Link>
+                              {(role === 'admin' || role === 'super_admin') && (
+                                <button
+                                  onClick={() => handleDeleteLead(lead.id)}
+                                  className="w-9 h-9 flex items-center justify-center text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all border border-transparent hover:border-rose-500/20"
+                                  title="Delete Lead"
+                                >
+                                  <Trash2 size={16} />
                                 </button>
+                              )}
 
-                                <Link to={`/analytics/${lead.id}`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
-                                  <BarChart3 size={14} />
-                                </Link>
-                                <Link to={`/clients/${lead.id}/edit`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
-                                  <Edit2 size={16} />
-                                </Link>
-                                {(role === 'admin' || role === 'super_admin') && (
-                                  <button
-                                    onClick={() => handleDeleteLead(lead.id)}
-                                    className="w-9 h-9 flex items-center justify-center text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all border border-transparent hover:border-rose-500/20"
-                                    title="Delete Lead"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                )}
-
-                                {isTranscribing && recordingId === null ? (
-                                  <div className="w-9 h-9 flex items-center justify-center bg-[var(--crm-bg)]/20 rounded-xl"><Loader2 size={16} className="animate-spin text-indigo-400" /></div>
-                                ) : recordingId === lead.id ? (
-                                  <div className="flex items-center gap-1 bg-[var(--crm-bg)]/20 p-1 rounded-xl border border-[var(--crm-border)]">
-                                    <div className={`px-2 py-1 font-mono text-[10px] font-bold ${isPaused ? 'text-amber-400' : 'text-[var(--crm-text)]'}`}>
-                                      {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
-                                    </div>
-                                    <button onClick={isPaused ? resumeRecording : pauseRecording} className="w-7 h-7 flex items-center justify-center rounded-lg text-amber-400 hover:bg-amber-500/20">
-                                      {isPaused ? <Play size={14} /> : <Pause size={14} />}
-                                    </button>
-                                    <button onClick={stopRecording} className="w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 hover:bg-rose-500/20">
-                                      <Square size={14} />
-                                    </button>
+                              {isTranscribing && recordingId === null ? (
+                                <div className="w-9 h-9 flex items-center justify-center bg-[var(--crm-bg)]/20 rounded-xl"><Loader2 size={16} className="animate-spin text-indigo-400" /></div>
+                              ) : recordingId === lead.id ? (
+                                <div className="flex items-center gap-1 bg-[var(--crm-bg)]/20 p-1 rounded-xl border border-[var(--crm-border)]">
+                                  <div className={`px-2 py-1 font-mono text-[10px] font-bold ${isPaused ? 'text-amber-400' : 'text-[var(--crm-text)]'}`}>
+                                    {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
                                   </div>
-                                ) : (
-                                  <button onClick={() => startRecording(lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent ${recordingId ? 'opacity-30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} disabled={!!recordingId} title="Record Call">
-                                    <Mic size={16} />
+                                  <button onClick={isPaused ? resumeRecording : pauseRecording} className="w-7 h-7 flex items-center justify-center rounded-lg text-amber-400 hover:bg-amber-500/20">
+                                    {isPaused ? <Play size={14} /> : <Pause size={14} />}
                                   </button>
-                                )}
-
-                                <button onClick={() => setExpandedLeadId(isExp ? null : lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${isExp ? 'bg-slate-50 text-indigo-600 border-slate-200' : 'text-[var(--crm-text-muted)] hover:bg-slate-100 hover:text-slate-700 border-transparent'}`}>
-                                  <ChevronDown size={18} className={`transition-transform duration-300 ${isExp ? 'rotate-180 text-[var(--crm-text)]' : ''}`} />
+                                  <button onClick={stopRecording} className="w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 hover:bg-rose-500/20">
+                                    <Square size={14} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button onClick={() => startRecording(lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent ${recordingId ? 'opacity-30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 hover:border-[var(--crm-border)]'}`} disabled={!!recordingId} title="Record Call">
+                                  <Mic size={16} />
                                 </button>
-                              </div>
-                            </td>
-                          </tr>
+                              )}
 
-                          {/* Expandable Row */}
-                          <AnimatePresence>
-                            {isExp && (
-                              <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-[var(--crm-bg)]/20 border-b border-[var(--crm-border)]">
-                                <td colSpan={9} className="p-0">
-                                  <div className="p-8 px-12">
-                                    {customFieldDefs.length > 0 && (
-                                      <div className="mb-8 pb-8 border-b border-[var(--crm-border)] border-dashed">
-                                        <h4 className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-4">Custom Data</h4>
-                                        <div className="flex flex-wrap gap-4">
-                                          {customFieldDefs.map(field => (
-                                            <div key={field.id} className="bg-[var(--crm-border)] px-5 py-3 rounded-2xl border border-[var(--crm-border)] shadow-sm flex flex-col min-w-[120px]">
-                                              <span className="text-[9px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest mb-1">{field.name}</span>
-                                              <span className="text-sm font-bold text-[var(--crm-text)]">{lead[field.name] || '-'}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
+                              <button onClick={() => setExpandedLeadId(isExp ? null : lead.id)} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${isExp ? 'bg-slate-50 text-indigo-600 border-slate-200' : 'text-[var(--crm-text-muted)] hover:bg-slate-100 hover:text-slate-700 border-transparent'}`}>
+                                <ChevronDown size={18} className={`transition-transform duration-300 ${isExp ? 'rotate-180 text-[var(--crm-text)]' : ''}`} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
 
-                                    <div className="flex items-center justify-between mb-6">
-                                      <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                                        History <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-500/30">{leadRecs.length}</span>
-                                      </h4>
-
-                                      <div className="flex items-center gap-3">
-
-                                        {shareUrls[lead.id] ? (
-                                          <div className="flex items-center gap-2 w-72 bg-black/20 rounded-xl shadow-inner border border-[var(--crm-border)] p-1">
-                                            <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-300 outline-none text-ellipsis" />
-                                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
-                                              <Copy size={16} />
-                                            </button> */}
-                                            <button onClick={() => onShareLink(lead.id, lead.name)} className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
-                                              <Share2 size={16} />
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <div className="flex items-center gap-2">
-                                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
-                                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Copy size={14} />} Copy Link
-                                            </button> */}
-                                            <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
-                                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />} Share Link
-                                            </button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {leadRecs.length === 0 ? (
-                                      <div className="text-sm text-[var(--crm-text-muted)] font-medium bg-black/20 border-2 border-[var(--crm-border)] border-dashed rounded-[2rem] p-12 text-center flex flex-col items-center">
-                                        <div className="w-16 h-16 bg-[var(--crm-border)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center mb-4 shadow-sm"><Play className="text-[var(--crm-text-muted)]" size={24} /></div>
-                                        <p>No recordings yet. Click the microphone to start a new one.</p>
-                                      </div>
-                                    ) : (
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {leadRecs.map(rec => (
-                                          <div key={rec.id} className="bg-[var(--crm-border)] rounded-[1.5rem] border border-[var(--crm-border)] p-6 shadow-sm hover:shadow-md hover:border-indigo-500/30 hover:bg-[var(--crm-bg)]/40 transition-all flex items-start gap-4 group cursor-pointer" onClick={() => window.location.href = `/r/${rec.id}`}>
-                                            <div className="w-12 h-12 rounded-xl bg-black/20 border border-[var(--crm-border)] flex items-center justify-center shrink-0 group-hover:bg-indigo-500/20 transition-colors">
-                                              <Play className="text-[var(--crm-text-muted)] group-hover:text-indigo-300 group-hover:fill-indigo-300 ml-1 transition-colors" size={18} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <div className="text-[10px] text-[var(--crm-text-muted)] group-hover:text-indigo-400 font-bold uppercase tracking-widest mb-1.5 transition-colors">
-                                                {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium' }) : 'Unknown Date'}
-                                              </div>
-                                              <div className="text-sm font-medium text-slate-300 italic line-clamp-2 leading-relaxed">"{rec.transcript}"</div>
-                                            </div>
+                        {/* Expandable Row */}
+                        <AnimatePresence>
+                          {isExp && (
+                            <motion.tr initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-[var(--crm-bg)]/20 border-b border-[var(--crm-border)]">
+                              <td colSpan={9} className="p-0">
+                                <div className="p-8 px-12">
+                                  {customFieldDefs.length > 0 && (
+                                    <div className="mb-8 pb-8 border-b border-[var(--crm-border)] border-dashed">
+                                      <h4 className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-4">Custom Data</h4>
+                                      <div className="flex flex-wrap gap-4">
+                                        {customFieldDefs.map(field => (
+                                          <div key={field.id} className="bg-[var(--crm-border)] px-5 py-3 rounded-2xl border border-[var(--crm-border)] shadow-sm flex flex-col min-w-[120px]">
+                                            <span className="text-[9px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest mb-1">{field.name}</span>
+                                            <span className="text-sm font-bold text-[var(--crm-text)]">{lead[field.name] || '-'}</span>
                                           </div>
                                         ))}
                                       </div>
-                                    )}
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center justify-between mb-6">
+                                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                      History <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-500/30">{leadRecs.length}</span>
+                                    </h4>
+
+                                    <div className="flex items-center gap-3">
+
+                                      {shareUrls[lead.id] ? (
+                                        <div className="flex items-center gap-2 w-72 bg-black/20 rounded-xl shadow-inner border border-[var(--crm-border)] p-1">
+                                          <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-300 outline-none text-ellipsis" />
+                                          {/* <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
+                                              <Copy size={16} />
+                                            </button> */}
+                                          <button onClick={() => onShareLink(lead.id, lead.name)} className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
+                                            <Share2 size={16} />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-2">
+                                          {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
+                                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Copy size={14} />} Copy Link
+                                            </button> */}
+                                          <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="flex justify-center items-center gap-2 text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
+                                            {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />} Share Link
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </td>
-                              </motion.tr>
-                            )}
-                          </AnimatePresence>
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+                                  {leadRecs.length === 0 ? (
+                                    <div className="text-sm text-[var(--crm-text-muted)] font-medium bg-black/20 border-2 border-[var(--crm-border)] border-dashed rounded-[2rem] p-12 text-center flex flex-col items-center">
+                                      <div className="w-16 h-16 bg-[var(--crm-border)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center mb-4 shadow-sm"><Play className="text-[var(--crm-text-muted)]" size={24} /></div>
+                                      <p>No recordings yet. Click the microphone to start a new one.</p>
+                                    </div>
+                                  ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {leadRecs.map(rec => (
+                                        <div key={rec.id} className="bg-[var(--crm-border)] rounded-[1.5rem] border border-[var(--crm-border)] p-6 shadow-sm hover:shadow-md hover:border-indigo-500/30 hover:bg-[var(--crm-bg)]/40 transition-all flex items-start gap-4 group cursor-pointer" onClick={() => window.location.href = `/r/${rec.id}`}>
+                                          <div className="w-12 h-12 rounded-xl bg-black/20 border border-[var(--crm-border)] flex items-center justify-center shrink-0 group-hover:bg-indigo-500/20 transition-colors">
+                                            <Play className="text-[var(--crm-text-muted)] group-hover:text-indigo-300 group-hover:fill-indigo-300 ml-1 transition-colors" size={18} />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] text-[var(--crm-text-muted)] group-hover:text-indigo-400 font-bold uppercase tracking-widest mb-1.5 transition-colors">
+                                              {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium' }) : 'Unknown Date'}
+                                            </div>
+                                            <div className="text-sm font-medium text-slate-300 italic line-clamp-2 leading-relaxed">"{rec.transcript}"</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </motion.tr>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-5 border-t border-[var(--crm-border)] bg-black/40 flex flex-col md:flex-row items-center justify-between text-sm text-[var(--crm-text-muted)] gap-4">
+              <div className="font-medium">Showing <span className="font-extrabold text-[var(--crm-text)]">{paginatedLeads.length}</span> of <span className="font-extrabold text-[var(--crm-text)]">{filteredLeads.length}</span> results</div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-bg)]/40 shadow-sm transition-all disabled:opacity-50">
+                    <ChevronLeft size={16} />
+                  </button>
+                  {getPageNumbers().map(pageNum => (
+                    <button
+                      key={pageNum} onClick={() => setCurrentPage(pageNum)}
+                      className={`px-4 py-2 font-bold shadow-sm border rounded-xl text-xs transition-all ${currentPage === pageNum ? 'bg-indigo-600 text-[var(--crm-text)] border-indigo-600 shadow-md' : 'text-slate-300 bg-[var(--crm-border)] border-[var(--crm-border)] hover:bg-[var(--crm-bg)]/40'}`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-bg)]/40 shadow-sm transition-all disabled:opacity-50">
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+
+      {/* ── Safety Alert Modal ── */ }
+  <AnimatePresence>
+    {showSafetyAlert && (
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      >
+        <motion.div
+          initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+          className="bg-slate-900 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-800 text-center"
+        >
+          <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <ShieldAlert className="text-amber-500" size={32} />
+          </div>
+          <h2 className="text-xl font-black text-[var(--crm-text)] mb-2">Still there?</h2>
+          <p className="text-[var(--crm-text-muted)] text-sm mb-1 font-medium">
+            Recording for <span className="text-[var(--crm-text)] font-bold">{Math.floor(recordingSeconds / 60)} minutes</span>.
+          </p>
+          <p className="text-amber-400 text-xs font-black uppercase tracking-widest mb-8">
+            Auto-submit in {autoSubmitCountdown}s...
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => { setShowSafetyAlert(false); setAutoSubmitCountdown(AUTO_SUBMIT_WINDOW); }}
+              className="w-full py-4 bg-indigo-600 text-[var(--crm-text)] rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+            >
+              Continue
+            </button>
+            <button
+              onClick={stopRecording}
+              className="w-full py-4 bg-[var(--crm-border)] text-slate-300 rounded-2xl font-bold hover:bg-[var(--crm-bg)]/40 transition-all"
+            >
+              Stop
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* ── Lead History Sidebar ── */ }
+  <AnimatePresence>
+    {selectedLeadForHistory && (
+      <div className="fixed inset-0 z-[200] flex justify-end">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setSelectedLeadForHistory(null)}
+          className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+        />
+        <motion.div
+          initial={{ x: '100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="relative w-full max-w-xl h-full bg-slate-900 border-l border-[var(--crm-border)] shadow-2xl flex flex-col overflow-hidden"
+        >
+          {/* Drawer Header */}
+          <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl border border-[var(--crm-border)] overflow-hidden shadow-lg bg-[var(--crm-border)]">
+                <img src={selectedLeadForHistory.avatar || `https://ui-avatars.com/api/?name=${selectedLeadForHistory.name}&background=random`} alt="" className="w-full h-full object-cover" />
               </div>
-              <div className="p-5 border-t border-[var(--crm-border)] bg-black/40 flex flex-col md:flex-row items-center justify-between text-sm text-[var(--crm-text-muted)] gap-4">
-                <div className="font-medium">Showing <span className="font-extrabold text-[var(--crm-text)]">{paginatedLeads.length}</span> of <span className="font-extrabold text-[var(--crm-text)]">{filteredLeads.length}</span> results</div>
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-bg)]/40 shadow-sm transition-all disabled:opacity-50">
-                      <ChevronLeft size={16} />
-                    </button>
-                    {getPageNumbers().map(pageNum => (
-                      <button
-                        key={pageNum} onClick={() => setCurrentPage(pageNum)}
-                        className={`px-4 py-2 font-bold shadow-sm border rounded-xl text-xs transition-all ${currentPage === pageNum ? 'bg-indigo-600 text-[var(--crm-text)] border-indigo-600 shadow-md' : 'text-slate-300 bg-[var(--crm-border)] border-[var(--crm-border)] hover:bg-[var(--crm-bg)]/40'}`}
-                      >
-                        {pageNum}
-                      </button>
-                    ))}
-                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-bg)]/40 shadow-sm transition-all disabled:opacity-50">
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                )}
+              <div>
+                <h3 className="text-lg font-black text-[var(--crm-text)] leading-tight uppercase tracking-tight">{selectedLeadForHistory.name}</h3>
+                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{selectedLeadForHistory.company}</p>
               </div>
             </div>
-          </>
-        )}
-      </div>
-
-      {/* ── Safety Alert Modal ── */}
-      <AnimatePresence>
-        {showSafetyAlert && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              className="bg-slate-900 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-800 text-center"
-            >
-              <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <ShieldAlert className="text-amber-500" size={32} />
-              </div>
-              <h2 className="text-xl font-black text-[var(--crm-text)] mb-2">Still there?</h2>
-              <p className="text-[var(--crm-text-muted)] text-sm mb-1 font-medium">
-                Recording for <span className="text-[var(--crm-text)] font-bold">{Math.floor(recordingSeconds / 60)} minutes</span>.
-              </p>
-              <p className="text-amber-400 text-xs font-black uppercase tracking-widest mb-8">
-                Auto-submit in {autoSubmitCountdown}s...
-              </p>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => { setShowSafetyAlert(false); setAutoSubmitCountdown(AUTO_SUBMIT_WINDOW); }}
-                  className="w-full py-4 bg-indigo-600 text-[var(--crm-text)] rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
-                >
-                  Continue
-                </button>
-                <button
-                  onClick={stopRecording}
-                  className="w-full py-4 bg-[var(--crm-border)] text-slate-300 rounded-2xl font-bold hover:bg-[var(--crm-bg)]/40 transition-all"
-                >
-                  Stop
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Lead History Sidebar ── */}
-      <AnimatePresence>
-        {selectedLeadForHistory && (
-          <div className="fixed inset-0 z-[200] flex justify-end">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <button
               onClick={() => setSelectedLeadForHistory(null)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-xl h-full bg-slate-900 border-l border-[var(--crm-border)] shadow-2xl flex flex-col overflow-hidden"
+              className="p-2.5 rounded-xl bg-[var(--crm-border)] text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] border border-[var(--crm-border)] transition-all active:scale-95"
             >
-              {/* Drawer Header */}
-              <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl border border-[var(--crm-border)] overflow-hidden shadow-lg bg-[var(--crm-border)]">
-                    <img src={selectedLeadForHistory.avatar || `https://ui-avatars.com/api/?name=${selectedLeadForHistory.name}&background=random`} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-[var(--crm-text)] leading-tight uppercase tracking-tight">{selectedLeadForHistory.name}</h3>
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{selectedLeadForHistory.company}</p>
-                  </div>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Drawer Content */}
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-hide space-y-8">
+            {/* Manual Note Entry */}
+            <div className="glass-card !bg-[var(--crm-border)] !rounded-3xl p-5 border-[var(--crm-border)] shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <MessageSquare size={16} />
                 </div>
+                <span className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">Append Intelligence</span>
+              </div>
+              <div className="relative">
+                <textarea
+                  value={newActivityNote}
+                  onChange={(e) => setNewActivityNote(e.target.value)}
+                  placeholder="Enter a manual note or update..."
+                  className="w-full bg-black/40 border border-[var(--crm-border)] rounded-2xl p-4 text-xs font-medium text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 min-h-[100px] resize-none transition-all shadow-inner"
+                />
                 <button
-                  onClick={() => setSelectedLeadForHistory(null)}
-                  className="p-2.5 rounded-xl bg-[var(--crm-border)] text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] border border-[var(--crm-border)] transition-all active:scale-95"
+                  disabled={!newActivityNote.trim() || submittingNote}
+                  onClick={handleAddActivityNote}
+                  className="absolute bottom-4 right-4 p-2.5 bg-indigo-500 text-[var(--crm-text)] rounded-xl shadow-lg shadow-indigo-500/40 hover:bg-indigo-400 transition-all active:scale-90 disabled:opacity-50 disabled:grayscale"
                 >
-                  <X size={20} />
+                  {submittingNote ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 </button>
               </div>
+            </div>
 
-              {/* Drawer Content */}
-              <div className="flex-1 overflow-y-auto p-6 scrollbar-hide space-y-8">
-                {/* Manual Note Entry */}
-                <div className="glass-card !bg-[var(--crm-border)] !rounded-3xl p-5 border-[var(--crm-border)] shadow-lg">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-                      <MessageSquare size={16} />
-                    </div>
-                    <span className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">Append Intelligence</span>
+            {/* Timeline */}
+            <div className="space-y-6 relative">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                  <History size={16} />
+                </div>
+                <span className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">Activity Stream</span>
+              </div>
+
+              {activityLogs.length === 0 ? (
+                <div className="py-20 text-center space-y-4 opacity-40">
+                  <div className="w-12 h-12 bg-[var(--crm-border)] rounded-2xl border border-[var(--crm-border)] mx-auto flex items-center justify-center">
+                    <History size={24} className="text-[var(--crm-text-muted)]" />
                   </div>
-                  <div className="relative">
-                    <textarea
-                      value={newActivityNote}
-                      onChange={(e) => setNewActivityNote(e.target.value)}
-                      placeholder="Enter a manual note or update..."
-                      className="w-full bg-black/40 border border-[var(--crm-border)] rounded-2xl p-4 text-xs font-medium text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 min-h-[100px] resize-none transition-all shadow-inner"
-                    />
-                    <button
-                      disabled={!newActivityNote.trim() || submittingNote}
-                      onClick={handleAddActivityNote}
-                      className="absolute bottom-4 right-4 p-2.5 bg-indigo-500 text-[var(--crm-text)] rounded-xl shadow-lg shadow-indigo-500/40 hover:bg-indigo-400 transition-all active:scale-90 disabled:opacity-50 disabled:grayscale"
+                  <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest italic">No interactions detected.</p>
+                </div>
+              ) : (
+                <div className="space-y-6 relative pl-4">
+                  {/* Vertical center line */}
+                  <div className="absolute left-7 top-4 bottom-4 w-[1px] bg-[var(--crm-border)]" />
+
+                  {activityLogs.map((log, idx) => (
+                    <motion.div
+                      key={log.id}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="relative pl-10"
                     >
-                      {submittingNote ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="space-y-6 relative">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
-                      <History size={16} />
-                    </div>
-                    <span className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">Activity Stream</span>
-                  </div>
-
-                  {activityLogs.length === 0 ? (
-                    <div className="py-20 text-center space-y-4 opacity-40">
-                      <div className="w-12 h-12 bg-[var(--crm-border)] rounded-2xl border border-[var(--crm-border)] mx-auto flex items-center justify-center">
-                        <History size={24} className="text-[var(--crm-text-muted)]" />
+                      {/* Marker */}
+                      <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border z-10 shadow-lg ${log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
+                        log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
+                          'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
+                        }`}>
+                        {log.type === 'MANUAL_NOTE' ? <MessageSquare size={10} /> :
+                          log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={10} /> :
+                            <Edit2 size={10} />}
                       </div>
-                      <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest italic">No interactions detected.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 relative pl-4">
-                      {/* Vertical center line */}
-                      <div className="absolute left-7 top-4 bottom-4 w-[1px] bg-[var(--crm-border)]" />
 
-                      {activityLogs.map((log, idx) => (
-                        <motion.div
-                          key={log.id}
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="relative pl-10"
-                        >
-                          {/* Marker */}
-                          <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border z-10 shadow-lg ${log.type === 'MANUAL_NOTE' ? 'bg-indigo-500 border-indigo-400 text-[var(--crm-text)]' :
-                            log.type === 'INTEREST_CHANGE' ? 'bg-cyan-500 border-cyan-400 text-[var(--crm-text)]' :
-                              'bg-slate-800 border-slate-700 text-[var(--crm-text-muted)]'
-                            }`}>
-                            {log.type === 'MANUAL_NOTE' ? <MessageSquare size={10} /> :
-                              log.type === 'INTEREST_CHANGE' ? <ThumbsUp size={10} /> :
-                                <Edit2 size={10} />}
+                      <div className="bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl p-4 space-y-3 hover:bg-white/[0.05] transition-all group">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="space-y-0.5">
+                            <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{log.action}</div>
+                            <div className="text-[10px] font-black text-[var(--crm-text)]">{log.authorName}</div>
                           </div>
-
-                          <div className="bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl p-4 space-y-3 hover:bg-white/[0.05] transition-all group">
-                            <div className="flex justify-between items-start gap-3">
-                              <div className="space-y-0.5">
-                                <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{log.action}</div>
-                                <div className="text-[10px] font-black text-[var(--crm-text)]">{log.authorName}</div>
-                              </div>
-                              <div className="text-[8px] font-black text-[var(--crm-text-muted)] whitespace-nowrap bg-black/20 px-2 py-1 rounded-md border border-white/5">
-                                {log.createdAt?.toDate ? log.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Just now'}
-                              </div>
-                            </div>
-
-                            {log.type === 'MANUAL_NOTE' ? (
-                              <div className="text-[11px] text-[var(--crm-text-muted)] font-medium leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 italic">
-                                "{log.details?.note}"
-                              </div>
-                            ) : (
-                              <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-[var(--crm-text-muted)]">
-                                <span className="uppercase opacity-40">{log.details?.field}:</span>
-                                <span className="line-through">{String(log.details?.oldValue)}</span>
-                                <ArrowUpRight size={12} className="text-cyan-500" />
-                                <span className="text-[var(--crm-text)] bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">{String(log.details?.newValue)}</span>
-                              </div>
-                            )}
+                          <div className="text-[8px] font-black text-[var(--crm-text-muted)] whitespace-nowrap bg-black/20 px-2 py-1 rounded-md border border-white/5">
+                            {log.createdAt?.toDate ? log.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                           </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+                        </div>
+
+                        {log.type === 'MANUAL_NOTE' ? (
+                          <div className="text-[11px] text-[var(--crm-text-muted)] font-medium leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 italic">
+                            "{log.details?.note}"
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-[var(--crm-text-muted)]">
+                            <span className="uppercase opacity-40">{log.details?.field}:</span>
+                            <span className="line-through">{String(log.details?.oldValue)}</span>
+                            <ArrowUpRight size={12} className="text-cyan-500" />
+                            <span className="text-[var(--crm-text)] bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">{String(log.details?.newValue)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Drawer Footer */}
-              <div className="p-6 border-t border-white/5 bg-white/[0.02] flex items-center gap-4">
-                <Link
-                  to={`/clients/${selectedLeadForHistory.id}`}
-                  className="flex-1 py-4 bg-white text-slate-950 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-500 hover:text-[var(--crm-text)] transition-all text-center shadow-xl shadow-white/5 active:scale-95"
-                >
-                  Full Intelligence View
-                </Link>
-              </div>
-            </motion.div>
+              )}
+            </div>
           </div>
-        )}
-      </AnimatePresence>
-    </div>
+
+          {/* Drawer Footer */}
+          <div className="p-6 border-t border-white/5 bg-white/[0.02] flex items-center gap-4">
+            <Link
+              to={`/clients/${selectedLeadForHistory.id}`}
+              className="flex-1 py-4 bg-white text-slate-950 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-500 hover:text-[var(--crm-text)] transition-all text-center shadow-xl shadow-white/5 active:scale-95"
+            >
+              Full Intelligence View
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+    </div >
   );
 }

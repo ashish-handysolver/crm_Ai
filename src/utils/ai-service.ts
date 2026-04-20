@@ -1,4 +1,5 @@
 import { getGeminiApiKey, uploadFileToGemini, extractJsonFromText } from './gemini';
+import { compressAudio } from './audio-compression';
 
 /**
  * Interface for AI Insights structure
@@ -149,29 +150,43 @@ export async function extractLeadFromCard(base64Image: string): Promise<any> {
   }
 }
 
-/**
- * Transcribe audio using Groq's Whisper API
- */
 export async function transcribeWithGroq(audioBlob: Blob): Promise<{ fullText: string, segments: any[] }> {
   const apiKey = (import.meta as any).env.VITE_GROQ_API_KEY;
   if (!apiKey) {
     throw new Error('Groq API Key (VITE_GROQ_API_KEY) is missing.');
   }
 
-  // Groq has a strict 25MB limit. Browser-based audio chunking breaks WebM headers,
-  // so we seamlessly fallback to Gemini's File API which supports up to 2GB audio files.
-  if (audioBlob.size > 25 * 1024 * 1024) {
-    console.warn('Audio exceeds Groq 25MB limit (100MB+). Falling back to Gemini 1.5 Flash...');
+  // 1. Always attempt to compress audio firstly for stability and speed
+  let processedBlob = audioBlob;
+  try {
+    processedBlob = await compressAudio(audioBlob);
+  } catch (err) {
+    console.warn("Global audio compression failed, using raw file.", err);
+  }
+
+  // 2. Recursive compression if file is still too large for Groq (25MB)
+  if (processedBlob.size > 25 * 1024 * 1024) {
+    console.warn(`Standard compression (${(processedBlob.size / 1024 / 1024).toFixed(1)}MB) still exceeds Groq limit. Triggering Deep Compression (8kHz 8-bit)...`);
+    try {
+      processedBlob = await compressAudio(audioBlob, 'low');
+    } catch (err) {
+      console.warn("Deep compression failed, sticking with standard result.", err);
+    }
+  }
+
+  // 3. Fallback logic: If even Deep Compression is > 25MB (or if it failed), use Gemini
+  if (processedBlob.size > 25 * 1024 * 1024) {
+    console.warn(`Final audio size (${(processedBlob.size / 1024 / 1024).toFixed(1)}MB) still exceeds Groq limit. Falling back to Gemini 1.5/2.0 Flash...`);
     const geminiKey = getGeminiApiKey();
     if (!geminiKey) {
       throw new Error('Audio file exceeds 25MB, and VITE_GEMINI_API_KEY is missing for the large-file fallback.');
     }
 
-    const fileUri = await uploadFileToGemini(audioBlob, geminiKey);
+    const fileUri = await uploadFileToGemini(processedBlob, geminiKey);
 
     const promptText = `Transcribe and translate this recording into English. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY JSON.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -179,7 +194,7 @@ export async function transcribeWithGroq(audioBlob: Blob): Promise<{ fullText: s
           role: 'user',
           parts: [
             { text: promptText },
-            { fileData: { mimeType: audioBlob.type || 'audio/webm', fileUri } }
+            { fileData: { mimeType: processedBlob.type || 'audio/wav', fileUri } }
           ]
         }],
         generationConfig: { maxOutputTokens: 8192, responseMimeType: 'application/json' }
@@ -200,7 +215,7 @@ export async function transcribeWithGroq(audioBlob: Blob): Promise<{ fullText: s
   }
 
   const formData = new FormData();
-  const audioFile = new File([audioBlob], 'audio.webm', { type: audioBlob.type || 'audio/webm' });
+  const audioFile = new File([processedBlob], 'audio.wav', { type: processedBlob.type || 'audio/wav' });
   formData.append('file', audioFile);
   formData.append('model', 'whisper-large-v3');
   formData.append('response_format', 'verbose_json');

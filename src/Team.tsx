@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Mail, Shield, User, Loader2, CheckCircle2, AlertCircle, RefreshCw, ChevronLeft, Key, Lock, Briefcase, Zap, Edit, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp, getDoc, deleteDoc } from 'firebase/firestore';
+import SearchableSelect from './components/SearchableSelect';
 import { db, firebaseConfig } from './firebase';
 import { useDemo } from './DemoContext';
 import { useAuth } from './contexts/AuthContext';
@@ -238,14 +239,16 @@ export default function Team({ user, companyId }: { user: any, companyId: string
                         {!!editingUserId && (
                           <div className="relative group/input">
                             <Shield className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-indigo-400 transition-colors" size={18} />
-                            <select
+                            <SearchableSelect
+                              options={[
+                                { id: 'active', name: 'Active' },
+                                { id: 'inactive', name: 'Inactive' }
+                              ]}
                               value={isActiveStatus ? 'active' : 'inactive'}
-                              onChange={e => setIsActiveStatus(e.target.value === 'active')}
-                              className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-16 pr-6 text-sm font-bold text-white focus:bg-black/40 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all shadow-inner appearance-none [&>option]:bg-slate-900"
-                            >
-                              <option value="active">Active</option>
-                              <option value="inactive">Inactive</option>
-                            </select>
+                              onChange={val => setIsActiveStatus(val === 'active')}
+                              hideSearch={true}
+                              compact={true}
+                            />
                           </div>
                         )}
                       </div>

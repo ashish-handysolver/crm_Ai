@@ -8,22 +8,26 @@ export const GEMINI_FALLBACK_MESSAGE = "Intelligence services temporarily unavai
  * saved as "AIza..." in .env files or Vercel dashboard.
  */
 export const getGeminiApiKey = (): string => {
-  const raw = [
+  const keys = [
     (import.meta as any).env.VITE_GEMINI_API_KEY,
     (import.meta as any).env.GEMINI_API_KEY,
     (process.env as any)?.GEMINI_API_KEY,
     (process.env as any)?.VITE_GEMINI_API_KEY,
-  ].find(k => {
-    if (!k || typeof k !== 'string') return false;
-    const clean = k.trim().replace(/^["']|["']$/g, '');
-    return clean.length > 5 && clean !== 'undefined' && clean !== 'null';
-  }) || '';
+  ];
 
-  const finalKey = raw.replace(/^["']|["']$/g, '').trim();
-  if (!finalKey) {
-    console.warn("Gemini API Key Lookup: No valid key found in environment.");
+  for (const k of keys) {
+    if (!k || typeof k !== 'string') continue;
+    
+    // Remove quotes, whitespace, and any non-printable characters
+    const clean = k.replace(/^["']|["']$/g, '').trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+    
+    if (clean.length > 5 && clean !== 'undefined' && clean !== 'null' && clean.startsWith('AIza')) {
+      return clean;
+    }
   }
-  return finalKey;
+
+  console.warn("Gemini API Key Lookup: No valid key found in environment.");
+  return '';
 };
 
 /**

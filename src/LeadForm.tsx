@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
 import { logActivity } from './utils/activity';
 import { motion } from 'motion/react';
+import SearchableSelect from './components/SearchableSelect';
 
 export default function LeadForm({ user }: { user: any }) {
   const { id } = useParams();
@@ -242,7 +243,8 @@ export default function LeadForm({ user }: { user: any }) {
     );
   }
 
-  const inputClasses = "w-full px-5 py-4 rounded-[1.25rem] border border-[var(--crm-border)] bg-[var(--crm-bg)]/20 focus:bg-[var(--crm-bg)]/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold text-[var(--crm-text)] shadow-inner placeholder:text-[var(--crm-text-muted)] placeholder:font-medium";
+  const inputClasses = "crm-input";
+  const selectClasses = "crm-select";
   const labelClasses = "text-[11px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2.5 block px-1";
 
   return (
@@ -381,18 +383,13 @@ export default function LeadForm({ user }: { user: any }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-2">
                         <label className={labelClasses}>Assigned Representative</label>
-                        <select
-                          name="assignedTo"
+                        <SearchableSelect
+                          options={teamMembers.map(m => ({ id: m.id, name: `${m.displayName || m.email} (${m.role})` }))}
                           value={formData.assignedTo || ''}
-                          onChange={handleChange}
+                          onChange={(val) => setFormData(f => ({ ...f, assignedTo: val }))}
+                          placeholder="— Unassigned —"
                           disabled={role === 'team_member'}
-                          className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}
-                        >
-                          <option value="">— Unassigned —</option>
-                          {teamMembers.map(m => (
-                            <option key={m.id} value={m.id}>{m.displayName || m.email} ({m.role})</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     </div>
                   </section>
@@ -422,34 +419,39 @@ export default function LeadForm({ user }: { user: any }) {
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Lead Type</label>
-                      <select name="leadType" value={formData.leadType} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
-                        {Array.from(new Set([
+                      <SearchableSelect
+                        options={Array.from(new Set([
                           ...String((import.meta as any).env.VITE_LEAD_TYPES || 'B2B,B2C,ENTERPRISE').split(',').map(t => t.trim().toUpperCase()),
                           ...customLeadTypes.map(t => t.toUpperCase())
-                        ])).map(val => (
-                          <option key={val} value={val}>{val}</option>
-                        ))}
-                      </select>
+                        ])).map(val => ({ id: val, name: val }))}
+                        value={formData.leadType}
+                        onChange={(val) => setFormData(f => ({ ...f, leadType: val }))}
+                        hideSearch={true}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Pipeline Phase</label>
-                      <select name="phase" value={formData.phase} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
-                        {Array.from(new Set([
+                      <SearchableSelect
+                        options={Array.from(new Set([
                           ...String((import.meta as any).env.VITE_PIPELINE_STAGES || 'DISCOVERY,CONNECTED,NURTURING,QUALIFIED,WON,LOST,INACTIVE').split(',').map(p => p.trim().toUpperCase()),
                           ...customPhases.map(p => p.toUpperCase())
-                        ])).map(val => (
-                          <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>
-                        ))}
-                      </select>
+                        ])).map(val => ({ id: val, name: val.charAt(0) + val.slice(1).toLowerCase() }))}
+                        value={formData.phase}
+                        onChange={(val) => setFormData(f => ({ ...f, phase: val }))}
+                        hideSearch={true}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className={labelClasses}>Health Status</label>
-                      <select name="health" value={formData.health} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
-                        {String((import.meta as any).env.VITE_HEALTH_STATUSES || 'HOT,WARM,COLD').split(',').map(h => {
+                      <SearchableSelect
+                        options={String((import.meta as any).env.VITE_HEALTH_STATUSES || 'HOT,WARM,COLD').split(',').map(h => {
                           const val = h.trim().toUpperCase();
-                          return <option key={val} value={val}>{val.charAt(0) + val.slice(1).toLowerCase()}</option>;
+                          return { id: val, name: val.charAt(0) + val.slice(1).toLowerCase() };
                         })}
-                      </select>
+                        value={formData.health}
+                        onChange={(val) => setFormData(f => ({ ...f, health: val }))}
+                        hideSearch={true}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className={`${labelClasses} flex justify-between`}>
@@ -485,10 +487,13 @@ export default function LeadForm({ user }: { user: any }) {
                         <div key={field.id} className="space-y-2">
                           <label className={labelClasses}>{field.name}</label>
                           {field.type === 'DROPDOWN' ? (
-                            <select name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses} appearance-none [&>option]:bg-[var(--crm-sidebar-bg)]`}>
-                              <option value="">Select Option</option>
-                              {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+                            <SearchableSelect
+                              options={field.options.map(opt => ({ id: opt, name: opt }))}
+                              value={formData[field.name] || ''}
+                              onChange={(val) => setFormData(f => ({ ...f, [field.name]: val }))}
+                              placeholder="Select Option"
+                              hideSearch={field.options.length < 6}
+                            />
                           ) : field.type === 'DATE' ? (
                             <input type="date" name={field.name} value={formData[field.name] || ''} onChange={handleChange} className={`${inputClasses}`} />
                           ) : (
