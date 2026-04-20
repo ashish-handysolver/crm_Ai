@@ -119,15 +119,18 @@ export default function Dashboard({ user }: { user: any }) {
   }));
 
   const teamMetrics = React.useMemo(() => {
+    const connectedPhases = ['CONNECTED', 'NURTURING', 'QUALIFIED', 'WON'];
+    const isConnectedLead = (lead: any) => {
+      const phase = (lead.phase || lead.status || '').toUpperCase();
+      return connectedPhases.includes(phase);
+    };
+
     return teamMembers.map(member => {
       const uId = member.uid || member.id;
-      const assignedLeads = leads.filter(l => l.assignedTo === uId);
+      const assignedLeads = leads.filter(l => l.assignedTo === uId || l.assignedTo === member.id || l.assignedTo === member.uid);
       const totalAssigned = assignedLeads.length;
 
-      const connectedCount = assignedLeads.filter(l => {
-        const ph = l.phase?.toUpperCase() || 'NEW';
-        return ['CONNECTED', 'NURTURING', 'QUALIFIED', 'WON'].includes(ph);
-      }).length;
+      const connectedCount = assignedLeads.filter(isConnectedLead).length;
 
       const convertedCount = assignedLeads.filter(l =>
         l.phase?.toUpperCase() === 'WON'
@@ -137,6 +140,8 @@ export default function Dashboard({ user }: { user: any }) {
       today.setHours(0, 0, 0, 0);
 
       const connectedTodayCount = assignedLeads.filter(l => {
+        const phase = (l.phase || l.status || '').toUpperCase();
+        if (phase !== 'CONNECTED') return false;
         if (!l.updatedAt) return false;
         const date = l.updatedAt.toDate ? l.updatedAt.toDate() : new Date(l.updatedAt);
         return date >= today;
