@@ -67,6 +67,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
 import { useTheme } from './contexts/ThemeContext';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 
 // --- Error Handling ---
@@ -1239,6 +1240,7 @@ export default function App() {
       <AuthProvider>
         <DemoProvider>
           <AppContent />
+          <SpeedInsights />
         </DemoProvider>
       </AuthProvider>
     </Router>

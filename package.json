@@ -22,6 +22,7 @@
     "@types/jspdf": "^2.0.0",
     "@types/papaparse": "^5.5.2",
     "@types/uuid": "^10.0.0",
+    "@vercel/speed-insights": "^2.0.0",
     "@vitejs/plugin-react": "^5.0.4",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
