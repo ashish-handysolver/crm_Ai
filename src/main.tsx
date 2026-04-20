@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
+import { Analytics } from '@vercel/analytics/react';
 
 // Register Service Worker for PWA Support
 if ('serviceWorker' in navigator) {
@@ -84,6 +85,7 @@ try {
     <StrictMode>
       <ThemeProvider>
         <App />
+        <Analytics />
       </ThemeProvider>
     </StrictMode>
   );
