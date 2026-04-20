@@ -73,11 +73,28 @@ const formatLogTime = (log: ActivityLogRecord) => {
 };
 
 const formatValue = (value: any) => {
-  if (typeof value === 'boolean') return value ? 'Interested' : 'Not interested';
+  if (typeof value === 'boolean') return value ? '👍 Interested' : '👎 Not interested';
   if (value === null || value === undefined || value === '') return 'Empty';
   if (Array.isArray(value)) return value.join(', ');
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
+};
+
+const formatFieldName = (field?: string) => {
+  const normalized = (field || 'Value').trim();
+  const key = normalized.toLowerCase();
+
+  if (key === 'isinterested' || key === 'is_interested') return 'Lead interest';
+  if (key === 'phase') return 'Pipeline status';
+  if (key === 'status') return 'Lead status';
+  if (key === 'health') return 'Lead temperature';
+  if (key === 'leadtype') return 'Lead type';
+  if (key === 'assignedto') return 'Assigned member';
+
+  return normalized
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
 };
 
 const getDetailText = (log: ActivityLogRecord) => {
@@ -85,10 +102,34 @@ const getDetailText = (log: ActivityLogRecord) => {
   if (!details) return 'No extra details added';
   if (details.note) return details.note;
   if (details.field || details.oldValue !== undefined || details.newValue !== undefined) {
-    const field = details.field || 'Value';
-    return `${field}: ${formatValue(details.oldValue)} -> ${formatValue(details.newValue)}`;
+    const field = formatFieldName(details.field);
+    const newValue = formatValue(details.newValue);
+    const oldValue = formatValue(details.oldValue);
+
+    if ((details.field || '').toLowerCase() === 'isinterested') {
+      return `Interest changed: ${oldValue} → ${newValue}`;
+    }
+
+    return `${field}: ${oldValue} → ${newValue}`;
   }
   return 'No extra details added';
+};
+
+const getDisplayAction = (log: ActivityLogRecord) => {
+  const field = (log.details?.field || '').toLowerCase();
+  const type = (log.type || '').toUpperCase();
+  const action = log.action || 'Activity recorded';
+
+  if (field === 'isinterested' || type.includes('INTEREST')) {
+    return log.details?.newValue === false ? '👎 Marked as not interested' : '👍 Marked as interested';
+  }
+
+  if (field === 'health') return '🌡️ Lead temperature updated';
+  if (field === 'phase' || field === 'status' || type.includes('STATUS')) return '📌 Status updated';
+  if (type.includes('NOTE')) return '📝 Note added';
+  if (type.includes('CALL')) return '📞 Call activity recorded';
+
+  return action;
 };
 
 const getActivityTone = (type?: string) => {
@@ -237,7 +278,7 @@ export default function ManagementActivity({ user }: { user: any }) {
         const lead = log.leadId ? leadById.get(log.leadId) : undefined;
         const searchable = [
           log.authorName,
-          log.action,
+          getDisplayAction(log),
           log.type,
           getDetailText(log),
           lead?.name,
@@ -477,7 +518,7 @@ export default function ManagementActivity({ user }: { user: any }) {
                                 {formatLogTime(log)}
                               </span>
                             </div>
-                            <h3 className="mt-3 break-words text-base font-black text-[var(--crm-text)]">{log.action || 'Activity recorded'}</h3>
+                            <h3 className="mt-3 break-words text-base font-black text-[var(--crm-text)]">{getDisplayAction(log)}</h3>
                           </div>
 
                           {log.leadId && (
