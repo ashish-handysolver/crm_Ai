@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Copy, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode, ThumbsUp, ThumbsDown, History, MessageSquare, X, Send
+  Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Copy, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode, ThumbsUp, ThumbsDown, History, MessageSquare, X, Send, MoreVertical, Mail, Phone
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -70,6 +70,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       (location.state as any)?.isInterested === false ? 'NOT_INTERESTED' : 'ALL'
   );
   const [selectedLeadForHistory, setSelectedLeadForHistory] = useState<any | null>(null);
+  const [openKanbanMenuId, setOpenKanbanMenuId] = useState<string | null>(null);
   const [newActivityNote, setNewActivityNote] = useState('');
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [submittingNote, setSubmittingNote] = useState(false);
@@ -635,6 +636,28 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     }
   };
 
+  const handleLeadTypeChange = async (leadId: string, newLeadType: string) => {
+    if (isDemoMode) return;
+    try {
+      if (!companyId) return;
+      const lead = leads.find(l => l.id === leadId);
+      const oldLeadType = lead?.leadType || '';
+      await updateDoc(doc(db, 'leads', leadId), { leadType: newLeadType, updatedAt: Timestamp.now() });
+
+      await logActivity({
+        leadId,
+        companyId,
+        type: 'FIELD_CHANGE',
+        action: 'Lead Type Updated',
+        authorUid: user.uid,
+        authorName: user.displayName || 'System',
+        details: { field: 'leadType', oldValue: oldLeadType, newValue: newLeadType }
+      });
+    } catch (e) {
+      console.error('Failed to update lead type', e);
+    }
+  };
+
   const handleAssignChange = async (leadId: string, assignedTo: string) => {
     if (isDemoMode) return;
     try {
@@ -803,6 +826,29 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const availableLeadTypes = Array.from(new Set([...DEFAULT_LEAD_TYPES, ...customLeadTypes]));
 
   const isAllSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeads.includes(l.id));
+  const hasActiveFilters = Boolean(
+    searchTerm ||
+    leadTypeFilter ||
+    selectedPhase !== 'All' ||
+    healthFilter !== 'ALL' ||
+    interestFilter !== 'ALL' ||
+    teamMemberFilter ||
+    activeTodayFilter ||
+    activePhasesFilter.length > 0 ||
+    (!isActiveOnlyRoute && activityFilter !== 'ALL')
+  );
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setLeadTypeFilter('');
+    setActivityFilter(isActiveOnlyRoute ? 'ACTIVE' : 'ALL');
+    setSelectedPhase('All');
+    setHealthFilter('ALL');
+    setInterestFilter('ALL');
+    setTeamMemberFilter('');
+    setActiveTodayFilter(false);
+    setActivePhasesFilter([]);
+  };
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
@@ -816,6 +862,32 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const toggleSelect = (id: string) => {
     setSelectedLeads(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
+
+  const PaginationControls = ({ compact = false }: { compact?: boolean }) => (
+    <div className={`flex flex-col ${compact ? 'gap-3' : 'md:flex-row items-center justify-between gap-4'} text-sm text-[var(--crm-text-muted)]`}>
+      <div className="font-medium text-center md:text-left">
+        Showing <span className="font-extrabold text-[var(--crm-text)]">{paginatedLeads.length}</span> of <span className="font-extrabold text-[var(--crm-text)]">{filteredLeads.length}</span> results
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1.5">
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-hover-bg)] shadow-sm transition-all disabled:opacity-50">
+            <ChevronLeft size={16} />
+          </button>
+          {getPageNumbers().map(pageNum => (
+            <button
+              key={pageNum} onClick={() => setCurrentPage(pageNum)}
+              className={`px-3 sm:px-4 py-2 font-bold shadow-sm border rounded-xl text-xs transition-all ${currentPage === pageNum ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'text-[var(--crm-text-muted)] bg-[var(--crm-control-bg)] border-[var(--crm-border)] hover:bg-[var(--crm-control-hover-bg)] hover:text-[var(--crm-text)]'}`}
+            >
+              {pageNum}
+            </button>
+          ))}
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-hover-bg)] shadow-sm transition-all disabled:opacity-50">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   const handleBulkDelete = async () => {
     if (!selectedLeads.length) return;
@@ -842,11 +914,11 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   };
 
   const KanbanView = () => (
-    <div className="flex gap-8 overflow-x-auto pb-10 min-h-[600px] hide-scrollbar snap-x">
+    <div className="flex gap-4 sm:gap-8 overflow-x-auto pb-10 min-h-[560px] hide-scrollbar snap-x px-4 sm:px-0">
       {availablePhases.map(phase => {
         const phaseLeads = filteredLeads.filter(l => l.phase === phase);
         return (
-          <div key={phase} className="min-w-[340px] w-[340px] flex flex-col gap-6 snap-start relative z-10">
+          <div key={phase} className="min-w-[82vw] w-[82vw] sm:min-w-[340px] sm:w-[340px] flex flex-col gap-5 sm:gap-6 snap-start relative z-10">
             <div className="flex items-center justify-between px-2 bg-[var(--crm-bg)]/20 backdrop-blur-sm p-4 rounded-2xl border border-[var(--crm-border)]">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.1)] ${getPhaseColor(phase).split(' ')[0]}`} />
@@ -883,7 +955,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     key={lead.id}
-                    className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 p-6 group relative overflow-hidden cursor-pointer"
+                    className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 p-6 group relative overflow-visible cursor-pointer"
                   >
                     <div className="relative z-10">
                       <div className="flex items-center gap-4 mb-5">
@@ -905,77 +977,117 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                           <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 shadow-sm ${lead.health === 'HOT' ? 'bg-rose-500' : lead.health === 'WARM' ? 'bg-amber-400' : 'bg-slate-400'}`} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <div className="font-black text-[var(--crm-text)] text-sm break-words leading-tight">{lead.name}</div>
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedLeadForHistory(lead);
-                                }}
-                                className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
-                                title="Activity History"
-                              >
-                                <History size={12} />
-                              </button>
-                              <button
-                                onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
-                                className={`p-1.5 rounded-lg transition-all hover:bg-[var(--crm-bg)]/40 active:scale-95 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
-                                title={lead.isInterested === false ? "Mark as Interested" : "Mark as Not Interested"}
-                              >
-                                {lead.isInterested === false ? (
-                                  <ThumbsDown size={14} className="shrink-0" />
-                                ) : (
-                                  <ThumbsUp size={14} className="shrink-0" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
+                          <div className="font-black text-[var(--crm-text)] text-sm break-words leading-tight mb-0.5">{lead.name}</div>
                           <div className="text-xs font-bold text-[var(--crm-text-muted)] break-words mt-0.5 leading-snug">{lead.company}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-5 border-t border-[var(--crm-border)]">
-                        <div className="flex items-center gap-2">
-                          <div className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[10px] font-black uppercase">
-                            {lead.score || 0}% Match
-                          </div>
-                          {lead.leadType && <span className="px-2.5 py-1 bg-[var(--crm-border)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] rounded-lg text-[8px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
+                      <div className="space-y-4 pt-4 border-t border-[var(--crm-border)]">
+                        <div className="grid grid-cols-1 gap-2">
+                          {lead.email && (
+                            <a
+                              href={`mailto:${lead.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="min-w-0 flex items-center gap-2 rounded-xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] px-3 py-2 text-[11px] font-bold text-[var(--crm-text-muted)] hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                            >
+                              <Mail size={13} className="shrink-0 text-indigo-400" />
+                              <span className="truncate">{lead.email}</span>
+                            </a>
+                          )}
+                          {lead.phone && (
+                            <a
+                              href={`tel:${lead.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="min-w-0 flex items-center gap-2 rounded-xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] px-3 py-2 text-[11px] font-bold text-[var(--crm-text-muted)] hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                            >
+                              <Phone size={13} className="shrink-0 text-emerald-400" />
+                              <span className="truncate">{lead.phone}</span>
+                            </a>
+                          )}
                         </div>
 
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[10px] font-black uppercase shrink-0">
+                            {lead.score || 0}% Match
+                          </div>
+                          {lead.leadType && <span className="min-w-0 truncate px-2.5 py-1 bg-[var(--crm-border)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] rounded-lg text-[8px] font-black uppercase tracking-widest">{lead.leadType}</span>}
+                        </div>
+
+                        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] p-1.5">
                           <button
                             onClick={(e) => { e.stopPropagation(); setSelectedLeadForHistory(lead); }}
-                            className="p-2 text-[var(--crm-text-muted)] hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
+                            className="h-9 px-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all text-[10px] font-black uppercase tracking-wider"
                             title="Activity History"
                           >
-                            <History size={16} />
+                            <History size={13} />
+                            <span>History</span>
                           </button>
-                          {/* {lead.phone && (
-                            <button 
+                          <button
+                            onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                            className={`h-9 px-3 inline-flex items-center justify-center gap-1.5 rounded-xl border transition-all active:scale-95 text-[10px] font-black uppercase tracking-wider ${lead.isInterested === false ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/20' : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20 hover:bg-cyan-500/20'}`}
+                            title={lead.isInterested === false ? "Mark as Interested" : "Mark as Not Interested"}
+                          >
+                            {lead.isInterested === false ? (
+                              <ThumbsDown size={13} className="shrink-0" />
+                            ) : (
+                              <ThumbsUp size={13} className="shrink-0" />
+                            )}
+                            <span>{lead.isInterested === false ? 'No' : 'Yes'}</span>
+                          </button>
+                          <div className="relative">
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const intro = WHATSAPP_TEMPLATES.find(t => t.id === 'intro-followup');
-                                if (intro) openWhatsApp(lead.phone, intro.generate({ leadName: lead.name, company: lead.company }));
+                                setOpenKanbanMenuId(prev => prev === lead.id ? null : lead.id);
                               }}
-                              className="p-2 text-[var(--crm-text-muted)] hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all"
-                              title="WhatsApp Intro"
+                              className="h-9 w-9 flex items-center justify-center rounded-xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] transition-all"
+                              title="More actions"
                             >
-                              <MessageSquare size={16} />
+                              <MoreVertical size={16} />
                             </button>
-                          )} */}
-                          {/* <button onClick={(e) => { e.preventDefault(); onCopyLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
-                            {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                          </button> */}
-                          <button onClick={(e) => { e.preventDefault(); onShareLink(lead.id, lead.name); }} disabled={isCreatingMeeting} className={`p-2 rounded-xl transition-all disabled:opacity-50 ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
-                            {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
-                          </button>
-                          <Link to={`/analytics/${lead.id}`} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 rounded-xl transition-all">
-                            <Sparkles size={16} />
-                          </Link>
-                          <Link to={`/clients/${lead.id}/edit`} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 rounded-xl transition-all">
-                            <Edit2 size={16} />
-                          </Link>
+
+                            <AnimatePresence>
+                              {openKanbanMenuId === lead.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="absolute right-0 bottom-full mb-2 w-44 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-sidebar-bg)] shadow-2xl p-2 z-50"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      onShareLink(lead.id, lead.name);
+                                      setOpenKanbanMenuId(null);
+                                    }}
+                                    disabled={isCreatingMeeting}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-[11px] font-black uppercase tracking-wider text-[var(--crm-text-muted)] hover:text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-50"
+                                  >
+                                    {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
+                                    Share Link
+                                  </button>
+                                  <Link
+                                    to={`/analytics/${lead.id}`}
+                                    onClick={() => setOpenKanbanMenuId(null)}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-[11px] font-black uppercase tracking-wider text-[var(--crm-text-muted)] hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                                  >
+                                    <Sparkles size={15} />
+                                    Analysis
+                                  </Link>
+                                  <Link
+                                    to={`/clients/${lead.id}/edit`}
+                                    onClick={() => setOpenKanbanMenuId(null)}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-[11px] font-black uppercase tracking-wider text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] transition-all"
+                                  >
+                                    <Edit2 size={15} />
+                                    Edit Lead
+                                  </Link>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -989,25 +1101,193 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     </div>
   );
 
+  const getAssignedName = (lead: any) =>
+    teamMembers.find(m => m.uid === lead.assignedTo || m.id === lead.assignedTo)?.displayName || 'Unassigned';
+
+  const getTemperature = (health?: string) => {
+    const normalized = (health || 'WARM').toUpperCase();
+    if (normalized === 'HOT') return { emoji: '🔥', label: 'Hot', className: 'text-rose-400 bg-rose-500/10 border-rose-500/20' };
+    if (normalized === 'COLD') return { emoji: '❄️', label: 'Cold', className: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
+    return { emoji: '☀️', label: 'Warm', className: 'text-amber-400 bg-amber-500/10 border-amber-500/20' };
+  };
+
+  const MobileLeadCard = ({ lead }: { lead: any }) => {
+    const temp = getTemperature(lead.health);
+    const isInterested = lead.isInterested !== false;
+    const canAssign = role === 'admin' || role === 'management' || role === 'super_admin';
+    const fieldSelectClass = "w-full appearance-none rounded-xl border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-2 pr-8 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text)] outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 disabled:opacity-70";
+
+    return (
+      <div className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2rem] p-4 border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-400 to-cyan-500"></div>
+
+        <div className="flex items-start gap-3 pl-1">
+          <input
+            type="checkbox"
+            checked={selectedLeads.includes(lead.id)}
+            onChange={() => toggleSelect(lead.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <h3 className="font-black text-base text-[var(--crm-text)] leading-tight break-words">{lead.name}</h3>
+                <a href={lead.phone ? `tel:${lead.phone}` : undefined} onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 text-[11px] font-bold text-[var(--crm-text-muted)] min-w-0">
+                  <Phone size={12} className="text-emerald-400 shrink-0" />
+                  <span className="truncate">{lead.phone || 'No mobile number'}</span>
+                </a>
+                <a href={lead.email ? `mailto:${lead.email}` : undefined} onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 text-[11px] font-bold text-[var(--crm-text-muted)] min-w-0">
+                  <Mail size={12} className="text-indigo-400 shrink-0" />
+                  <span className="truncate">{lead.email || 'No email id'}</span>
+                </a>
+                <div className="text-xs font-bold text-[var(--crm-text)] break-words">{lead.company || 'No company'}</div>
+              </div>
+
+              <div className="min-w-[116px] space-y-2 text-right">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] space-y-1.5">
+                  <span>Lead temperature</span>
+                  <div className="relative">
+                    <select
+                      value={lead.health || 'WARM'}
+                      onChange={(e) => handleHealthChange(lead.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={isDemoMode}
+                      className={`${fieldSelectClass} pl-7 ${temp.className}`}
+                    >
+                      <option value="HOT">Hot</option>
+                      <option value="WARM">Warm</option>
+                      <option value="COLD">Cold</option>
+                    </select>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs">{temp.emoji}</span>
+                    <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--crm-text-muted)]" />
+                  </div>
+                </div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] space-y-1.5">
+                  <span>Status</span>
+                  <div className="relative">
+                    <select
+                      value={lead.phase || 'DISCOVERY'}
+                      onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={isDemoMode}
+                      className={fieldSelectClass}
+                    >
+                      {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--crm-text-muted)]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] space-y-1.5">
+                <span>Assigned to</span>
+                {canAssign ? (
+                  <div className="relative">
+                    <select
+                      value={lead.assignedTo || ''}
+                      onChange={(e) => handleAssignChange(lead.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={isDemoMode}
+                      className={fieldSelectClass}
+                    >
+                      <option value="">Unassigned</option>
+                      {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
+                    </select>
+                    <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--crm-text-muted)]" />
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text)]">{getAssignedName(lead)}</div>
+                )}
+              </div>
+
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] space-y-1.5">
+                <span>Lead Type</span>
+                <div className="relative">
+                  <select
+                    value={lead.leadType || ''}
+                    onChange={(e) => handleLeadTypeChange(lead.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={isDemoMode}
+                    className={fieldSelectClass}
+                  >
+                    <option value="">Select</option>
+                    {availableLeadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--crm-text-muted)]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <button
+                onClick={(e) => isInterested ? undefined : handleInterestToggle(e, lead.id, false)}
+                disabled={isDemoMode || isInterested}
+                className={`h-10 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${isInterested ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' : 'bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border-[var(--crm-border)] hover:bg-cyan-500/10 hover:text-cyan-400'}`}
+              >
+                Interested
+              </button>
+              <button
+                onClick={(e) => !isInterested ? undefined : handleInterestToggle(e, lead.id, true)}
+                disabled={isDemoMode || !isInterested}
+                className={`h-10 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${!isInterested ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' : 'bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border-[var(--crm-border)] hover:bg-rose-500/10 hover:text-rose-400'}`}
+              >
+                Not Interested
+              </button>
+            </div>
+
+            <div className="grid grid-cols-5 gap-2 mt-4 pt-4 border-t border-[var(--crm-border)]">
+              {!isDemoMode && (
+                recordingId === lead.id ? (
+                  <button onClick={stopRecording} className="h-10 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/20 flex items-center justify-center" title="Stop Recording">
+                    <Square size={16} />
+                  </button>
+                ) : (
+                  <button onClick={() => startRecording(lead.id)} disabled={!!recordingId} className="h-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center disabled:opacity-40" title="Record Call">
+                    <Mic size={16} />
+                  </button>
+                )
+              )}
+              <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className="h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center disabled:opacity-50" title="Share Link">
+                {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+              </button>
+              <Link to={`/clients/${lead.id}/edit`} className="h-10 rounded-xl bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] flex items-center justify-center hover:text-[var(--crm-text)]" title="Edit Lead">
+                <Edit2 size={16} />
+              </Link>
+              <Link to={`/analytics/${lead.id}`} className="h-10 rounded-xl bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] flex items-center justify-center hover:text-indigo-400" title="Analytics">
+                <BarChart3 size={16} />
+              </Link>
+              <button onClick={(e) => { e.stopPropagation(); setSelectedLeadForHistory(lead); }} className="h-10 rounded-xl bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] flex items-center justify-center hover:text-cyan-400" title="Change Note">
+                <MessageSquare size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`flex-1 bg-transparent min-h-full ${viewMode === 'kanban' ? 'overflow-x-hidden' : ''}`}>
-      <div className={`max-w-[1600px] mx-auto ${viewMode === 'kanban' ? 'p-0 sm:p-8 lg:p-12' : 'p-4 sm:p-8 lg:p-12'} space-y-6 sm:space-y-10`}>
+      <div className={`max-w-[1600px] mx-auto ${viewMode === 'kanban' ? 'p-0 sm:p-8 lg:p-12' : 'p-4 sm:p-8 lg:p-12'} space-y-5 sm:space-y-10`}>
 
         {/* Header Section */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-8 px-4 sm:px-0">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
               <Users size={14} /> All leads
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto">
             {!isDemoMode ? (
               <>
-                <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-6 py-3.5 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-[var(--crm-bg)]/40 transition-all shadow-sm">
-                  <UploadCloud size={18} /> <span className="hidden sm:inline">Import Excel</span>
+                <button onClick={() => setIsImportModalOpen(true)} className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 sm:px-6 py-3.5 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-[var(--crm-control-hover-bg)] transition-all shadow-sm">
+                  <UploadCloud size={18} /> <span>Import Excel</span>
                 </button>
-                <Link to="/clients/new" className="flex items-center gap-3 px-6 py-3.5 bg-indigo-600 text-[var(--crm-text)] rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">
+                <Link to="/clients/new" className="w-full sm:w-auto justify-center flex items-center gap-3 px-4 sm:px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">
                   <Plus size={18} />
                   <span>New Lead</span>
                 </Link>
@@ -1032,8 +1312,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         </AnimatePresence>
 
         {/* Toolbar - Added overflow-visible to prevent select clipping */}
-        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !overflow-visible p-4 sm:p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 relative z-50">
-          <div className="relative w-full max-w-md group">
+        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !overflow-visible p-4 sm:p-6 mb-6 sm:mb-8 flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 sm:gap-6 relative z-50 mx-4 sm:mx-0">
+          <div className="relative w-full xl:max-w-md group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
             <input
               type="text"
@@ -1051,7 +1331,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto"
+                className="flex flex-col xl:flex-row xl:items-center xl:justify-end gap-3 sm:gap-4 w-full xl:w-auto"
               >
                 <div className="hidden md:flex items-center gap-1.5 p-1.5 bg-[var(--crm-bg)]/20 rounded-2xl border border-[var(--crm-border)] shadow-inner">
                   <button onClick={() => setViewMode('list')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}>LIST</button>
@@ -1060,7 +1340,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
                 <div className="h-8 w-[1px] bg-[var(--crm-bg)]/40 mx-1 hidden lg:block"></div>
 
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:flex md:flex-row md:flex-wrap items-center gap-2 sm:gap-4 w-full md:w-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-row xl:flex-wrap items-center gap-2 sm:gap-4 w-full xl:w-auto">
                   <div className="w-full sm:w-auto min-w-[150px]">
                     <SearchableSelect
                       options={[
@@ -1166,13 +1446,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                     onClick={() => handleBulkInterestUpdate(true)}
                     className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-cyan-500/10 text-cyan-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-cyan-500/20 transition-all border border-cyan-500/20 shadow-sm uppercase tracking-widest"
                   >
-                    <ThumbsUp size={14} /> <span className="hidden xs:inline">Interested</span>
+                    <ThumbsUp size={14} /> <span className="hidden sm:inline">Interested</span>
                   </button>
                   <button
                     onClick={() => handleBulkInterestUpdate(false)}
                     className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-rose-500/10 text-rose-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500/20 transition-all border border-rose-500/20 shadow-sm uppercase tracking-widest"
                   >
-                    <ThumbsDown size={14} /> <span className="hidden xs:inline">Not Interested</span>
+                    <ThumbsDown size={14} /> <span className="hidden sm:inline">Not Interested</span>
                   </button>
                   <button
                     onClick={handleBulkDelete}
@@ -1186,14 +1466,39 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           </AnimatePresence>
         </div>
 
-        <div className="flex flex-wrap gap-3 mb-6">
+        {/* <div className="lg:hidden px-4 sm:px-0">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-1.5 shadow-inner">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)]'}`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)]'}`}
+            >
+              Card
+            </button>
+          </div>
+        </div> */}
+
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 overflow-x-auto hide-scrollbar pb-1 px-4 sm:px-0">
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
+            >
+              Clear Filters
+            </button>
+          )}
           {['All', ...availablePhases].map((phase) => (
             <button
               key={phase}
               onClick={() => setSelectedPhase(phase)}
-              className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${selectedPhase === phase
+              className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${selectedPhase === phase
                 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm'
-                : 'bg-[var(--crm-border)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] hover:border-white/20 hover:text-[var(--crm-text)]'
+                : 'bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] hover:bg-[var(--crm-control-hover-bg)] hover:text-[var(--crm-text)]'
                 }`}
             >
               {phase} <span className="ml-1 opacity-75">({phaseCounts[phase] || 0})</span>
@@ -1205,7 +1510,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
 
 
             {/* Mobile View (Cards) */}
-            <div className="lg:hidden space-y-4">
+            <div className="lg:hidden space-y-4 px-4 sm:px-0">
               {loadingLeads ? (
                 [...Array(4)].map((_, i) => (
                   <div key={i} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] shadow-sm space-y-4 animate-pulse">
@@ -1216,142 +1521,177 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                         <div className="h-3 bg-[var(--crm-bg)]/40 rounded w-1/3"></div>
                       </div>
                     </div>
-                    <div className="h-16 bg-black/20 rounded-xl"></div>
-                    <div className="h-10 bg-black/20 rounded-xl"></div>
+                    <div className="h-16 bg-[var(--crm-control-bg)] rounded-xl"></div>
+                    <div className="h-10 bg-[var(--crm-control-bg)] rounded-xl"></div>
                   </div>
                 ))
+              ) : paginatedLeads.length === 0 ? (
+                <div className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2rem] p-8 border border-dashed border-[var(--crm-border)] text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] flex items-center justify-center mx-auto mb-4">
+                    <Search className="text-[var(--crm-text-muted)]" size={22} />
+                  </div>
+                  <h3 className="text-base font-black text-[var(--crm-text)] mb-2">No leads found</h3>
+                  <p className="text-sm font-medium text-[var(--crm-text-muted)]">Try changing the search or filters.</p>
+                </div>
               ) : paginatedLeads.map(lead => (
-                <div key={lead.id} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-orange-400 to-orange-500"></div>
-                  <div className="flex items-start justify-between mb-4 gap-4">
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.includes(lead.id)}
-                        onChange={() => toggleSelect(lead.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer shrink-0"
-                      />
-                      <div className="relative shrink-0">
-                        {lead.avatar ? (
-                          <img src={lead.avatar} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] object-cover ring-2 ring-slate-900/50" alt={lead.name} />
-                        ) : (
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] bg-[var(--crm-bg)]/40 flex items-center justify-center text-[var(--crm-text)] text-xs sm:text-sm font-black ring-2 ring-slate-900/50">
-                            {lead.name.split(' ').map((n: string) => n[0]).join('')}
+                <React.Fragment key={lead.id}>
+                  <MobileLeadCard lead={lead} />
+                  {false && (
+                    <div className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] p-4 sm:p-6 border border-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-orange-400 to-orange-500"></div>
+                      <div className="flex items-start justify-between mb-4 gap-4">
+                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.includes(lead.id)}
+                            onChange={() => toggleSelect(lead.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer shrink-0"
+                          />
+                          <div className="relative shrink-0">
+                            {lead.avatar ? (
+                              <img src={lead.avatar} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] object-cover ring-2 ring-slate-900/50" alt={lead.name} />
+                            ) : (
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] bg-[var(--crm-bg)]/40 flex items-center justify-center text-[var(--crm-text)] text-xs sm:text-sm font-black ring-2 ring-slate-900/50">
+                                {lead.name.split(' ').map((n: string) => n[0]).join('')}
+                              </div>
+                            )}
+                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-extrabold text-sm sm:text-base text-[var(--crm-text)] break-words leading-tight">{lead.name}</h3>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedLeadForHistory(lead);
+                                  }}
+                                  className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
+                                >
+                                  <History size={12} />
+                                </button>
+                                <button
+                                  onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
+                                  className={`p-1.5 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
+                                >
+                                  {lead.isInterested === false ? (
+                                    <ThumbsDown size={14} className="shrink-0" />
+                                  ) : (
+                                    <ThumbsUp size={14} className="shrink-0" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="text-[var(--crm-text-muted)] text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
+                              <span className="break-words">{lead.company}</span>
+                              {lead.leadType && <span className="px-2 py-0.5 bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] rounded text-[9px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
+                            </div>
+                            {(lead.email || lead.phone) && (
+                              <div className="mt-3 grid grid-cols-1 gap-2">
+                                {lead.email && (
+                                  <a
+                                    href={`mailto:${lead.email}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="min-w-0 flex items-center gap-2 rounded-xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] px-3 py-2 text-[11px] font-bold text-[var(--crm-text-muted)] hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                                  >
+                                    <Mail size={13} className="shrink-0 text-indigo-400" />
+                                    <span className="truncate">{lead.email}</span>
+                                  </a>
+                                )}
+                                {lead.phone && (
+                                  <a
+                                    href={`tel:${lead.phone}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="min-w-0 flex items-center gap-2 rounded-xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] px-3 py-2 text-[11px] font-bold text-[var(--crm-text-muted)] hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                                  >
+                                    <Phone size={13} className="shrink-0 text-emerald-400" />
+                                    <span className="truncate">{lead.phone}</span>
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="relative shrink-0 mt-1 max-w-[120px]">
+                          <select
+                            value={lead.health || 'WARM'}
+                            onChange={(e) => handleHealthChange(lead.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
+                          >
+                            <option value="HOT">Hot 🔥</option>
+                            <option value="WARM">Warm ☀️</option>
+                            <option value="COLD">Cold ❄️</option>
+                          </select>
+                          <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5 p-3 sm:p-4 bg-[var(--crm-bg)]/20 rounded-xl sm:rounded-2xl border border-[var(--crm-border)]">
+                        <div>
+                          <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Score</div>
+                          <div className="font-extrabold text-[var(--crm-text)]">{lead.score || 0}%</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Status</div>
+                          <div className="relative inline-block w-full max-w-[140px]">
+                            <select
+                              value={lead.phase || 'DISCOVERY'}
+                              onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
+                            >
+                              {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                          </div>
+                        </div>
+                        {(role === 'admin' || role === 'management' || role === 'super_admin') && (
+                          <div className="col-span-2 border-t border-[var(--crm-border)] pt-3 mt-1">
+                            <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5 flex items-center justify-between">
+                              <span>Assigned To</span>
+                            </div>
+                            <div className="relative inline-block w-full">
+                              <select
+                                value={lead.assignedTo || ''}
+                                onChange={(e) => handleAssignChange(lead.id, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`w-full text-xs font-bold pl-2.5 pr-6 py-2 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]`}
+                              >
+                                <option value="">Unassigned</option>
+                                {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
+                              </select>
+                              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-[var(--crm-text-muted)]" />
+                            </div>
                           </div>
                         )}
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-extrabold text-sm sm:text-base text-[var(--crm-text)] break-words leading-tight">{lead.name}</h3>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedLeadForHistory(lead);
-                              }}
-                              className="p-1.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all"
-                            >
-                              <History size={12} />
-                            </button>
-                            <button
-                              onClick={(e) => handleInterestToggle(e, lead.id, lead.isInterested !== false)}
-                              className={`p-1.5 rounded-xl transition-all hover:bg-[var(--crm-bg)]/40 active:scale-90 ${lead.isInterested === false ? 'text-rose-500' : 'text-cyan-500'}`}
-                            >
-                              {lead.isInterested === false ? (
-                                <ThumbsDown size={14} className="shrink-0" />
+
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 pt-4 border-t border-[var(--crm-border)] gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {!isDemoMode && (
+                            <>
+                              {recordingId === lead.id ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-pulse'}`} />
+                                    {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+                                  </div>
+                                  <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-2 sm:p-3 bg-amber-500/20 text-amber-300 rounded-lg sm:rounded-xl hover:bg-amber-500/30">
+                                    {isPaused ? <Play size={16} /> : <Pause size={16} />}
+                                  </button>
+                                  <button onClick={stopRecording} className="p-2 sm:p-3 bg-rose-500/20 text-rose-300 rounded-lg sm:rounded-xl hover:bg-rose-500/30">
+                                    <Square size={16} />
+                                  </button>
+                                </div>
                               ) : (
-                                <ThumbsUp size={14} className="shrink-0" />
+                                <button onClick={() => startRecording(lead.id)} className="p-2 sm:p-3 bg-indigo-500/20 text-indigo-300 rounded-lg sm:rounded-xl hover:bg-indigo-500/30 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-indigo-500/30" title="Start Session" disabled={!!recordingId}>
+                                  <Mic size={16} /> Record
+                                </button>
                               )}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="text-[var(--crm-text-muted)] text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
-                          <span className="break-words">{lead.company}</span>
-                          {lead.leadType && <span className="px-2 py-0.5 bg-[var(--crm-bg)]/40 text-[var(--crm-text-muted)] rounded text-[9px] font-black uppercase tracking-widest shrink-0">{lead.leadType}</span>}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="relative shrink-0 mt-1 max-w-[120px]">
-                      <select
-                        value={lead.health || 'WARM'}
-                        onChange={(e) => handleHealthChange(lead.id, e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`w-full text-[9px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] ${(lead.health || 'WARM') === 'HOT' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (lead.health || 'WARM') === 'COLD' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}
-                      >
-                        <option value="HOT">Hot 🔥</option>
-                        <option value="WARM">Warm ☀️</option>
-                        <option value="COLD">Cold ❄️</option>
-                      </select>
-                      <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5 p-3 sm:p-4 bg-[var(--crm-bg)]/20 rounded-xl sm:rounded-2xl border border-[var(--crm-border)]">
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Score</div>
-                      <div className="font-extrabold text-[var(--crm-text)]">{lead.score || 0}%</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5">Status</div>
-                      <div className="relative inline-block w-full max-w-[140px]">
-                        <select
-                          value={lead.phase || 'DISCOVERY'}
-                          onChange={(e) => handlePhaseChange(lead.id, e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className={`w-full text-[10px] font-black uppercase tracking-widest pl-2.5 pr-6 py-1.5 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-slate-900 ${getPhaseColor(lead.phase || 'DISCOVERY')}`}
-                        >
-                          {availablePhases.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
-                      </div>
-                    </div>
-                    {(role === 'admin' || role === 'management' || role === 'super_admin') && (
-                      <div className="col-span-2 border-t border-white/5 pt-3 mt-1">
-                        <div className="text-[10px] uppercase font-bold text-[var(--crm-text-muted)] tracking-widest mb-1.5 flex items-center justify-between">
-                          <span>Assigned To</span>
-                        </div>
-                        <div className="relative inline-block w-full">
-                          <select
-                            value={lead.assignedTo || ''}
-                            onChange={(e) => handleAssignChange(lead.id, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`w-full text-xs font-bold pl-2.5 pr-6 py-2 rounded-lg border appearance-none cursor-pointer outline-none text-ellipsis overflow-hidden whitespace-nowrap [&>option]:bg-[var(--crm-sidebar-bg)] bg-[var(--crm-border)] text-[var(--crm-text-muted)] border-[var(--crm-border)]`}
-                          >
-                            <option value="">Unassigned</option>
-                            {teamMembers.map(m => <option key={m.id} value={m.uid}>{m.displayName}</option>)}
-                          </select>
-                          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-[var(--crm-text-muted)]" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between mt-2 pt-4 border-t border-[var(--crm-border)] gap-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {!isDemoMode && (
-                        <>
-                          {recordingId === lead.id ? (
-                            <div className="flex items-center gap-2">
-                              <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs">
-                                <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-red-500 animate-pulse'}`} />
-                                {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
-                              </div>
-                              <button onClick={isPaused ? resumeRecording : pauseRecording} className="p-2 sm:p-3 bg-amber-500/20 text-amber-300 rounded-lg sm:rounded-xl hover:bg-amber-500/30">
-                                {isPaused ? <Play size={16} /> : <Pause size={16} />}
-                              </button>
-                              <button onClick={stopRecording} className="p-2 sm:p-3 bg-rose-500/20 text-rose-300 rounded-lg sm:rounded-xl hover:bg-rose-500/30">
-                                <Square size={16} />
-                              </button>
-                            </div>
-                          ) : (
-                            <button onClick={() => startRecording(lead.id)} className="p-2 sm:p-3 bg-indigo-500/20 text-indigo-300 rounded-lg sm:rounded-xl hover:bg-indigo-500/30 transition-all flex items-center gap-1.5 sm:gap-2 font-bold text-[10px] sm:text-xs border border-indigo-500/30" title="Start Session" disabled={!!recordingId}>
-                              <Mic size={16} /> Record
-                            </button>
-                          )}
-                          <div className="flex items-center gap-1">
-                            {/* {lead.phone && (
+                              <div className="flex items-center gap-1">
+                                {/* {lead.phone && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -1364,37 +1704,44 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" />
                               </button>
                             )} */}
-                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
+                                {/* <button onClick={() => onCopyLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Copy Link">
                               {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
                             </button> */}
-                            <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
-                              {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                            </button>
-                          </div>
-                          <Link to={`/clients/${lead.id}/edit`} className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 rounded-lg sm:rounded-xl transition-all border border-transparent">
-                            <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                          </Link>
-                          {(role === 'admin' || role === 'super_admin') && (
-                            <button
-                              onClick={() => handleDeleteLead(lead.id)}
-                              className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg sm:rounded-xl transition-all border border-transparent"
-                              title="Delete Lead"
-                            >
-                              <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                            </button>
+                                <button onClick={() => onShareLink(lead.id, lead.name)} disabled={isCreatingMeeting} className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all disabled:opacity-50 border border-transparent ${shareUrls[lead.id] ? 'text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40'}`} title="Share Link">
+                                  {isCreatingMeeting && !shareUrls[lead.id] ? <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" /> : <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                                </button>
+                              </div>
+                              <Link to={`/clients/${lead.id}/edit`} className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 rounded-lg sm:rounded-xl transition-all border border-transparent">
+                                <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                              </Link>
+                              {(role === 'admin' || role === 'super_admin') && (
+                                <button
+                                  onClick={() => handleDeleteLead(lead.id)}
+                                  className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg sm:rounded-xl transition-all border border-transparent"
+                                  title="Delete Lead"
+                                >
+                                  <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                </button>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                      {isDemoMode && (
-                        <div className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest px-3 py-1 bg-[var(--crm-border)] rounded-lg">Readonly</div>
-                      )}
+                          {isDemoMode && (
+                            <div className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest px-3 py-1 bg-[var(--crm-border)] rounded-lg">Readonly</div>
+                          )}
+                        </div>
+                        <Link to={`/analytics/${lead.id}`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
+                          <BarChart3 size={14} />
+                        </Link>
+                      </div>
                     </div>
-                    <Link to={`/analytics/${lead.id}`} className="text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-bg)]/40 w-9 h-9 flex items-center justify-center rounded-xl transition-all border border-transparent hover:border-[var(--crm-border)]">
-                      <BarChart3 size={14} />
-                    </Link>
-                  </div>
-                </div>
+                  )}
+                </React.Fragment>
               ))}
+              {!loadingLeads && filteredLeads.length > 0 && (
+                <div className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2rem] p-4 border border-[var(--crm-border)]">
+                  <PaginationControls compact />
+                </div>
+              )}
             </div>
 
 
@@ -1409,7 +1756,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                           type="checkbox"
                           checked={isAllSelected}
                           onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-[var(--crm-border)] bg-[var(--crm-control-bg)] text-indigo-500 focus:ring-indigo-500 cursor-pointer"
                         />
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--crm-bg)]/40"></div>
                       </th>
@@ -1426,7 +1773,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   <tbody className="text-sm">
                     {loadingLeads ? (
                       [...Array(5)].map((_, i) => (
-                        <tr key={i} className="border-b border-white/5">
+                        <tr key={i} className="border-b border-[var(--crm-border)]">
                           <td className="py-5 px-6 text-center"><div className="w-4 h-4 rounded bg-[var(--crm-bg)]/40 animate-pulse mx-auto"></div></td>
                           <td className="py-5 px-8">
                             <div className="flex items-center gap-4">
@@ -1665,8 +2012,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                       <div className="flex items-center gap-3">
 
                                         {shareUrls[lead.id] ? (
-                                          <div className="flex items-center gap-2 w-72 bg-black/20 rounded-xl shadow-inner border border-[var(--crm-border)] p-1">
-                                            <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-slate-300 outline-none text-ellipsis" />
+                                          <div className="flex items-center gap-2 w-72 bg-[var(--crm-control-bg)] rounded-xl shadow-inner border border-[var(--crm-border)] p-1">
+                                            <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-[var(--crm-text-muted)] outline-none text-ellipsis" />
                                             {/* <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
                                               <Copy size={16} />
                                             </button> */}
@@ -1688,7 +2035,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                     </div>
 
                                     {leadRecs.length === 0 ? (
-                                      <div className="text-sm text-[var(--crm-text-muted)] font-medium bg-black/20 border-2 border-[var(--crm-border)] border-dashed rounded-[2rem] p-12 text-center flex flex-col items-center">
+                                      <div className="text-sm text-[var(--crm-text-muted)] font-medium bg-[var(--crm-control-bg)] border-2 border-[var(--crm-border)] border-dashed rounded-[2rem] p-12 text-center flex flex-col items-center">
                                         <div className="w-16 h-16 bg-[var(--crm-border)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center mb-4 shadow-sm"><Play className="text-[var(--crm-text-muted)]" size={24} /></div>
                                         <p>No recordings yet. Click the microphone to start a new one.</p>
                                       </div>
@@ -1696,14 +2043,14 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {leadRecs.map(rec => (
                                           <div key={rec.id} className="bg-[var(--crm-border)] rounded-[1.5rem] border border-[var(--crm-border)] p-6 shadow-sm hover:shadow-md hover:border-indigo-500/30 hover:bg-[var(--crm-bg)]/40 transition-all flex items-start gap-4 group cursor-pointer" onClick={() => window.location.href = `/r/${rec.id}`}>
-                                            <div className="w-12 h-12 rounded-xl bg-black/20 border border-[var(--crm-border)] flex items-center justify-center shrink-0 group-hover:bg-indigo-500/20 transition-colors">
+                                            <div className="w-12 h-12 rounded-xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] flex items-center justify-center shrink-0 group-hover:bg-indigo-500/20 transition-colors">
                                               <Play className="text-[var(--crm-text-muted)] group-hover:text-indigo-300 group-hover:fill-indigo-300 ml-1 transition-colors" size={18} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                               <div className="text-[10px] text-[var(--crm-text-muted)] group-hover:text-indigo-400 font-bold uppercase tracking-widest mb-1.5 transition-colors">
                                                 {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium' }) : 'Unknown Date'}
                                               </div>
-                                              <div className="text-sm font-medium text-slate-300 italic line-clamp-2 leading-relaxed">"{rec.transcript}"</div>
+                                              <div className="text-sm font-medium text-[var(--crm-text-muted)] italic line-clamp-2 leading-relaxed">"{rec.transcript}"</div>
                                             </div>
                                           </div>
                                         ))}
@@ -1720,26 +2067,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   </tbody>
                 </table>
               </div>
-              <div className="p-5 border-t border-[var(--crm-border)] bg-black/40 flex flex-col md:flex-row items-center justify-between text-sm text-[var(--crm-text-muted)] gap-4">
-                <div className="font-medium">Showing <span className="font-extrabold text-[var(--crm-text)]">{paginatedLeads.length}</span> of <span className="font-extrabold text-[var(--crm-text)]">{filteredLeads.length}</span> results</div>
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-bg)]/40 shadow-sm transition-all disabled:opacity-50">
-                      <ChevronLeft size={16} />
-                    </button>
-                    {getPageNumbers().map(pageNum => (
-                      <button
-                        key={pageNum} onClick={() => setCurrentPage(pageNum)}
-                        className={`px-4 py-2 font-bold shadow-sm border rounded-xl text-xs transition-all ${currentPage === pageNum ? 'bg-indigo-600 text-[var(--crm-text)] border-indigo-600 shadow-md' : 'text-slate-300 bg-[var(--crm-border)] border-[var(--crm-border)] hover:bg-[var(--crm-bg)]/40'}`}
-                      >
-                        {pageNum}
-                      </button>
-                    ))}
-                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] rounded-xl hover:bg-[var(--crm-bg)]/40 shadow-sm transition-all disabled:opacity-50">
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                )}
+              <div className="p-5 border-t border-[var(--crm-border)] bg-[var(--crm-control-bg)]">
+                <PaginationControls />
               </div>
             </div>
           </>
@@ -1751,11 +2080,11 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         {showSafetyAlert && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[var(--crm-overlay-bg)] backdrop-blur-sm"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              className="bg-slate-900 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-800 text-center"
+              className="bg-[var(--crm-sidebar-bg)] rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-[var(--crm-border)] text-center"
             >
               <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <ShieldAlert className="text-amber-500" size={32} />
@@ -1777,7 +2106,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                 </button>
                 <button
                   onClick={stopRecording}
-                  className="w-full py-4 bg-[var(--crm-border)] text-slate-300 rounded-2xl font-bold hover:bg-[var(--crm-bg)]/40 transition-all"
+                  className="w-full py-4 bg-[var(--crm-control-bg)] text-[var(--crm-text)] rounded-2xl font-bold hover:bg-[var(--crm-control-hover-bg)] transition-all"
                 >
                   Stop
                 </button>
@@ -1796,17 +2125,17 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedLeadForHistory(null)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-[var(--crm-overlay-bg)] backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-xl h-full bg-slate-900 border-l border-[var(--crm-border)] shadow-2xl flex flex-col overflow-hidden"
+              className="relative w-full max-w-xl h-full bg-[var(--crm-sidebar-bg)] border-l border-[var(--crm-border)] shadow-2xl flex flex-col overflow-hidden"
             >
               {/* Drawer Header */}
-              <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+              <div className="p-6 border-b border-[var(--crm-border)] bg-[var(--crm-control-bg)] flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl border border-[var(--crm-border)] overflow-hidden shadow-lg bg-[var(--crm-border)]">
                     <img src={selectedLeadForHistory.avatar || `https://ui-avatars.com/api/?name=${selectedLeadForHistory.name}&background=random`} alt="" className="w-full h-full object-cover" />
@@ -1839,7 +2168,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                       value={newActivityNote}
                       onChange={(e) => setNewActivityNote(e.target.value)}
                       placeholder="Enter a manual note or update..."
-                      className="w-full bg-black/40 border border-[var(--crm-border)] rounded-2xl p-4 text-xs font-medium text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 min-h-[100px] resize-none transition-all shadow-inner"
+                      className="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-2xl p-4 text-xs font-medium text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:border-indigo-500 min-h-[100px] resize-none transition-all shadow-inner"
                     />
                     <button
                       disabled={!newActivityNote.trim() || submittingNote}
@@ -1896,13 +2225,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{log.action}</div>
                                 <div className="text-[10px] font-black text-[var(--crm-text)]">{log.authorName}</div>
                               </div>
-                              <div className="text-[8px] font-black text-[var(--crm-text-muted)] whitespace-nowrap bg-black/20 px-2 py-1 rounded-md border border-white/5">
+                              <div className="text-[8px] font-black text-[var(--crm-text-muted)] whitespace-nowrap bg-[var(--crm-control-bg)] px-2 py-1 rounded-md border border-[var(--crm-border)]">
                                 {log.createdAt?.toDate ? log.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                               </div>
                             </div>
 
                             {log.type === 'MANUAL_NOTE' ? (
-                              <div className="text-[11px] text-[var(--crm-text-muted)] font-medium leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 italic">
+                              <div className="text-[11px] text-[var(--crm-text-muted)] font-medium leading-relaxed bg-[var(--crm-control-bg)] p-3 rounded-xl border border-[var(--crm-border)] italic">
                                 "{log.details?.note}"
                               </div>
                             ) : (
@@ -1922,7 +2251,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               </div>
 
               {/* Drawer Footer */}
-              <div className="p-6 border-t border-white/5 bg-white/[0.02] flex items-center gap-4">
+              <div className="p-6 border-t border-[var(--crm-border)] bg-[var(--crm-control-bg)] flex items-center gap-4">
                 <Link
                   to={`/clients/${selectedLeadForHistory.id}`}
                   className="flex-1 py-4 bg-white text-slate-950 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-500 hover:text-[var(--crm-text)] transition-all text-center shadow-xl shadow-white/5 active:scale-95"

@@ -41,6 +41,25 @@ export default function Analytics({ user }: { user: any }) {
 
   const avgScore = leads.length > 0 ? Math.round(leads.reduce((acc, lead) => acc + (lead.score || 0), 0) / leads.length) : 0;
   const primeTargets = leads.filter(l => (l.score || 0) >= 70).length;
+  const warmTargets = leads.filter(l => (l.score || 0) >= 40 && (l.score || 0) < 70).length;
+  const lowFitTargets = leads.filter(l => (l.score || 0) < 40).length;
+  const hotLeads = leads.filter(l => (l.health || 'WARM').toUpperCase() === 'HOT').length;
+  const topLeads = [...leads].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 4);
+  const scoreLabel = avgScore >= 70 ? 'Strong pipeline' : avgScore >= 40 ? 'Needs nurturing' : 'Needs attention';
+  const scoreTone = avgScore >= 70 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : avgScore >= 40 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+
+  const getScoreTone = (score: number) => {
+    if (score >= 70) return 'from-emerald-500 to-teal-500 text-emerald-400 border-emerald-500/20 bg-emerald-500/10';
+    if (score >= 40) return 'from-amber-500 to-yellow-500 text-amber-400 border-amber-500/20 bg-amber-500/10';
+    return 'from-rose-500 to-red-500 text-rose-400 border-rose-500/20 bg-rose-500/10';
+  };
+
+  const statCards = [
+    { label: 'Tracked Leads', value: leads.length, icon: <Users size={18} />, tone: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+    { label: 'Average Score', value: `${avgScore}%`, icon: <Target size={18} />, tone: scoreTone },
+    { label: 'Prime Targets', value: primeTargets, icon: <Sparkles size={18} />, tone: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+    { label: 'Hot Leads', value: hotLeads, icon: <Zap size={18} />, tone: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
+  ];
 
   if (loading) {
     return (
@@ -62,27 +81,113 @@ export default function Analytics({ user }: { user: any }) {
   }
 
   return (
-    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12">
+    <div className="flex-1 bg-transparent min-h-full overflow-y-auto">
+      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8">
 
         {/* Header Section */}
-        <header className="mb-6 sm:mb-10">
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <BarChart3 size={14} className="animate-pulse" /> Lead Performance
+        <header>
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !rounded-[2rem] p-5 sm:p-7 border border-[var(--crm-border)] overflow-hidden">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                  <BarChart3 size={14} /> Lead Performance
+                </div>
+                <div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[var(--crm-text)] tracking-tight">Analytics</h2>
+                  <p className="mt-2 text-sm sm:text-base font-medium text-[var(--crm-text-muted)] max-w-2xl">
+                    Track conversion score, lead temperature, and the accounts worth immediate follow-up.
+                  </p>
+                </div>
+              </div>
+
+              <div className={`rounded-2xl border px-4 py-3 text-left lg:text-right ${scoreTone}`}>
+                <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Pipeline Health</div>
+                <div className="text-lg font-black text-[var(--crm-text)]">{scoreLabel}</div>
+                <div className="text-xs font-bold opacity-80">{avgScore}% average score</div>
+              </div>
             </div>
           </motion.div>
         </header>
 
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {statCards.map((stat) => (
+            <div key={stat.label} className="glass-card !rounded-2xl p-4 sm:p-5 border border-[var(--crm-border)]">
+              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-4 ${stat.tone}`}>
+                {stat.icon}
+              </div>
+              <div className="text-2xl sm:text-3xl font-black text-[var(--crm-text)] leading-none">{stat.value}</div>
+              <div className="mt-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">{stat.label}</div>
+            </div>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4 sm:gap-6">
+          <div className="glass-card !rounded-[2rem] p-5 sm:p-6 border border-[var(--crm-border)]">
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-[var(--crm-text)]">Score Distribution</h3>
+                <p className="text-xs sm:text-sm font-medium text-[var(--crm-text-muted)]">How your leads are spread by conversion fit.</p>
+              </div>
+              <TrendingUp className="text-indigo-400 shrink-0" size={22} />
+            </div>
+            <div className="space-y-4">
+              {[
+                { label: 'Prime', count: primeTargets, color: 'bg-emerald-500', text: 'text-emerald-400' },
+                { label: 'Nurture', count: warmTargets, color: 'bg-amber-500', text: 'text-amber-400' },
+                { label: 'Low fit', count: lowFitTargets, color: 'bg-rose-500', text: 'text-rose-400' },
+              ].map((item) => {
+                const pct = leads.length ? Math.round((item.count / leads.length) * 100) : 0;
+                return (
+                  <div key={item.label}>
+                    <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest mb-2">
+                      <span className={item.text}>{item.label}</span>
+                      <span className="text-[var(--crm-text-muted)]">{item.count} leads</span>
+                    </div>
+                    <div className="h-3 rounded-full bg-[var(--crm-control-bg)] border border-[var(--crm-border)] overflow-hidden">
+                      <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="glass-card !rounded-[2rem] p-5 sm:p-6 border border-[var(--crm-border)]">
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-[var(--crm-text)]">Priority Leads</h3>
+                <p className="text-xs sm:text-sm font-medium text-[var(--crm-text-muted)]">Highest scoring accounts right now.</p>
+              </div>
+              <Activity className="text-cyan-400 shrink-0" size={22} />
+            </div>
+            <div className="space-y-3">
+              {topLeads.map((lead) => (
+                <Link key={lead.id} to={`/analytics/${lead.id}`} className="flex items-center gap-3 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] p-3 hover:bg-[var(--crm-control-hover-bg)] transition-all">
+                  <img
+                    src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name}&background=random`}
+                    alt={lead.name}
+                    className="w-10 h-10 rounded-xl object-cover border border-[var(--crm-border)]"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-black text-[var(--crm-text)] truncate">{lead.name}</div>
+                    <div className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest truncate">{lead.company || 'No company'}</div>
+                  </div>
+                  <div className="text-sm font-black text-[var(--crm-text)]">{lead.score || 0}%</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Analytics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           <AnimatePresence mode="popLayout">
             {leads.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                className="col-span-full glass-card !bg-transparent !border-dashed !border-[var(--crm-border)] py-20 sm:py-32 flex flex-col items-center justify-center text-center max-w-2xl mx-auto w-full px-4"
+                className="col-span-full glass-card !bg-transparent !border-dashed !border-[var(--crm-border)] py-16 sm:py-24 flex flex-col items-center justify-center text-center max-w-2xl mx-auto w-full px-4"
               >
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-3xl flex items-center justify-center mb-6 sm:mb-8 shadow-xl shadow-black/20">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-black/10">
                   <Users size={32} className="text-[var(--crm-text-muted)] sm:w-10 sm:h-10" />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-black text-[var(--crm-text)] mb-3 tracking-tight">Intelligence Void</h3>
@@ -98,22 +203,19 @@ export default function Analytics({ user }: { user: any }) {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, type: 'spring', stiffness: 200, damping: 25 }}
-                  className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] group p-5 sm:p-6 lg:p-8 flex flex-col relative overflow-hidden h-full hover:bg-[var(--crm-border)] hover:border-indigo-500/30 transition-all duration-500 shadow-xl"
+                  className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] group p-4 sm:p-5 lg:p-6 flex flex-col relative overflow-hidden h-full hover:bg-[var(--crm-hover-bg)] hover:border-indigo-500/30 transition-all duration-500 shadow-xl"
                 >
-                  {/* Decorative Gradient Background */}
-                  <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-indigo-500/10 rounded-full blur-3xl -z-0 opacity-40 group-hover:opacity-100 group-hover:bg-indigo-500/20 transition-all duration-500 translate-x-1/3 -translate-y-1/3"></div>
-
-                  <div className="flex items-center sm:items-start gap-4 sm:gap-5 mb-6 sm:mb-8 relative z-10">
+                  <div className="flex items-center sm:items-start gap-3 sm:gap-4 mb-5 sm:mb-6 relative z-10">
                     <div className="relative shrink-0">
                       <img
                         src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name}&background=random`}
                         alt={lead.name}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover ring-2 ring-[var(--crm-border)] shadow-xl group-hover:ring-indigo-500/30 transition-all duration-300"
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover ring-2 ring-[var(--crm-border)] shadow-xl group-hover:ring-indigo-500/30 transition-all duration-300"
                       />
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full border-2 sm:border-[3px] border-[var(--crm-bg)] shadow-md" />
                     </div>
                     <div className="flex-1 min-w-0 pt-1">
-                      <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-[var(--crm-text)] tracking-tight truncate group-hover:text-indigo-400 transition-colors">{lead.name}</h3>
+                      <h3 className="text-base sm:text-lg lg:text-xl font-black text-[var(--crm-text)] tracking-tight truncate group-hover:text-indigo-400 transition-colors">{lead.name}</h3>
                       <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5 w-fit max-w-full">
                         <ExternalLink size={12} className="text-slate-500 shrink-0" />
                         <span className="text-[10px] sm:text-xs font-bold text-[var(--crm-text-muted)] uppercase tracking-widest truncate">{lead.company}</span>
@@ -121,8 +223,8 @@ export default function Analytics({ user }: { user: any }) {
                     </div>
                   </div>
 
-                  <div className="space-y-6 flex-1 relative z-10 flex flex-col justify-end">
-                    <div className="bg-[var(--crm-bg)]/20 rounded-2xl p-4 sm:p-5 border border-[var(--crm-border)] group-hover:border-[var(--crm-border)]/40 transition-colors">
+                  <div className="space-y-5 flex-1 relative z-10 flex flex-col justify-end">
+                    <div className="bg-[var(--crm-control-bg)] rounded-2xl p-4 border border-[var(--crm-border)] group-hover:border-[var(--crm-border)]/40 transition-colors">
                       <div className="flex justify-between items-end mb-3">
                         <div className="flex items-center gap-2 text-[var(--crm-text-muted)] font-black uppercase tracking-[0.2em] text-[10px]">
                           <Target size={14} className="text-indigo-400 animate-pulse" /> Conversion AI
@@ -138,7 +240,7 @@ export default function Analytics({ user }: { user: any }) {
                           whileInView={{ width: `${lead.score || 0}%` }}
                           viewport={{ once: true }}
                           transition={{ duration: 1.2, ease: "circOut", delay: 0.2 + (index * 0.1) }}
-                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"
+                          className={`absolute top-0 left-0 h-full bg-gradient-to-r ${getScoreTone(lead.score || 0).split(' ').slice(0, 2).join(' ')} rounded-full`}
                         />
                       </div>
                       <div className="flex justify-between mt-2.5 text-[8px] sm:text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">
@@ -146,11 +248,19 @@ export default function Analytics({ user }: { user: any }) {
                         <span>Prime Target</span>
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className={`rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest ${getScoreTone(lead.score || 0).split(' ').slice(2).join(' ')}`}>
+                        {(lead.health || 'WARM').toUpperCase()}
+                      </div>
+                      <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] truncate">
+                        {lead.phase || 'DISCOVERY'}
+                      </div>
+                    </div>
                   </div>
 
                   <Link
                     to={`/analytics/${lead.id}`}
-                    className="w-full mt-5 sm:mt-8 px-4 py-3.5 sm:py-4 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border border-indigo-500/20 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/20 active:scale-95 group/btn relative z-10"
+                    className="w-full mt-5 px-4 py-3.5 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border border-indigo-500/20 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/20 active:scale-95 group/btn relative z-10"
                   >
                     <Sparkles size={16} className="group-hover/btn:animate-pulse" />
                     <span>Deep Dive Analysis</span>

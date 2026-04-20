@@ -12,20 +12,16 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first
     const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) return savedTheme;
-    // Fallback to system or dark default
-    return 'dark'; 
+    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
-    // Apply theme to document element
     const root = window.document.documentElement;
     root.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
-    
-    // Also update body styles if needed (though CSS handles mostly)
+
     if (theme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');

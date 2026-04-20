@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteField, addDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { ref, getBytes } from 'firebase/storage';
 import { useAuth } from './contexts/AuthContext';
 import { db, storage } from './firebase';
@@ -102,6 +102,38 @@ export default function LeadInsights({ user }: { user: any }) {
 
   const selectedRec = recordings.find(r => r.id === selectedRecId);
 
+  const normalizeInsights = (parsed: any) => {
+    if (parsed?.tasks && Array.isArray(parsed.tasks)) {
+      parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: Boolean(t.completed) }));
+    }
+    return parsed;
+  };
+
+  const syncLeadFromInsights = async (parsed: any) => {
+    if (!lead || !parsed) return;
+    const leadUpdates: any = {};
+
+    if ((lead.phase || '').toUpperCase() === 'DISCOVERY') {
+      leadUpdates.phase = 'CONNECTED';
+    } else if (parsed.recommendedPhase && lead.phase !== parsed.recommendedPhase.toUpperCase()) {
+      leadUpdates.phase = parsed.recommendedPhase.toUpperCase();
+    }
+
+    if (parsed.leadScore !== undefined) {
+      const newScore = Math.max(0, Math.min(100, Math.round(Number(parsed.leadScore))));
+      if (!isNaN(newScore)) {
+        leadUpdates.score = newScore;
+        leadUpdates.lastAIScoreSync = Timestamp.now();
+      }
+    }
+
+    if (Object.keys(leadUpdates).length > 0) {
+      leadUpdates.updatedAt = Timestamp.now();
+      await updateDoc(doc(db, 'leads', lead.id), leadUpdates);
+      setLead((prev: any) => ({ ...prev, ...leadUpdates }));
+    }
+  };
+
   useEffect(() => {
     if (!selectedRec || !selectedRec.transcript || selectedRec.aiInsights || generatingAI) return;
     if (attemptedRecs.current.has(selectedRec.id)) return; // Prevent infinite retry loops
@@ -117,9 +149,7 @@ export default function LeadInsights({ user }: { user: any }) {
           throw new Error("Analytics retrieval failure.");
         }
 
-        if (parsed.tasks && Array.isArray(parsed.tasks)) {
-          parsed.tasks = parsed.tasks.map((t: any) => ({ ...t, completed: false }));
-        }
+        normalizeInsights(parsed);
 
         console.log("AI Results Produced:", parsed);
 
@@ -127,29 +157,7 @@ export default function LeadInsights({ user }: { user: any }) {
           aiInsights: parsed
         });
 
-        // Auto-sync the Sales State Machine and Score
-        const leadUpdates: any = {};
-
-        // Auto-transition DISCOVERY -> CONNECTED only if current phase is DISCOVERY
-        if ((lead.phase || '').toUpperCase() === 'DISCOVERY') {
-          leadUpdates.phase = 'CONNECTED';
-          console.log("Auto-advancing lead from DISCOVERY to CONNECTED");
-        } else if (parsed.recommendedPhase && lead.phase !== parsed.recommendedPhase.toUpperCase()) {
-          leadUpdates.phase = parsed.recommendedPhase.toUpperCase();
-        }
-
-        if (parsed.leadScore !== undefined) {
-          const newScore = Number(parsed.leadScore);
-          if (!isNaN(newScore)) {
-            leadUpdates.score = newScore;
-          }
-        }
-
-        if (Object.keys(leadUpdates).length > 0) {
-          leadUpdates.updatedAt = Timestamp.now();
-          await updateDoc(doc(db, 'leads', lead.id), leadUpdates);
-          setLead((prev: any) => ({ ...prev, ...leadUpdates }));
-        }
+        await syncLeadFromInsights(parsed);
       } catch (err) {
         console.error("Failed to generate AI insights:", err);
       } finally {
@@ -161,12 +169,24 @@ export default function LeadInsights({ user }: { user: any }) {
   }, [selectedRec, generatingAI]);
 
   const handleRegenerate = async () => {
-    if (!selectedRec) return;
-    setGeneratingAI(false); // Reset lock
-    attemptedRecs.current.delete(selectedRec.id); // Allow the retry
-    await updateDoc(doc(db, 'recordings', selectedRec.id), {
-      aiInsights: deleteField()
-    });
+    if (!selectedRec || !selectedRec.transcript || generatingAI) return;
+    setGeneratingAI(true);
+    attemptedRecs.current.delete(selectedRec.id);
+    try {
+      const parsed = normalizeInsights(await analyzeWithGroq(selectedRec.transcript));
+
+      await updateDoc(doc(db, 'recordings', selectedRec.id), {
+        aiInsights: parsed,
+        updatedAt: Timestamp.now()
+      });
+
+      await syncLeadFromInsights(parsed);
+    } catch (err: any) {
+      console.error("Failed to regenerate AI insights:", err);
+      alert("Analytics regeneration failed: " + (err.message || "Unknown error"));
+    } finally {
+      setGeneratingAI(false);
+    }
   };
 
   const handleSyncTranscript = async () => {
