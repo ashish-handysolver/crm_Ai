@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, CalendarDays, Clock, FileText, Search, Target, UserCheck, Users } from 'lucide-react';
+import { Activity, ArrowUpRight, CalendarDays, Clock, FileText, Search, Target, UserCheck, Users } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from './firebase';
@@ -58,8 +58,18 @@ const getMemberKey = (log: ActivityLogRecord) => log.authorUid || log.authorName
 
 const formatLogTime = (log: ActivityLogRecord) => {
   const date = getLogDate(log);
-  if (!date) return '--:--';
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (!date) return '-- --- ---- --:--';
+
+  // This will produce: "20 Mar 2026, 03:56"
+  return date.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Set to true if you prefer AM/PM
+  }).replace(',', ''); // Removes the comma usually placed between date and time
 };
 
 const formatValue = (value: any) => {
@@ -285,10 +295,10 @@ export default function ManagementActivity({ user }: { user: any }) {
               <Activity size={14} />
               Manager Report
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-[var(--crm-text)] sm:text-3xl">Daily Activity</h1>
+            {/* <h1 className="text-2xl font-black tracking-tight text-[var(--crm-text)] sm:text-3xl">Daily Activity</h1>
             <p className="mt-1 max-w-2xl text-sm font-semibold text-[var(--crm-text-muted)]">
               Track who changed leads, added notes, updated status, and followed up during the selected day.
-            </p>
+            </p> */}
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
@@ -400,7 +410,7 @@ export default function ManagementActivity({ user }: { user: any }) {
           ))}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {loading ? (
             <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-8 text-center text-sm font-bold text-[var(--crm-text-muted)]">
               Loading daily activity report...
@@ -418,11 +428,11 @@ export default function ManagementActivity({ user }: { user: any }) {
               key={group.memberId}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="overflow-hidden rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] shadow-lg"
+              className="glass-card overflow-hidden rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] shadow-lg"
             >
-              <div className="flex flex-col gap-3 border-b border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 border-b border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[8px] bg-indigo-500 text-sm font-black text-white">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-black text-white shadow-lg shadow-indigo-500/20">
                     {(group.name || 'U').slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -430,51 +440,77 @@ export default function ManagementActivity({ user }: { user: any }) {
                     <p className="truncate text-xs font-bold text-[var(--crm-text-muted)]">{group.email || 'Team activity'}</p>
                   </div>
                 </div>
-                <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-xs font-black uppercase tracking-wider text-[var(--crm-text)]">
-                  {group.items.length} action{group.items.length === 1 ? '' : 's'}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                  <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-center text-xs font-black uppercase tracking-wider text-[var(--crm-text)]">
+                    {group.items.length} action{group.items.length === 1 ? '' : 's'}
+                  </div>
+                  <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-center text-xs font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
+                    {new Set(group.items.map(item => item.leadId).filter(Boolean)).size} leads
+                  </div>
                 </div>
               </div>
 
-              <div className="divide-y divide-[var(--crm-border)]">
+              <div className="relative space-y-4 p-4 sm:p-5">
+                <div className="absolute bottom-5 left-9 top-5 hidden w-px bg-gradient-to-b from-indigo-500/40 via-[var(--crm-border)] to-transparent sm:block" />
                 {group.items.map(log => {
                   const lead = log.leadId ? leadById.get(log.leadId) : undefined;
                   const leadName = lead?.name || lead?.contactName || 'Lead record';
                   const company = lead?.company || lead?.companyName || lead?.email || '';
 
                   return (
-                    <div key={log.id} className="grid gap-3 p-4 transition hover:bg-[var(--crm-control-hover-bg)] md:grid-cols-[84px_1fr_auto] md:items-start">
-                      <div className="flex items-center gap-2 text-xs font-black text-[var(--crm-text-muted)]">
-                        <Clock size={14} />
-                        {formatLogTime(log)}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`rounded-[8px] border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getActivityTone(log.type)}`}>
-                            {(log.type || 'Activity').replaceAll('_', ' ')}
-                          </span>
-                          {log.leadId ? (
-                            <Link to={`/clients/${log.leadId}/edit`} className="truncate text-sm font-black text-indigo-500 hover:underline">
-                              {leadName}
-                            </Link>
-                          ) : (
-                            <span className="text-sm font-black text-[var(--crm-text)]">{leadName}</span>
-                          )}
-                          {company && <span className="text-xs font-bold text-[var(--crm-text-muted)]">{company}</span>}
+                    <article key={log.id} className="relative grid gap-3 sm:grid-cols-[42px_1fr]">
+                      <div className="relative hidden sm:flex sm:justify-center">
+                        <div className="relative z-10 mt-5 flex h-8 w-8 items-center justify-center rounded-full border border-indigo-500/20 bg-[var(--crm-sidebar-bg)] text-indigo-500 shadow-lg">
+                          <Activity size={14} />
                         </div>
-                        <h3 className="mt-2 text-sm font-black text-[var(--crm-text)]">{log.action || 'Activity recorded'}</h3>
-                        <p className="mt-1 break-words text-sm font-semibold leading-6 text-[var(--crm-text-muted)]">{getDetailText(log)}</p>
                       </div>
 
-                      {log.leadId && (
-                        <Link
-                          to={`/analytics/${log.leadId}`}
-                          className="inline-flex items-center justify-center rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-2 text-xs font-black uppercase tracking-wider text-[var(--crm-text)] transition hover:bg-[var(--crm-card-bg)]"
-                        >
-                          Analytics
-                        </Link>
-                      )}
-                    </div>
+                      <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 shadow-sm transition hover:border-indigo-500/30 hover:bg-[var(--crm-control-hover-bg)] sm:p-5">
+                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`rounded-[8px] border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getActivityTone(log.type)}`}>
+                                {(log.type || 'Activity').replaceAll('_', ' ')}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
+                                <Clock size={12} />
+                                {formatLogTime(log)}
+                              </span>
+                            </div>
+                            <h3 className="mt-3 break-words text-base font-black text-[var(--crm-text)]">{log.action || 'Activity recorded'}</h3>
+                          </div>
+
+                          {log.leadId && (
+                            <Link
+                              to={`/clients/${log.leadId}/edit`}
+                              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[8px] border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-indigo-500 transition hover:bg-indigo-500/20"
+                            >
+                              Open Lead
+                              <ArrowUpRight size={13} />
+                            </Link>
+                          )}
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+                          <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3">
+                            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">Lead</div>
+                            {log.leadId ? (
+                              <Link to={`/clients/${log.leadId}/edit`} className="block truncate text-sm font-black text-indigo-500 hover:underline">
+                                {leadName}
+                              </Link>
+                            ) : (
+                              <span className="block truncate text-sm font-black text-[var(--crm-text)]">{leadName}</span>
+                            )}
+                            {company && <div className="mt-1 truncate text-xs font-bold text-[var(--crm-text-muted)]">{company}</div>}
+                          </div>
+
+                          <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3">
+                            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">Details</div>
+                            <p className="break-words text-sm font-semibold leading-6 text-[var(--crm-text-muted)]">{getDetailText(log)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
                   );
                 })}
               </div>
