@@ -45,6 +45,7 @@ function NavItem({ to, icon, label, onClick }: { to: string, icon: React.ReactEl
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { companyName, role, logout } = useAuth();
   const { isDemoMode, setDemoMode } = useDemo();
+  const showManagementReport = role === 'admin' || role === 'super_admin' || role === 'management';
 
   // Mobile backdrop
   const mobileOverlay = (
@@ -98,6 +99,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <NavItem onClick={onClose} to="/clients" icon={<Users />} label="All Leads" />
           <NavItem onClick={onClose} to="/upload" icon={<UploadCloud />} label="Import audio" />
           <NavItem onClick={onClose} to="/calendar" icon={<CalendarDays />} label="Calendar" />
+          {showManagementReport && <NavItem onClick={onClose} to="/management" icon={<Activity />} label="Management" />}
 
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4 mt-8">System</div>
           {role !== 'team_member' && <NavItem onClick={onClose} to="/settings" icon={<Settings />} label="Settings" />}
