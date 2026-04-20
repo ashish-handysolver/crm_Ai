@@ -43,6 +43,7 @@ import ManualUpload from './ManualUpload';
 import LeadInsights from './LeadInsights';
 import LeadCapture from './LeadCapture';
 import CalendarPage from './Calendar';
+import ManagementActivity from './ManagementActivity';
 import ImportModal from './ImportModal';
 import Login from './Login';
 import RegisterCompany from './RegisterCompany';
@@ -1254,6 +1255,7 @@ const AppContent = () => {
             <Route path="/clients/:id/edit" element={<LeadForm user={user} />} />
             <Route path="/upload" element={<ManualUpload user={user} />} />
             <Route path="/analytics/:id" element={<LeadInsights user={user} />} />
+            <Route path="/management" element={role === 'team_member' ? <Navigate to="/" replace /> : <ManagementActivity user={user} />} />
             <Route path="/settings" element={role === 'team_member' ? <Navigate to="/" replace /> : <Settings user={user} />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
             <Route path="/profile" element={<Profile />} />
