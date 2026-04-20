@@ -583,6 +583,18 @@ const RecordingView = () => {
       aiInsights,
       updatedAt: Timestamp.now()
     });
+
+    if (recording.leadId && recording.leadId !== 'general' && aiInsights?.leadScore !== undefined) {
+      const newScore = Math.max(0, Math.min(100, Math.round(Number(aiInsights.leadScore))));
+      if (!isNaN(newScore)) {
+        await updateDoc(doc(db, 'leads', recording.leadId), {
+          score: newScore,
+          lastAIScoreSync: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+      }
+    }
+
     return aiInsights;
   };
 
@@ -1155,8 +1167,34 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-zinc-300" size={48} />
+      <div className="min-h-[100dvh] bg-[var(--crm-bg)] text-[var(--crm-text)] flex items-center justify-center p-6 overflow-hidden relative">
+        <div className="absolute inset-0 pointer-events-none opacity-[var(--crm-glow-opacity)]">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 bg-indigo-500 rounded-full blur-[110px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-52 h-52 bg-cyan-500 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-sm text-center">
+          <div className="mx-auto mb-6 w-20 h-20 rounded-[1.5rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] shadow-2xl flex items-center justify-center p-3">
+            <img src="/logo.png" alt="handycrm.ai" className="w-full h-full object-contain drop-shadow-[0_0_18px_rgba(99,102,241,0.35)]" />
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+            <Sparkles size={13} className="animate-pulse" />
+            Starting Workspace
+          </div>
+
+          <h1 className="text-3xl font-black tracking-tight text-[var(--crm-text)] lowercase">
+            handycrm<span className="text-indigo-500">.ai</span>
+          </h1>
+          <p className="mt-3 text-sm font-semibold text-[var(--crm-text-muted)] leading-relaxed">
+            Loading your leads, meetings, and sales intelligence.
+          </p>
+
+          <div className="mt-8 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--crm-text-muted)]">
+            <Loader2 className="animate-spin text-indigo-400" size={18} />
+            Preparing dashboard
+          </div>
+        </div>
       </div>
     );
   }

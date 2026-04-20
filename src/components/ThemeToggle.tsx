@@ -10,10 +10,11 @@ export default function ThemeToggle() {
     <motion.button
       whileTap={{ scale: 0.9 }}
       onClick={toggleTheme}
-      className="relative p-2.5 rounded-xl transition-all duration-300 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] group overflow-hidden shadow-inner flex items-center justify-center min-w-[44px] min-h-[44px]"
+      className="relative p-2.5 rounded-xl transition-all duration-300 bg-[var(--crm-control-bg)] hover:bg-[var(--crm-control-hover-bg)] border border-[var(--crm-border)] group overflow-hidden shadow-inner flex items-center justify-center min-w-[44px] min-h-[44px]"
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
       title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
-      <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       
       <AnimatePresence mode="wait" initial={false}>
         {theme === 'dark' ? (
