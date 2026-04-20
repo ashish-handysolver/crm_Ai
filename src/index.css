@@ -14,43 +14,43 @@
   --color-accent: #a5b4fc;
   /* indigo-300 */
 
-  --radius-crm: 1rem;
-  --radius-crm-lg: 2rem;
+  --radius-crm: 0.9rem;
+  --radius-crm-lg: 1.35rem;
 }
 
 :root {
-  --crm-bg: #030014;
-  --crm-surface: rgba(15, 23, 42, 0.72);
-  --crm-surface-strong: rgba(15, 23, 42, 0.92);
-  --crm-card-bg: rgba(15, 23, 42, 0.62);
-  --crm-card-border: rgba(255, 255, 255, 0.06);
-  --crm-card-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.15);
-  --crm-sidebar-bg: rgba(3, 0, 20, 0.95);
+  --crm-bg: #080910;
+  --crm-surface: rgba(18, 20, 30, 0.78);
+  --crm-surface-strong: rgba(18, 20, 30, 0.94);
+  --crm-card-bg: rgba(20, 22, 32, 0.74);
+  --crm-card-border: rgba(255, 255, 255, 0.08);
+  --crm-card-shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.55);
+  --crm-sidebar-bg: rgba(12, 13, 20, 0.96);
   --crm-text: #f1f5f9;
-  --crm-text-muted: #94a3b8;
-  --crm-border: rgba(255, 255, 255, 0.05);
-  --crm-glass-bg: rgba(15, 23, 42, 0.8);
-  --crm-hover-bg: rgba(255, 255, 255, 0.06);
-  --crm-control-bg: rgba(255, 255, 255, 0.05);
-  --crm-control-hover-bg: rgba(255, 255, 255, 0.1);
-  --crm-overlay-bg: rgba(2, 6, 23, 0.72);
+  --crm-text-muted: #98a2b3;
+  --crm-border: rgba(255, 255, 255, 0.08);
+  --crm-glass-bg: rgba(20, 22, 32, 0.82);
+  --crm-hover-bg: rgba(255, 255, 255, 0.07);
+  --crm-control-bg: rgba(255, 255, 255, 0.06);
+  --crm-control-hover-bg: rgba(255, 255, 255, 0.11);
+  --crm-overlay-bg: rgba(8, 9, 16, 0.72);
 }
 
 [data-theme='light'] {
-  --crm-bg: #f5f7fb;
-  --crm-surface: rgba(255, 255, 255, 0.86);
+  --crm-bg: #f6f8fb;
+  --crm-surface: rgba(255, 255, 255, 0.9);
   --crm-surface-strong: #ffffff;
-  --crm-card-bg: rgba(255, 255, 255, 0.92);
+  --crm-card-bg: rgba(255, 255, 255, 0.96);
   --crm-card-border: rgba(15, 23, 42, 0.08);
-  --crm-card-shadow: 0 18px 45px -24px rgba(15, 23, 42, 0.28);
+  --crm-card-shadow: 0 14px 34px -24px rgba(15, 23, 42, 0.32);
   --crm-sidebar-bg: #ffffff;
   --crm-text: #111827;
-  --crm-text-muted: #64748b;
-  --crm-border: rgba(15, 23, 42, 0.1);
-  --crm-glass-bg: rgba(255, 255, 255, 0.9);
+  --crm-text-muted: #667085;
+  --crm-border: rgba(15, 23, 42, 0.09);
+  --crm-glass-bg: rgba(255, 255, 255, 0.92);
   --crm-hover-bg: rgba(15, 23, 42, 0.05);
   --crm-control-bg: rgba(15, 23, 42, 0.04);
-  --crm-control-hover-bg: rgba(15, 23, 42, 0.08);
+  --crm-control-hover-bg: rgba(15, 23, 42, 0.075);
   --crm-overlay-bg: rgba(15, 23, 42, 0.34);
   --crm-glow-opacity: 0.04;
   --crm-input-bg: #ffffff;
@@ -58,29 +58,33 @@
 }
 
 [data-theme='dark'] {
-  --crm-bg: #030014;
-  --crm-surface: rgba(15, 23, 42, 0.72);
-  --crm-surface-strong: rgba(15, 23, 42, 0.92);
-  --crm-card-bg: rgba(15, 23, 42, 0.62);
-  --crm-card-border: rgba(255, 255, 255, 0.06);
-  --crm-card-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.15);
-  --crm-sidebar-bg: rgba(3, 0, 20, 0.95);
+  --crm-bg: #080910;
+  --crm-surface: rgba(18, 20, 30, 0.78);
+  --crm-surface-strong: rgba(18, 20, 30, 0.94);
+  --crm-card-bg: rgba(20, 22, 32, 0.74);
+  --crm-card-border: rgba(255, 255, 255, 0.08);
+  --crm-card-shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.55);
+  --crm-sidebar-bg: rgba(12, 13, 20, 0.96);
   --crm-text: #f1f5f9;
-  --crm-text-muted: #94a3b8;
-  --crm-border: rgba(255, 255, 255, 0.05);
-  --crm-glass-bg: rgba(15, 23, 42, 0.8);
-  --crm-hover-bg: rgba(255, 255, 255, 0.06);
-  --crm-control-bg: rgba(255, 255, 255, 0.05);
-  --crm-control-hover-bg: rgba(255, 255, 255, 0.1);
-  --crm-overlay-bg: rgba(2, 6, 23, 0.72);
-  --crm-glow-opacity: 0.15;
-  --crm-input-bg: rgba(3, 0, 20, 0.4);
+  --crm-text-muted: #98a2b3;
+  --crm-border: rgba(255, 255, 255, 0.08);
+  --crm-glass-bg: rgba(20, 22, 32, 0.82);
+  --crm-hover-bg: rgba(255, 255, 255, 0.07);
+  --crm-control-bg: rgba(255, 255, 255, 0.06);
+  --crm-control-hover-bg: rgba(255, 255, 255, 0.11);
+  --crm-overlay-bg: rgba(8, 9, 16, 0.72);
+  --crm-glow-opacity: 0.11;
+  --crm-input-bg: rgba(255, 255, 255, 0.045);
   color-scheme: dark;
 }
 
 @layer base {
   body {
     @apply bg-[var(--crm-bg)] text-[var(--crm-text)] antialiased;
+    background:
+      radial-gradient(circle at top left, rgba(99, 102, 241, var(--crm-glow-opacity, 0.08)), transparent 34rem),
+      radial-gradient(circle at bottom right, rgba(6, 182, 212, calc(var(--crm-glow-opacity, 0.08) * 0.75)), transparent 30rem),
+      var(--crm-bg);
     overflow-x: hidden;
   }
 
@@ -124,7 +128,7 @@
   }
 
   .btn-primary {
-    @apply px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 active:scale-95 transition-all duration-300 shadow-xl shadow-indigo-500/20 flex items-center gap-2 relative overflow-hidden;
+    @apply px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 active:scale-95 transition-all duration-300 shadow-lg shadow-indigo-500/20 flex items-center gap-2 relative overflow-hidden;
   }
 
   .btn-primary::after {
@@ -146,7 +150,7 @@
   }
 
   .btn-secondary {
-    @apply px-6 py-2.5 bg-[var(--crm-control-bg)] text-[var(--crm-text)] border border-[var(--crm-border)] rounded-xl font-bold hover:bg-[var(--crm-control-hover-bg)] active:scale-95 transition-all duration-300 flex items-center gap-2;
+    @apply px-5 py-2.5 bg-[var(--crm-control-bg)] text-[var(--crm-text)] border border-[var(--crm-border)] rounded-xl font-bold hover:bg-[var(--crm-control-hover-bg)] active:scale-95 transition-all duration-300 flex items-center gap-2;
   }
 
   .sidebar-item {
@@ -177,7 +181,7 @@
 }
 
 @utility crm-input {
-  @apply w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-2xl px-5 py-3.5 text-sm font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 shadow-inner;
+  @apply w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl px-4 py-3 text-sm font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-500 transition-all duration-300 shadow-sm;
 }
 
 /* Premium Design Utilities */
