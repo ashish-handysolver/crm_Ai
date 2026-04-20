@@ -77,7 +77,12 @@ const formatValue = (value: any) => {
   if (value === null || value === undefined || value === '') return 'Empty';
   if (Array.isArray(value)) return value.join(', ');
   if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
+  const text = String(value);
+  const normalized = text.trim().toUpperCase();
+  if (normalized === 'HOT') return '🔥 Hot';
+  if (normalized === 'WARM') return '🌟 Warm';
+  if (normalized === 'COLD') return '❄️ Cold';
+  return text;
 };
 
 const formatFieldName = (field?: string) => {
@@ -124,7 +129,13 @@ const getDisplayAction = (log: ActivityLogRecord) => {
     return log.details?.newValue === false ? '👎 Marked as not interested' : '👍 Marked as interested';
   }
 
-  if (field === 'health') return '🌡️ Lead temperature updated';
+  if (field === 'health') {
+    const newValue = String(log.details?.newValue || '').toUpperCase();
+    if (newValue === 'HOT') return '🔥 Lead is now hot';
+    if (newValue === 'WARM') return '🌟 Lead is now warm';
+    if (newValue === 'COLD') return '❄️ Lead is now cold';
+    return '🌡️ Lead temperature updated';
+  }
   if (field === 'phase' || field === 'status' || type.includes('STATUS')) return '📌 Status updated';
   if (type.includes('NOTE')) return '📝 Note added';
   if (type.includes('CALL')) return '📞 Call activity recorded';
