@@ -860,7 +860,7 @@ const RecordingView = () => {
                       </span>
                       Sentiment
                     </div>
-                    <div className="mt-3 text-xl font-black text-[var(--crm-text)]">{recording.aiInsights.sentiment || 'Neutral'}</div>
+                    <div className="mt-3 text-xl font-black text-[var(--crm-text)]">{recording.aiInsights?.sentiment || 'Neutral'}</div>
                   </div>
 
                   {[
