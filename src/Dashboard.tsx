@@ -222,9 +222,9 @@ export default function Dashboard({ user }: { user: any }) {
               {/* KPI Section */}
               <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-8">
                 {[
-                  { label: 'Total Leads', value: interestedCount, icon: <Users size={24} />, color: 'bg-indigo-500', link: '/clients' },
+                  { label: 'Total Leads', value: totalClients, icon: <Users size={24} />, color: 'bg-indigo-500', link: '/clients' },
                   { label: 'Conversion', value: `${conversionRate}%`, icon: <Target size={24} />, color: 'bg-emerald-500', link: '/clients' },
-                  // { label: 'Interested', value: totalClients, icon: <ThumbsUp size={24} />, color: 'bg-cyan-500', link: '/clients', filter: { isInterested: true } },
+                  // { label: 'Interested', value: interestedCount, icon: <ThumbsUp size={24} />, color: 'bg-cyan-500', link: '/clients', filter: { isInterested: true } },
                   // { label: 'Not Interested', value: notInterestedCount, icon: <ThumbsDown size={24} />, color: 'bg-rose-500', link: '/clients', filter: { isInterested: false } },
                   { label: 'Turnover', value: `₹ ${estimatedValue}`, icon: <Zap size={24} />, color: 'bg-purple-500' },
                 ].map((kpi, i) => (
