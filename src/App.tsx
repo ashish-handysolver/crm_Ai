@@ -251,7 +251,7 @@ const NotificationBell = () => {
               <h3 className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.2em]">Notifications</h3>
               <div className="flex items-center gap-3">
                 {notifications.length > 0 && (
-                  <button onClick={handleClearNotifications} className="text-[9px] font-bold text-slate-400 hover:text-rose-400 uppercase tracking-widest transition-colors">
+                  <button onClick={handleClearNotifications} className="text-[9px] font-bold text-[var(--crm-text-muted)] hover:text-rose-500 uppercase tracking-widest transition-colors">
                     Clear All
                   </button>
                 )}
@@ -263,12 +263,12 @@ const NotificationBell = () => {
 
             <div className="max-h-[400px] overflow-y-auto scrollbar-hide py-2">
               {!pushEnabled && (
-                <div className="p-4 mx-2 mb-2 rounded-2xl bg-rose-950 border border-rose-900 hover:bg-rose-900 transition-all cursor-pointer group" onClick={handleRequestPush}>
+                <div className="p-4 mx-2 mb-2 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/15 transition-all cursor-pointer group" onClick={handleRequestPush}>
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 shadow-sm"><Bell size={14} /></div>
                     <div className="flex-1">
                       <div className="font-black text-[var(--crm-text)] text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
-                      <div className="text-[10px] text-slate-300 font-bold uppercase tracking-tight opacity-70">Get alerted for upcoming meetings & leads</div>
+                      <div className="text-[10px] text-[var(--crm-text-muted)] font-bold uppercase tracking-tight opacity-80">Get alerted for upcoming meetings & leads</div>
                     </div>
                   </div>
                 </div>
@@ -278,13 +278,13 @@ const NotificationBell = () => {
                 <div key={n.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group relative">
                   <button
                     onClick={(e) => handleMarkAsRead(n.id, e)}
-                    className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 hover:bg-rose-500/10 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute top-4 right-4 p-1 rounded-lg text-[var(--crm-text-muted)] hover:bg-rose-500/10 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <X size={14} />
                   </button>
                   <div className="font-bold text-[var(--crm-text)] text-sm mb-1 pr-6 group-hover:text-indigo-500 transition-colors">{n.title}</div>
-                  <div className="text-[11px] text-slate-400 font-medium mb-2 leading-snug">{n.message}</div>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500 font-black uppercase tracking-wider">
+                  <div className="text-[11px] text-[var(--crm-text-muted)] font-medium mb-2 leading-snug">{n.message}</div>
+                  <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-black uppercase tracking-wider">
                     <Clock size={10} className="text-indigo-500/50" />
                     {n.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false }) || 'Just now'}
                   </div>
@@ -296,7 +296,7 @@ const NotificationBell = () => {
                         </div>
                       )}
                       {n.assignedByName && (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--crm-border)] text-[var(--crm-text-muted)] text-[9px] font-black uppercase tracking-widest border border-white/5">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] text-[9px] font-black uppercase tracking-widest border border-[var(--crm-border)]">
                           Assigned by {n.assignedByName}
                         </div>
                       )}
@@ -306,14 +306,14 @@ const NotificationBell = () => {
               ))}
 
               {meetings.length > 0 && (
-                <div className="px-4 py-2 bg-slate-800/30 border-y border-[var(--crm-border)] text-[10px] font-black tracking-widest uppercase text-slate-400">
+                <div className="px-4 py-2 bg-[var(--crm-control-bg)] border-y border-[var(--crm-border)] text-[10px] font-black tracking-widest uppercase text-[var(--crm-text-muted)]">
                   Upcoming Meetings
                 </div>
               )}
               {meetings.length > 0 && meetings.map((m, idx) => (
                 <div key={m.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group">
                   <div className="font-bold text-[var(--crm-text)] text-sm mb-1 group-hover:text-indigo-500 transition-colors">{m.title}</div>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-black uppercase tracking-wider">
                     <Clock size={10} className="text-indigo-500/50" />
                     {m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false })}
                   </div>
@@ -327,7 +327,7 @@ const NotificationBell = () => {
 
               {meetings.length === 0 && notifications.length === 0 && (
                 <div className="p-12 text-center space-y-4">
-                  <div className="p-4 bg-slate-800 rounded-full w-fit mx-auto text-slate-400">
+                  <div className="p-4 bg-[var(--crm-control-bg)] rounded-full w-fit mx-auto text-[var(--crm-text-muted)] border border-[var(--crm-border)]">
                     <History size={32} />
                   </div>
                   <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em] italic">No notifications yet.</p>

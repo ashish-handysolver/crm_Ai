@@ -156,9 +156,9 @@ export default function Profile() {
         <div className="flex flex-col gap-6 sm:gap-8">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit"
+            className="inline-flex items-center gap-2 text-[10px] font-black text-[var(--crm-text-muted)] hover:text-indigo-600 uppercase tracking-[0.2em] transition-all group w-fit"
           >
-            <div className="p-2 bg-white/5 border border-white/10 rounded-xl group-hover:border-indigo-500/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-all text-white">
+            <div className="p-2 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl group-hover:border-indigo-500/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-all text-[var(--crm-text)]">
               <ArrowLeft size={14} />
             </div>
             Back
@@ -203,8 +203,8 @@ export default function Profile() {
 
               <div className="px-10 pb-10 -mt-16 text-center relative z-10">
                 <div className="relative inline-block mb-8">
-                  <div className="w-32 h-32 rounded-[2.5rem] relative group/avatar shadow-3xl overflow-hidden p-1.5 bg-white/10 backdrop-blur-md transition-all hover:scale-105 mx-auto">
-                    <div className="w-full h-full rounded-[2rem] overflow-hidden bg-slate-800">
+                  <div className="w-32 h-32 rounded-[2.5rem] relative group/avatar shadow-3xl overflow-hidden p-1.5 bg-[var(--crm-control-bg)] backdrop-blur-md transition-all hover:scale-105 mx-auto">
+                    <div className="w-full h-full rounded-[2rem] overflow-hidden bg-[var(--crm-card-bg)]">
                       {user?.photoURL ? (
                         <img src={user.photoURL} className="w-full h-full object-cover" alt="Profile" />
                       ) : (
@@ -213,13 +213,13 @@ export default function Profile() {
                         </div>
                       )}
                     </div>
-                    <label className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all backdrop-blur-md rounded-[2rem]">
+                    <label className="absolute inset-0 bg-[var(--crm-overlay-bg)] opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all backdrop-blur-md rounded-[2rem]">
                       {uploading ? <Loader2 className="animate-spin text-white" /> : <Camera className="text-white mb-2" size={24} />}
                       <span className="text-[9px] font-black text-white uppercase tracking-widest">{uploading ? 'Processing' : 'Update Profile'}</span>
                       <input type="file" onChange={handleImageUpload} className="hidden" accept="image/*" disabled={uploading} />
                     </label>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-2xl bg-emerald-500 border-4 border-white shadow-lg flex items-center justify-center">
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-2xl bg-emerald-500 border-4 border-[var(--crm-surface-strong)] shadow-lg flex items-center justify-center">
                     <div className="w-2 h-2 rounded-full bg-white animate-ping" />
                   </div>
                 </div>
@@ -231,10 +231,10 @@ export default function Profile() {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-center gap-3 px-5 py-3 bg-slate-900/50 rounded-2xl border border-white/10 mb-10 shadow-sm">
+                <div className="flex items-center justify-center gap-3 px-5 py-3 bg-[var(--crm-control-bg)] rounded-2xl border border-[var(--crm-border)] mb-10 shadow-sm">
                   <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{userRole || 'Stakeholder'}</span>
-                  <div className="w-1 h-1 rounded-full bg-slate-600" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[120px]">{companyName || 'handycrm.ai'}</span>
+                  <div className="w-1 h-1 rounded-full bg-[var(--crm-text-muted)]" />
+                  <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest truncate max-w-[120px]">{companyName || 'handycrm.ai'}</span>
                 </div>
 
                 {/* <div className="grid grid-cols-2 gap-4">
@@ -254,15 +254,15 @@ export default function Profile() {
             <div className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-10 text-[var(--crm-text)] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
               <div className="space-y-4 sm:space-y-6">
-                <div className="flex items-center justify-between p-3.5 sm:p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorization</span>
+                <div className="flex items-center justify-between p-3.5 sm:p-4 bg-[var(--crm-control-bg)] rounded-2xl border border-[var(--crm-border)] group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest">Authorization</span>
                   <span className="text-[9px] sm:text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     L5 SECURE
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-3.5 sm:p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Storage Type</span>
+                <div className="flex items-center justify-between p-3.5 sm:p-4 bg-[var(--crm-control-bg)] rounded-2xl border border-[var(--crm-border)] group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest">Storage Type</span>
                   <span className="text-[9px] sm:text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">AES-256 Cloud</span>
                 </div>
               </div>
@@ -270,9 +270,9 @@ export default function Profile() {
               <div className="mt-10 pt-8 border-t border-white/5 flex flex-col gap-4">
                 <div className="flex justify-between items-end">
                   <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Integrity Pulse</div>
-                  <div className="text-[18px] font-black text-white">99.9%</div>
+                  <div className="text-[18px] font-black text-[var(--crm-text)]">99.9%</div>
                 </div>
-                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[var(--crm-control-bg)] rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: '99.9%' }}
@@ -306,7 +306,7 @@ export default function Profile() {
                     <div className="space-y-3">
                       <label className={labelClasses}>Full Name</label>
                       <div className="relative group/input">
-                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-indigo-500 transition-colors" size={18} />
+                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within/input:text-indigo-500 transition-colors" size={18} />
                         <input
                           type="text"
                           value={formData.displayName}

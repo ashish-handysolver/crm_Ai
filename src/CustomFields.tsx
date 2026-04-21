@@ -20,7 +20,7 @@ const DEFAULT_SOURCES = ['LINKEDIN', 'REFERRAL', 'DIRECT', 'WEBSITE'];
 const DEFAULT_PHASES = ['DISCOVERY', 'NURTURING', 'QUALIFIED', 'WON', 'LOST', 'INACTIVE'];
 const DEFAULT_LEAD_TYPES = ['B2B', 'B2C', 'ENTERPRISE'];
 
-export default function CustomFields({ user }: { user: any }) {
+export default function CustomFields({ user, embedded = false }: { user: any, embedded?: boolean }) {
   const { companyId } = useAuth();
   const { isDemoMode, demoData } = useDemo();
   const [fields, setFields] = useState<CustomFieldDef[]>([]);
@@ -191,8 +191,8 @@ export default function CustomFields({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-        <div className="max-w-6xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12 animate-pulse">
+      <div className={`flex-1 bg-transparent overflow-y-auto ${embedded ? 'min-h-0' : 'min-h-screen'}`}>
+        <div className={`${embedded ? 'space-y-10' : 'max-w-6xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12'} animate-pulse`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-10">
             <div className="space-y-4 w-full">
               <div className="w-48 h-6 bg-white/10 rounded-full"></div>
@@ -218,8 +218,8 @@ export default function CustomFields({ user }: { user: any }) {
   const labelClasses = "text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2 block";
 
   return (
-    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-      <div className="max-w-6xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
+    <div className={`flex-1 bg-transparent overflow-y-auto ${embedded ? 'min-h-0' : 'min-h-screen'}`}>
+      <div className={`${embedded ? 'space-y-10' : 'max-w-6xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12'}`}>
 
         {/* Global Action Header */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-10">
@@ -228,7 +228,7 @@ export default function CustomFields({ user }: { user: any }) {
               <Sparkles size={14} className="animate-pulse" /> System Settings
             </div>
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">Custom Fields</h1>
-            <p className="text-slate-400 font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Customize your lead fields, sources, and pipeline stages.</p>
+            <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Customize your lead fields, sources, and pipeline stages.</p>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="w-full sm:w-auto">
@@ -258,13 +258,13 @@ export default function CustomFields({ user }: { user: any }) {
           <div className="lg:col-span-2 space-y-10">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] overflow-hidden relative border border-[var(--crm-border)] shadow-sm">
               <div className="p-8 sm:p-12 space-y-12">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[var(--crm-border)] gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner border border-indigo-500/30"><Settings size={18} /></div>
                     <h2 className="text-xl font-black text-[var(--crm-text)] tracking-tight">Lead Fields</h2>
                   </div>
                   {!isDemoMode && (
-                    <button onClick={addField} className="text-[10px] font-black text-indigo-300 hover:text-white hover:bg-indigo-500/30 bg-indigo-500/20 flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-500/30 rounded-xl transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto shadow-sm">
+                    <button onClick={addField} className="text-[10px] font-black text-indigo-400 hover:text-white hover:bg-indigo-500/30 bg-indigo-500/10 flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-500/30 rounded-xl transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto shadow-sm">
                       <Plus size={14} /> Add Field
                     </button>
                   )}
@@ -273,9 +273,9 @@ export default function CustomFields({ user }: { user: any }) {
                 <div className="space-y-8">
                   <AnimatePresence mode="popLayout">
                     {fields.length === 0 ? (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 px-10 bg-black/20 rounded-[2rem] border-2 border-dashed border-white/20 flex flex-col items-center gap-6">
-                        <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center text-slate-500 shadow-xl shadow-black/20"><Wand2 size={32} /></div>
-                        <p className="text-slate-400 font-bold italic text-sm max-w-xs uppercase tracking-widest leading-loose">No custom attribute structures detected in the current partition.</p>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 px-10 bg-[var(--crm-control-bg)] rounded-[2rem] border-2 border-dashed border-[var(--crm-border)] flex flex-col items-center gap-6">
+                        <div className="w-20 h-20 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-3xl flex items-center justify-center text-[var(--crm-text-muted)] shadow-xl shadow-black/10"><Wand2 size={32} /></div>
+                        <p className="text-[var(--crm-text-muted)] font-bold italic text-sm max-w-xs uppercase tracking-widest leading-loose">No custom attribute structures detected in the current partition.</p>
                       </motion.div>
                     ) : fields.map((field, idx) => (
                       <motion.div
@@ -283,7 +283,7 @@ export default function CustomFields({ user }: { user: any }) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="p-6 sm:p-8 bg-white/5 border border-[var(--crm-border)] rounded-[2rem] flex flex-col gap-6 sm:gap-10 relative group/field hover:bg-white/10 transition-all duration-500"
+                        className="p-6 sm:p-8 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-[2rem] flex flex-col gap-6 sm:gap-10 relative group/field hover:bg-[var(--crm-control-hover-bg)] transition-all duration-500"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
@@ -304,8 +304,8 @@ export default function CustomFields({ user }: { user: any }) {
                           {field.type === 'DROPDOWN' && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="md:col-span-2 space-y-6">
                               <label className={labelClasses}>Dropdown Options</label>
-                              <div className="flex flex-wrap gap-2.5 min-h-[50px] p-6 bg-black/40 rounded-2xl border border-white/10 shadow-inner">
-                                {field.options.length === 0 && <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] pt-1">Null Options Set</span>}
+                              <div className="flex flex-wrap gap-2.5 min-h-[50px] p-6 bg-[var(--crm-card-bg)] rounded-2xl border border-[var(--crm-border)] shadow-inner">
+                                {field.options.length === 0 && <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] pt-1">Null Options Set</span>}
                                 {field.options.map(opt => (
                                   <span key={opt} className="inline-flex items-center gap-2.5 pl-4 pr-3 py-2 bg-indigo-500/20 text-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-500/30 shadow-sm transition-all hover:bg-indigo-500/30">
                                     {opt}
@@ -342,7 +342,7 @@ export default function CustomFields({ user }: { user: any }) {
                                       setNewOptionInputs(prev => ({ ...prev, [field.id]: '' }));
                                     }
                                   }}
-                                  className="px-6 py-3.5 bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95 shadow-lg shadow-black/20"
+                                  className="px-6 py-3.5 bg-[var(--crm-control-bg)] text-[var(--crm-text)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all active:scale-95 shadow-lg shadow-black/10"
                                 >
                                   Append
                                 </button>
@@ -351,7 +351,7 @@ export default function CustomFields({ user }: { user: any }) {
                           )}
                         </div>
                         {!isDemoMode && (
-                          <button onClick={() => removeField(field.id)} className="absolute top-6 right-6 p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
+                          <button onClick={() => removeField(field.id)} className="absolute top-6 right-6 p-2 text-[var(--crm-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
                             <Trash2 size={20} />
                           </button>
                         )}
@@ -374,7 +374,7 @@ export default function CustomFields({ user }: { user: any }) {
               </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-white/5 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">{s}</span>)}
+                  {DEFAULT_SOURCES.map(s => <span key={s} className="px-3 py-1.5 bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] rounded-lg text-[9px] font-black uppercase tracking-widest border border-[var(--crm-border)]">{s}</span>)}
                   {customSources.map(s => (
                     <span key={s} className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-500/20 shadow-sm">
                       {s}
@@ -389,7 +389,7 @@ export default function CustomFields({ user }: { user: any }) {
                     placeholder="e.g. PARTNERSHIP"
                     className={`${inputClasses} !py-3 !px-4 !text-xs`}
                   />
-                  <button onClick={addSource} className="px-5 py-3 bg-white/10 text-white rounded-xl text-[10px] font-black hover:bg-emerald-500 transition-all uppercase tracking-widest shadow-md">
+                  <button onClick={addSource} className="px-5 py-3 bg-[var(--crm-control-bg)] text-[var(--crm-text)] rounded-xl text-[10px] font-black hover:bg-emerald-500 hover:text-white transition-all uppercase tracking-widest shadow-md">
                     Add
                   </button>
                 </div>
@@ -404,7 +404,7 @@ export default function CustomFields({ user }: { user: any }) {
               </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-white/5 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">{p}</span>)}
+                  {DEFAULT_PHASES.map(p => <span key={p} className="px-3 py-1.5 bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] rounded-lg text-[9px] font-black uppercase tracking-widest border border-[var(--crm-border)]">{p}</span>)}
                   {customPhases.map(p => (
                     <span key={p} className="px-3 py-1.5 bg-purple-500/10 text-purple-400 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-purple-500/20 shadow-sm">
                       {p}
@@ -419,7 +419,7 @@ export default function CustomFields({ user }: { user: any }) {
                     placeholder="e.g. EVALUATION"
                     className={`${inputClasses} !py-3 !px-4 !text-xs`}
                   />
-                  <button onClick={addPhase} className="px-5 py-3 bg-white/10 text-white rounded-xl text-[10px] font-black hover:bg-purple-500 transition-all uppercase tracking-widest shadow-md">
+                  <button onClick={addPhase} className="px-5 py-3 bg-[var(--crm-control-bg)] text-[var(--crm-text)] rounded-xl text-[10px] font-black hover:bg-purple-500 hover:text-white transition-all uppercase tracking-widest shadow-md">
                     Add
                   </button>
                 </div>
@@ -434,7 +434,7 @@ export default function CustomFields({ user }: { user: any }) {
               </div>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-white/5 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">{p}</span>)}
+                  {DEFAULT_LEAD_TYPES.map(p => <span key={p} className="px-3 py-1.5 bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] rounded-lg text-[9px] font-black uppercase tracking-widest border border-[var(--crm-border)]">{p}</span>)}
                   {customLeadTypes.map(p => (
                     <span key={p} className="px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-blue-500/20 shadow-sm">
                       {p}
@@ -444,7 +444,7 @@ export default function CustomFields({ user }: { user: any }) {
                 </div>
                 <div className="flex gap-3">
                   <input type="text" value={newLeadType} onChange={e => setNewLeadType(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLeadType()} placeholder="e.g. NON_PROFIT" className={`${inputClasses} !py-3 !px-4 !text-xs`} />
-                  <button onClick={addLeadType} className="px-5 py-3 bg-white/10 text-white rounded-xl text-[10px] font-black hover:bg-indigo-500 transition-all uppercase tracking-widest shadow-md">Add</button>
+                  <button onClick={addLeadType} className="px-5 py-3 bg-[var(--crm-control-bg)] text-[var(--crm-text)] rounded-xl text-[10px] font-black hover:bg-indigo-500 hover:text-white transition-all uppercase tracking-widest shadow-md">Add</button>
                 </div>
               </div>
             </motion.div>

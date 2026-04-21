@@ -432,7 +432,7 @@ export default function CalendarPage({ user }: { user: any }) {
                         </div>
                       ))}
                       {dayMeetings.length > 3 && (
-                        <div className="text-[9px] text-slate-300 font-bold uppercase tracking-tighter pl-1">+{dayMeetings.length - 3} more</div>
+                        <div className="text-[9px] text-[var(--crm-text-muted)] font-bold uppercase tracking-tighter pl-1">+{dayMeetings.length - 3} more</div>
                       )}
                     </div>
                     {/* Mobile View: Markers (Dots) */}
@@ -460,10 +460,10 @@ export default function CalendarPage({ user }: { user: any }) {
 
               {upcoming.length === 0 ? (
                 <div className="text-center py-10">
-                  <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/20 mx-auto mb-4">
+                  <div className="w-12 h-12 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center text-[var(--crm-text-muted)]/40 mx-auto mb-4">
                     <CalendarIcon size={24} />
                   </div>
-                  <p className="text-white/40 text-xs font-bold leading-relaxed italic">
+                  <p className="text-[var(--crm-text-muted)] text-xs font-bold leading-relaxed italic opacity-70">
                     Calendar is clear.<br />Select a node to begin.
                   </p>
                 </div>
@@ -474,7 +474,7 @@ export default function CalendarPage({ user }: { user: any }) {
                     return (
                       <motion.div
                         initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
-                        key={m.id} className="p-5 rounded-2xl bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] group/item hover:bg-white/10 hover:border-indigo-400/30 transition-all relative overflow-hidden"
+                        key={m.id} className="p-5 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] group/item hover:bg-[var(--crm-control-hover-bg)] hover:border-indigo-400/30 transition-all relative overflow-hidden"
                       >
                         <div className="absolute top-5 left-5 text-[var(--crm-text-muted)] pointer-events-none">
                           <Sparkles size={18} className="text-indigo-500" />
@@ -494,7 +494,7 @@ export default function CalendarPage({ user }: { user: any }) {
                             <div className="flex flex-col gap-1.5 mt-2">
                               {m.leadName && (
                                 <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
-                                  <User size={10} className="text-slate-400" />
+                                  <User size={10} className="text-[var(--crm-text-muted)]" />
                                   <span className="opacity-70">Lead:</span>
                                   <span className="text-[var(--crm-text)]">{m.leadName}</span>
                                 </div>
@@ -629,7 +629,7 @@ export default function CalendarPage({ user }: { user: any }) {
                     <div>
                       <label className={labelClasses}>Meeting Time</label>
                       <div className="relative">
-                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)]" size={18} />
                         <input
                           type="time"
                           value={form.time}
@@ -642,7 +642,7 @@ export default function CalendarPage({ user }: { user: any }) {
                     <div>
                       <label className={labelClasses}>Meet Link (URL)</label>
                       <div className="relative">
-                        <Video className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <Video className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)]" size={18} />
                         <input
                           type="url"
                           value={form.meetLink}
@@ -663,7 +663,7 @@ export default function CalendarPage({ user }: { user: any }) {
                           placeholder="Search lead..."
                           value={leadSearch}
                           onChange={e => setLeadSearch(e.target.value)}
-                          className={`${inputClasses} !bg-white/5 border-dashed`}
+                          className={`${inputClasses} !bg-[var(--crm-control-bg)] border-dashed`}
                         />
                         <select
                           value={form.leadId}
@@ -689,7 +689,7 @@ export default function CalendarPage({ user }: { user: any }) {
                           placeholder="Search member..."
                           value={memberSearch}
                           onChange={e => setMemberSearch(e.target.value)}
-                          className={`${inputClasses} !bg-white/5 border-dashed`}
+                          className={`${inputClasses} !bg-[var(--crm-control-bg)] border-dashed`}
                         />
                         <div className="bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-2xl p-4 max-h-[160px] overflow-y-auto space-y-3 custom-scrollbar">
                           {teamMembers
@@ -708,14 +708,14 @@ export default function CalendarPage({ user }: { user: any }) {
                                         : [...f.assignedTo, m.id]
                                     }));
                                   }}
-                                  className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-transparent border-transparent hover:bg-[var(--crm-control-bg)]'}`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${isSelected ? 'bg-indigo-500 text-white' : 'bg-[var(--crm-border)] text-[var(--crm-text-muted)]'}`}>
                                       {m.displayName?.[0] || m.email?.[0] || 'U'}
                                     </div>
                                     <div>
-                                      <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-[var(--crm-text-muted)]'}`}>{m.displayName || m.email?.split('@')[0]}</div>
+                                      <div className={`text-xs font-bold ${isSelected ? 'text-[var(--crm-text)]' : 'text-[var(--crm-text-muted)]'}`}>{m.displayName || m.email?.split('@')[0]}</div>
                                       <div className="text-[9px] font-black uppercase text-indigo-400 opacity-60 tracking-tighter">{m.role}</div>
                                     </div>
                                   </div>
@@ -742,7 +742,7 @@ export default function CalendarPage({ user }: { user: any }) {
               </div>
 
               <div className="px-6 md:px-10 pb-6 md:pb-10 pt-4 md:pt-0 border-t sm:border-t-0 border-[var(--crm-border)] flex gap-4 relative z-10 shrink-0 bg-[var(--crm-sidebar-bg)]">
-                <button onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-white hover:bg-white/10 transition-all text-xs md:text-sm uppercase tracking-widest">
+                <button onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-bg)] transition-all text-xs md:text-sm uppercase tracking-widest">
                   Cancel
                 </button>
                 <button onClick={handleSave} disabled={saving} className="flex-1 btn-primary shadow-xl shadow-indigo-500/20 disabled:opacity-50 !py-4 text-xs md:text-sm">
