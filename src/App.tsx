@@ -811,61 +811,55 @@ const RecordingView = () => {
 
         <header className="flex flex-col gap-5">
           <div className="glass-card rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-7 lg:p-8 border border-[var(--crm-border)] relative overflow-hidden">
-            <div className="absolute inset-y-0 right-0 w-56 bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none"></div>
-            <div className="flex flex-col xl:flex-row xl:items-stretch xl:justify-between gap-6 lg:gap-8 relative z-10">
-              <div className="flex-1 space-y-5 min-w-0">
+            <div className="absolute -top-24 right-0 w-72 h-72 bg-indigo-500/10 blur-[110px] pointer-events-none"></div>
+            <div className="absolute -bottom-24 left-8 w-56 h-56 bg-cyan-500/10 blur-[110px] pointer-events-none"></div>
+            <div className="relative z-10 space-y-6">
+              <div className="space-y-6 min-w-0">
                 <div className="flex items-start gap-4 sm:gap-5">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-500/10 text-indigo-400 rounded-[1.4rem] sm:rounded-[1.6rem] flex items-center justify-center border border-indigo-500/20 shadow-xl backdrop-blur-xl shrink-0">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500/15 to-cyan-500/10 text-indigo-400 rounded-[1.4rem] sm:rounded-[1.6rem] flex items-center justify-center border border-indigo-500/20 shadow-xl backdrop-blur-xl shrink-0">
                     <History size={28} />
                   </div>
-                  <div className="space-y-2 min-w-0">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-200 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-                      {recordTypeLabel}
+                  <div className="space-y-3 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                        {recordTypeLabel}
+                      </div>
+
                     </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-[2.8rem] font-black text-[var(--crm-text)] tracking-tight leading-[0.95]">
-                      Interaction <span className="text-indigo-500">Intelligence</span>
-                    </h1>
-                    <p className="text-sm sm:text-[15px] text-[var(--crm-text-muted)] font-medium max-w-2xl leading-relaxed">
-                      Review the original record, track AI status, and export a clean summary without leaving this page.
-                    </p>
+                    <div className="space-y-2">
+                      <h1 className="text-3xl sm:text-4xl lg:text-[2.9rem] font-black text-[var(--crm-text)] tracking-tight leading-[0.95]">
+                        Recording <span className="text-indigo-500">Overview</span>
+                      </h1>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-blue-500 bg-blue-500/5">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-500/80">📝 Summary Notes</div>
+                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{meetingMinutes.length}</div>
+                  </div>
+                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-emerald-500 bg-emerald-500/5">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500/80">✅ Tasks</div>
+                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{taskItems.length}</div>
+                  </div>
+                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-purple-500 bg-purple-500/5">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-purple-500/80">🎭 Sentiment</div>
+                    <div className="mt-2 text-sm font-black text-[var(--crm-text)]">{recording.aiInsights.sentiment || 'N/A'}</div>
+                  </div>
+
                   {[
-                    { label: 'Record ID', value: recording.id.slice(0, 8) },
-                    { label: 'Created', value: createdAtLabel },
-                    { label: 'Notes', value: String(meetingMinutes.length) },
-                    { label: 'Tasks', value: String(taskItems.length) },
+                    { label: 'Transcript', value: recording.transcript ? 'Ready' : 'Pending', tone: recording.transcript ? 'text-emerald-500' : 'text-amber-500' },
+                    { label: 'Analytics', value: recording.aiInsights ? 'Ready' : 'Pending', tone: recording.aiInsights ? 'text-indigo-500' : 'text-amber-500' },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-[1.35rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] px-4 py-3.5 shadow-sm min-w-0">
-                      <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-                        {item.label}
-                      </div>
-                      <div className="mt-2 text-sm sm:text-[15px] font-black text-[var(--crm-text)] break-words">
-                        {item.value}
+                    <div key={item.label} className="rounded-[1.45rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4 sm:p-4.5 shadow-sm min-h-[104px] flex flex-col justify-between">
+                      <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">{item.label}</div>
+                      <div className={`mt-3 text-base sm:text-lg font-black ${item.tone}`}>{item.value}</div>
+                      <div className="mt-2 h-1.5 w-12 rounded-full bg-[var(--crm-border)] overflow-hidden">
+                        <div className={`h-full rounded-full ${item.tone.replace('text-', 'bg-')}`}></div>
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              <div className="xl:w-[26rem]">
-                <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-3">
-                {[
-                  { label: 'Transcript', value: recording.transcript ? 'Ready' : 'Pending', tone: recording.transcript ? 'text-emerald-500' : 'text-amber-500' },
-                  { label: 'Analytics', value: recording.aiInsights ? 'Ready' : 'Pending', tone: recording.aiInsights ? 'text-indigo-500' : 'text-amber-500' },
-                  { label: 'Tasks', value: String(taskItems.length), tone: 'text-cyan-500' },
-                  { label: 'Share', value: 'Enabled', tone: 'text-fuchsia-500' },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-[1.45rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4 sm:p-4.5 shadow-sm min-h-[104px] flex flex-col justify-between">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">{item.label}</div>
-                    <div className={`mt-3 text-base sm:text-lg font-black ${item.tone}`}>{item.value}</div>
-                    <div className="mt-2 h-1.5 w-12 rounded-full bg-[var(--crm-border)] overflow-hidden">
-                      <div className={`h-full w-8 rounded-full ${item.tone.replace('text-', 'bg-')}`}></div>
-                    </div>
-                  </div>
-                ))}
                 </div>
               </div>
             </div>
@@ -931,20 +925,7 @@ const RecordingView = () => {
                   </div>
                   <p className="text-[var(--crm-text-muted)] text-[15px] leading-relaxed font-medium relative z-10">{summaryText}</p>
                 </div>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-blue-500 bg-blue-500/5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-500/80">📝 Summary Notes</div>
-                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{meetingMinutes.length}</div>
-                  </div>
-                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-emerald-500 bg-emerald-500/5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500/80">✅ Tasks</div>
-                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{taskItems.length}</div>
-                  </div>
-                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-purple-500 bg-purple-500/5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-purple-500/80">🎭 Sentiment</div>
-                    <div className="mt-2 text-sm font-black text-[var(--crm-text)]">{recording.aiInsights.sentiment || 'N/A'}</div>
-                  </div>
-                </div>
+
                 <div className="glass-card rounded-[2.2rem] p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-3xl">
                   <div className="flex items-center gap-3 font-black text-[var(--crm-text)] uppercase tracking-widest text-[11px]">
                     <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Key Notes
