@@ -111,7 +111,7 @@ export default function Reports({ user }: { user: any }) {
 
       await setDoc(doc(db, 'leads', newLeadId), leadPayload);
       await updateDoc(doc(db, 'recordings', syncingRecordId), { leadId: newLeadId });
-      
+
       await logActivity({
         leadId: newLeadId,
         companyId,
@@ -139,7 +139,7 @@ export default function Reports({ user }: { user: any }) {
 
   const handleDeleteRecording = async () => {
     if (!recToDelete) return;
-    
+
     setIsDeleting(recToDelete);
     setError('');
     const idToNotify = recToDelete;
@@ -204,16 +204,16 @@ export default function Reports({ user }: { user: any }) {
         <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 animate-pulse">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="space-y-4 w-full">
-              <div className="w-48 h-6 bg-white/10 rounded-full"></div>
-              <div className="w-64 sm:w-96 h-8 sm:h-12 bg-white/10 rounded-xl"></div>
-              <div className="w-full max-w-2xl h-4 bg-white/10 rounded"></div>
+              <div className="w-48 h-6 bg-[var(--crm-border)] rounded-full"></div>
+              <div className="w-64 sm:w-96 h-8 sm:h-12 bg-[var(--crm-border)] rounded-xl"></div>
+              <div className="w-full max-w-2xl h-4 bg-[var(--crm-border)] rounded"></div>
             </div>
           </div>
 
-          <div className="h-16 sm:h-20 bg-white/5 rounded-2xl w-full"></div>
+          <div className="h-16 sm:h-20 bg-[var(--crm-border)] rounded-2xl w-full"></div>
           <div className="space-y-6 sm:space-y-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-48 sm:h-64 bg-white/5 rounded-[2.5rem] w-full"></div>
+              <div key={i} className="h-48 sm:h-64 bg-[var(--crm-border)] rounded-[2.5rem] w-full"></div>
             ))}
           </div>
         </div>
@@ -275,23 +275,23 @@ export default function Reports({ user }: { user: any }) {
           <div className="w-full space-y-3">
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--crm-text-muted)]">Search History</div>
             <div className="relative w-full max-w-2xl group shrink-0 lg:shrink">
-            <div className="absolute inset-y-0 left-0 pl-4 sm:pl-5 flex items-center pointer-events-none z-10">
-              <Search className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+              <div className="absolute inset-y-0 left-0 pl-4 sm:pl-5 flex items-center pointer-events-none z-10">
+                <Search className="text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by transcript, lead name, or company"
+                className="w-full pl-11 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-4 bg-[var(--crm-input-bg)] hover:bg-[var(--crm-hover-bg)] border border-[var(--crm-border)] rounded-2xl text-sm sm:text-base font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-[var(--crm-text-muted)] text-[var(--crm-text)] shadow-inner"
+              />
             </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by transcript, lead name, or company"
-              className="w-full pl-11 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-4 bg-slate-900/50 hover:bg-slate-900 border border-[var(--crm-border)] rounded-2xl text-sm sm:text-base font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-[var(--crm-text-muted)] text-[var(--crm-text)] shadow-inner"
-            />
-          </div>
           </div>
           <div className="flex flex-wrap gap-2 w-full lg:w-auto lg:justify-end">
-            <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-300">
+            <div className="px-4 py-3 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--crm-text)]">
               {searchTerm ? `${enrichedRecordings.length} Match${enrichedRecordings.length === 1 ? '' : 'es'}` : `${enrichedRecordings.length} Visible`}
             </div>
-            <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="px-4 py-3 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">
               {unlinkedCount} Unlinked
             </div>
           </div>
@@ -360,7 +360,7 @@ export default function Reports({ user }: { user: any }) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--crm-card-bg)] flex items-center justify-center text-[var(--crm-text-muted)] font-black text-xl sm:text-2xl shadow-inner border border-[var(--crm-border)] opacity-70">?</div>
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--crm-card-bg)] flex items-center justify-center text-[var(--crm-text-muted)] font-black text-xl sm:text-2xl shadow-inner border border-[var(--crm-border)] opacity-70">?</div>
                           <div className="space-y-2">
                             <div className="opacity-80">
                               <h3 className="font-extrabold text-lg sm:text-xl lg:text-2xl text-[var(--crm-text)] tracking-tight">Unlinked Record</h3>
@@ -413,13 +413,13 @@ export default function Reports({ user }: { user: any }) {
                   </div>
 
                   {/* Intelligence Manifest column */}
-                  <div className="p-5 sm:p-6 lg:p-8 flex-1 flex flex-col relative bg-transparent z-10">
+                  <div className="p-5 pr-16 sm:p-6 sm:pr-20 lg:p-8 lg:pr-24 flex-1 flex flex-col relative bg-transparent z-10">
                     {(role === 'admin' || role === 'super_admin' || role === 'management') && (
-                      <button 
+                      <button
                         onClick={() => initiateDelete(rec.id)}
                         disabled={isDeleting === rec.id}
-                        className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 bg-white/5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-white/10 hover:border-rose-500/30 rounded-xl transition-all shadow-sm active:scale-95 group/del z-[20]"
-                        title="Purge Intel"
+                        className="absolute top-4 right-4 sm:top-6 sm:right-6 w-11 h-11 sm:w-12 sm:h-12 shrink-0 bg-[var(--crm-card-bg)] hover:bg-rose-500/15 text-[var(--crm-text-muted)] hover:text-rose-400 border border-[var(--crm-border)] hover:border-rose-500/30 rounded-xl transition-all shadow-sm active:scale-95 group/del z-[20] flex items-center justify-center"
+                        title="Delete record"
                       >
                         {isDeleting === rec.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                       </button>
@@ -429,15 +429,14 @@ export default function Reports({ user }: { user: any }) {
                     <div className="absolute top-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-indigo-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-all duration-700 pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
 
                     <div className="space-y-5 relative z-10 h-full">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-indigo-300 tracking-[0.2em] uppercase bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20 w-fit">
-                          <Sparkles size={14} /> Transcript Preview
-                        </div>
-                        <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-[var(--crm-text)] tracking-[0.2em] uppercase bg-[var(--crm-card-bg)] px-3 py-1.5 rounded-lg border border-[var(--crm-border)] w-fit">
-                          {rec.fileType === 'document' ? 'Document File' : 'Audio File'}
-                        </div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">
-                          {formatRecordingDate(rec)}
+                      <div className="flex flex-col gap-3 lg:gap-4">
+                        <div className="flex flex-wrap items-center gap-3 pr-2">
+                          <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-indigo-300 tracking-[0.2em] uppercase bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20 w-fit">
+                            <Sparkles size={14} /> Transcript Preview
+                          </div>
+                          <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-[var(--crm-text)] tracking-[0.2em] uppercase bg-[var(--crm-card-bg)] px-3 py-1.5 rounded-lg border border-[var(--crm-border)] w-fit">
+                            {rec.fileType === 'document' ? 'Document File' : 'Audio File'}
+                          </div>
                         </div>
                       </div>
 
@@ -495,7 +494,7 @@ export default function Reports({ user }: { user: any }) {
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10"
+                className="relative w-full max-w-md bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10"
               >
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
@@ -503,13 +502,13 @@ export default function Reports({ user }: { user: any }) {
                       <UserPlus size={20} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Quick Sync Lead</h3>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Create & Link Session</p>
+                      <h3 className="text-lg font-black text-[var(--crm-text)] uppercase tracking-tight">Quick Sync Lead</h3>
+                      <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Create & Link Session</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setShowQuickAdd(false)}
-                    className="p-2 text-slate-500 hover:text-white transition-colors"
+                    className="p-2 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] transition-colors"
                   >
                     <X size={20} />
                   </button>
@@ -517,43 +516,43 @@ export default function Reports({ user }: { user: any }) {
 
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                    <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Full Name</label>
                     <div className="relative">
-                      <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)]" size={16} />
                       <input
                         type="text"
                         value={quickLeadData.name}
                         onChange={(e) => setQuickLeadData(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="John Doe"
-                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-700 shadow-inner"
+                        className="w-full pl-12 pr-4 py-4 bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-2xl text-sm font-bold text-[var(--crm-text)] outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--crm-text-muted)] shadow-inner"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company</label>
+                    <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Company</label>
                     <div className="relative">
-                      <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)]" size={16} />
                       <input
                         type="text"
                         value={quickLeadData.company}
                         onChange={(e) => setQuickLeadData(prev => ({ ...prev, company: e.target.value }))}
                         placeholder="Acme Corp"
-                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-700 shadow-inner"
+                        className="w-full pl-12 pr-4 py-4 bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-2xl text-sm font-bold text-[var(--crm-text)] outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--crm-text-muted)] shadow-inner"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                    <label className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest ml-1">Email Address</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)]" size={16} />
                       <input
                         type="email"
                         value={quickLeadData.email}
                         onChange={(e) => setQuickLeadData(prev => ({ ...prev, email: e.target.value }))}
                         placeholder="john@example.com"
-                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-700 shadow-inner"
+                        className="w-full pl-12 pr-4 py-4 bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-2xl text-sm font-bold text-[var(--crm-text)] outline-none focus:border-indigo-500 transition-all placeholder:text-[var(--crm-text-muted)] shadow-inner"
                       />
                     </div>
                   </div>
@@ -590,7 +589,7 @@ export default function Reports({ user }: { user: any }) {
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10 text-center"
+                className="relative w-full max-w-md bg-[var(--crm-card-bg)] border border-rose-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10 text-center"
               >
                 <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
                   <Trash2 size={32} className="text-rose-500" />
@@ -600,13 +599,13 @@ export default function Reports({ user }: { user: any }) {
                   Are you sure you want to permanently delete this intelligence report? This action will purge all conversation data from the secure matrix and cannot be reversed.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button 
+                  <button
                     onClick={() => setRecToDelete(null)}
                     className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
                   >
                     Abort Mission
                   </button>
-                  <button 
+                  <button
                     onClick={handleDeleteRecording}
                     className="flex-1 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20 active:scale-95"
                   >
