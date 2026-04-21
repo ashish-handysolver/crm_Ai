@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link, u
 import { Mic, Square, Play, Pause, Share2, Loader2, CheckCircle2, AlertCircle, LogIn, LogOut, History, Copy, ExternalLink, FileText, Languages, Users, Link as LinkIcon, MessageSquare, Building2, BarChart3, Search, Filter, ArrowUpRight, ShieldCheck, Globe, Activity, Mail, Calendar, MoreVertical, Trash2, ArrowLeft, Clock, Sparkles, ArrowUp, Bell, Menu, RotateCcw, Download, LayoutDashboard, QrCode, Camera, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import {
   collection,
   doc,
@@ -62,7 +61,6 @@ import { SyncManager } from './components/SyncManager';
 import { Plus } from 'lucide-react';
 import { analyzeWithGroq, transcribeWithGroq } from './utils/ai-service';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
@@ -603,43 +601,107 @@ const RecordingView = () => {
     if (!recording || isSyncing) return;
     setIsSyncing(true);
     try {
-      // Auto-regenerate before export
-      await performSync();
+      const exportRecording = recording;
+      const exportInsights = exportRecording.aiInsights || {};
+      const exportMeetingMinutes = Array.isArray(exportInsights.meetingMinutes) ? exportInsights.meetingMinutes : [];
+      const exportTasks = Array.isArray(exportInsights.tasks) ? exportInsights.tasks : [];
+      const exportTranscript = exportRecording.transcript || 'No transcript available.';
+      const leadLabel = exportRecording.lead?.name || exportRecording.leadName || 'Unlinked Record';
+      const companyLabel = exportRecording.lead?.company || exportRecording.company || 'No company';
+      const createdLabel = exportRecording.createdAt?.toDate?.().toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }) || 'Unknown';
 
-      // Brief pause to allow React to flush the update to the DOM
-      await new Promise(r => setTimeout(r, 500));
-
-      const element = contentRef.current;
-      if (!element) return;
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#030014',
-        logging: false,
-        onclone: (clonedDoc) => {
-          const styleTags = clonedDoc.getElementsByTagName('style');
-          for (let i = 0; i < styleTags.length; i++) {
-            styleTags[i].innerHTML = styleTags[i].innerHTML
-              .replace(/oklch\([^)]+\)/g, '#6366f1')
-              .replace(/oklab\([^)]+\)/g, '#6366f1');
-          }
-
-          const safeStyle = clonedDoc.createElement('style');
-          safeStyle.innerHTML = `
-            * { color-interpolation: sRGB !important; }
-            body { background: #030014 !important; }
-            .glass-card { background: rgba(255, 255, 255, 0.05) !important; border: none !important; }
-          `;
-          clonedDoc.head.appendChild(safeStyle);
-        }
-      });
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Intelligence_${recording.id.slice(0, 8)}.pdf`);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 16;
+      const maxTextWidth = pageWidth - margin * 2;
+      let y = 20;
+
+      const ensureSpace = (heightNeeded: number) => {
+        if (y + heightNeeded > pageHeight - 18) {
+          pdf.addPage();
+          y = 20;
+        }
+      };
+
+      const addSectionTitle = (title: string) => {
+        ensureSpace(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.setTextColor(30, 41, 59);
+        pdf.text(title, margin, y);
+        y += 8;
+      };
+
+      const addParagraph = (text: string, fontSize = 10, color: [number, number, number] = [71, 85, 105]) => {
+        const safeText = text?.trim() || 'Not available.';
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(fontSize);
+        pdf.setTextColor(...color);
+        const lines = pdf.splitTextToSize(safeText, maxTextWidth);
+        ensureSpace(lines.length * 5 + 4);
+        pdf.text(lines, margin, y);
+        y += lines.length * 5 + 4;
+      };
+
+      const addBulletList = (items: string[]) => {
+        if (!items.length) {
+          addParagraph('Not available.');
+          return;
+        }
+
+        items.forEach((item) => {
+          const bulletLines = pdf.splitTextToSize(`• ${item}`, maxTextWidth - 2);
+          ensureSpace(bulletLines.length * 5 + 2);
+          pdf.text(bulletLines, margin, y);
+          y += bulletLines.length * 5 + 2;
+        });
+      };
+
+      pdf.setFillColor(15, 23, 42);
+      pdf.rect(0, 0, pageWidth, 34, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(18);
+      pdf.text('HandyCRM Record Report', margin, 16);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Record ID: ${exportRecording.id.slice(0, 8)}`, margin, 24);
+      pdf.text(`Created: ${createdLabel}`, pageWidth - margin, 24, { align: 'right' });
+
+      y = 44;
+      addSectionTitle('Record Details');
+      addParagraph(`Lead: ${leadLabel}`);
+      addParagraph(`Company: ${companyLabel}`);
+      addParagraph(`Type: ${exportRecording.fileType === 'document' ? 'Document' : 'Audio'}`);
+      addParagraph(`Status: ${exportRecording.aiInsights ? 'Analyzed' : 'Saved'}`);
+
+      addSectionTitle('Executive Summary');
+      addParagraph(exportInsights.overview || 'Analytics not generated yet.');
+
+      addSectionTitle('Key Notes');
+      addBulletList(exportMeetingMinutes);
+
+      addSectionTitle('Action Items');
+      addBulletList(
+        exportTasks.map((task: any) => {
+          const assignee = task?.assignee ? ` | Owner: ${task.assignee}` : '';
+          const dueDate = task?.dueDate ? ` | Due: ${task.dueDate}` : '';
+          const status = task?.completed ? 'Completed' : 'Open';
+          return `${task?.title || 'Untitled task'} | Status: ${status}${assignee}${dueDate}`;
+        })
+      );
+
+      addSectionTitle('Transcript');
+      addParagraph(exportTranscript, 9, [51, 65, 85]);
+
+      pdf.setFontSize(8);
+      pdf.setTextColor(148, 163, 184);
+      pdf.text('Generated by HandyCRM', pageWidth / 2, pageHeight - 8, { align: 'center' });
+      pdf.save(`Intelligence_${exportRecording.id.slice(0, 8)}.pdf`);
     } catch (err) {
       console.error("PDF Export failed", err);
       alert("PDF Export failed. Check console for details.");
@@ -717,61 +779,105 @@ const RecordingView = () => {
     </div>
   );
 
+  const createdAtLabel = recording.createdAt?.toDate?.().toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }) || 'Unknown';
+  const meetingMinutes = recording.aiInsights?.meetingMinutes || [];
+  const taskItems = recording.aiInsights?.tasks || [];
+  const summaryText = recording.aiInsights?.overview || 'Analytics not generated yet.';
+  const recordTypeLabel = recording.fileType === 'document' ? 'Document Record' : 'Audio Record';
+
   return (
-    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen overflow-y-auto overflow-x-hidden pt-8 pb-32 font-sans hide-scrollbar">
+    <div className="flex-1 bg-[var(--crm-bg)] min-h-screen overflow-y-auto overflow-x-hidden pt-6 sm:pt-8 pb-24 sm:pb-32 font-sans hide-scrollbar">
       <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-indigo-500/10 blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 relative z-10" ref={contentRef}>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-8 sm:space-y-10 relative z-10" ref={contentRef}>
 
-        <header className="flex flex-col lg:flex-row justify-between items-start gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-indigo-500/10 text-indigo-400 rounded-[1.5rem] flex items-center justify-center border-none shadow-2xl backdrop-blur-xl">
-                <History size={28} />
-              </div>
-              <div className="space-y-1">
-                <h1 className="text-4xl font-black text-[var(--crm-text)] tracking-tightest leading-none uppercase">
-                  Interaction <span className="text-indigo-500">Intelligence</span>
-                </h1>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">
+        <header className="flex flex-col gap-5">
+          <div className="glass-card rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-7 border border-[var(--crm-border)] relative overflow-hidden">
+            <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none"></div>
+            <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-6 relative z-10">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-indigo-500/10 text-indigo-400 rounded-[1.5rem] flex items-center justify-center border border-indigo-500/20 shadow-2xl backdrop-blur-xl">
+                    <History size={28} />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-200 text-[10px] font-black uppercase tracking-[0.2em]">
+                      {recordTypeLabel}
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black text-[var(--crm-text)] tracking-tight leading-none">
+                      Interaction <span className="text-indigo-500">Intelligence</span>
+                    </h1>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <span className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">
                     ID: {recording.id.slice(0, 8)}
                   </span>
-                  <div className="w-1 h-1 rounded-full bg-[var(--crm-border)]"></div>
-                  <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">
-                    {recording.createdAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                  <span className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">
+                    {createdAtLabel}
+                  </span>
+                  <span className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">
+                    {meetingMinutes.length} Notes
+                  </span>
+                  <span className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black text-[var(--crm-text)] uppercase tracking-widest">
+                    {taskItems.length} Tasks
                   </span>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Transcript', value: recording.transcript ? 'Ready' : 'Pending' },
+                  { label: 'Analytics', value: recording.aiInsights ? 'Ready' : 'Pending' },
+                  { label: 'Tasks', value: String(taskItems.length) },
+                  { label: 'Share', value: 'Enabled' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl bg-black/20 border border-white/10 p-4">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">{item.label}</div>
+                    <div className="mt-2 text-sm sm:text-base font-black text-[var(--crm-text)]">{item.value}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button onClick={handleShareWhatsApp} className="px-6 py-4 bg-[#25D366] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/10 flex items-center gap-2.5">
-              Send
-            </button>
-            <button onClick={handleRegenerateTranscriptAndAnalytics} disabled={isSyncing} className="px-6 py-4 glass-card border-none text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-2xl backdrop-blur-2xl">
-              <RotateCcw size={14} className={isSyncing ? "animate-spin text-cyan-500" : "text-indigo-500"} />
-              {isSyncing ? 'Processing...' : 'Regen All'}
-            </button>
-            <button onClick={handleRegenerateAnalytics} disabled={isSyncing} className="px-6 py-4 glass-card border-none text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-2xl backdrop-blur-2xl">
-              <Sparkles size={14} className={isSyncing ? "animate-pulse text-purple-500" : "text-purple-500"} />
-              {isSyncing ? 'Thinking...' : 'Regen Analytics'}
-            </button>
-            <button onClick={handleExportPDF} className="px-6 py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase shadow-2xl flex items-center gap-2.5">
-              <Download size={14} /> PDF
-            </button>
+          <div className="sticky top-20 sm:top-24 z-20">
+            <div className="glass-card rounded-[1.8rem] p-3 sm:p-4 border border-[var(--crm-border)]">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={handleShareWhatsApp} className="flex-1 px-5 py-3.5 bg-[#25D366] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/10 flex items-center justify-center gap-2.5">
+                  <Share2 size={14} /> WhatsApp
+                </button>
+                <button onClick={handleRegenerateTranscriptAndAnalytics} disabled={isSyncing} className="flex-1 px-5 py-3.5 bg-white/5 border border-white/10 text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center justify-center gap-2.5 shadow-xl backdrop-blur-2xl">
+                  <RotateCcw size={14} className={isSyncing ? "animate-spin text-cyan-500" : "text-indigo-500"} />
+                  {isSyncing ? 'Processing...' : 'Refresh All'}
+                </button>
+                <button onClick={handleRegenerateAnalytics} disabled={isSyncing} className="flex-1 px-5 py-3.5 bg-white/5 border border-white/10 text-[var(--crm-text)] rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-50 flex items-center justify-center gap-2.5 shadow-xl backdrop-blur-2xl">
+                  <Sparkles size={14} className={isSyncing ? "animate-pulse text-purple-500" : "text-purple-500"} />
+                  {isSyncing ? 'Thinking...' : 'Refresh Analytics'}
+                </button>
+                <button onClick={handleExportPDF} className="flex-1 sm:flex-none px-5 py-3.5 bg-white text-black rounded-2xl text-[10px] font-black uppercase shadow-2xl flex items-center justify-center gap-2.5">
+                  <Download size={14} /> Export PDF
+                </button>
+              </div>
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-12 xl:col-span-7 space-y-8">
-            <div className="glass-card border-none rounded-[3rem] p-6 sm:p-10 shadow-2xl backdrop-blur-3xl relative overflow-hidden h-fit">
-              <div className="flex items-center gap-3 mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+          <div className="lg:col-span-12 xl:col-span-7 space-y-6">
+            <div className="glass-card rounded-[2.4rem] p-5 sm:p-8 shadow-2xl backdrop-blur-3xl relative overflow-hidden h-fit">
+              <div className="flex items-center gap-3 mb-6 sm:mb-8">
                 <div className="w-10 h-10 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center border border-indigo-500/10"><Languages size={18} /></div>
-                <h2 className="text-xs font-black text-[var(--crm-text)] uppercase tracking-widest">Protocol Transcript</h2>
+                <div>
+                  <h2 className="text-xs font-black text-[var(--crm-text)] uppercase tracking-widest">Transcript</h2>
+                  <p className="text-sm text-[var(--crm-text-muted)] font-medium mt-1">Read, play, and follow along with the recording.</p>
+                </div>
               </div>
-              <div className="bg-black/20 rounded-[2.5rem] p-6 sm:p-8 border-none min-h-[400px] backdrop-blur-xl">
+              <div className="bg-black/20 rounded-[2rem] p-4 sm:p-6 border border-white/5 min-h-[360px] backdrop-blur-xl">
                 {recording.transcript ? (
                   <TranscriptPlayer audioUrl={recording.audioUrl} transcriptData={recording.transcriptData} fallbackText={recording.transcript} />
                 ) : (
@@ -787,19 +893,38 @@ const RecordingView = () => {
           <div className="lg:col-span-12 xl:col-span-5 space-y-6">
             {recording.aiInsights ? (
               <>
-                <div className="glass-card border-none rounded-[2.5rem] p-8 space-y-6 shadow-2xl backdrop-blur-3xl relative overflow-hidden">
-                  <div className="flex items-center gap-3">
+                <div className="glass-card rounded-[2.2rem] p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-3xl relative overflow-hidden">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
                     <Sparkles size={16} className="text-indigo-400" />
-                    <h4 className="text-xs font-black text-[var(--crm-text)] uppercase tracking-widest">Executive Summary</h4>
+                      <h4 className="text-xs font-black text-[var(--crm-text)] uppercase tracking-widest">Executive Summary</h4>
+                    </div>
+                    <span className="px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest text-indigo-300">
+                      Ready
+                    </span>
                   </div>
-                  <p className="text-[var(--crm-text-muted)] text-[15px] leading-relaxed font-medium italic relative z-10">"{recording.aiInsights.overview}"</p>
+                  <p className="text-[var(--crm-text-muted)] text-[15px] leading-relaxed font-medium relative z-10">{summaryText}</p>
                 </div>
-                <div className="glass-card border-none rounded-[2.5rem] p-8 space-y-8 shadow-2xl backdrop-blur-3xl">
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Summary Notes</div>
+                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{meetingMinutes.length}</div>
+                  </div>
+                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Tasks</div>
+                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{taskItems.length}</div>
+                  </div>
+                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Sentiment</div>
+                    <div className="mt-2 text-sm font-black text-[var(--crm-text)]">{recording.aiInsights.sentiment || 'N/A'}</div>
+                  </div>
+                </div>
+                <div className="glass-card rounded-[2.2rem] p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-3xl">
                   <div className="flex items-center gap-3 font-black text-[var(--crm-text)] uppercase tracking-widest text-[11px]">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Meeting Protocol
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Key Notes
                   </div>
                   <div className="space-y-4">
-                    {(recording.aiInsights.meetingMinutes || []).map((pt: string, i: number) => (
+                    {meetingMinutes.map((pt: string, i: number) => (
                       <div key={i} className="flex gap-4 p-5 bg-white/5 rounded-2xl shadow-lg transition-all hover:bg-white/10 group">
                         <span className="text-[11px] font-black text-indigo-500/50 mt-1 group-hover:text-indigo-400 transition-colors">{String(i + 1).padStart(2, '0')}</span>
                         <span className="text-[14px] text-[var(--crm-text-muted)] group-hover:text-[var(--crm-text)] transition-colors font-medium leading-snug">{pt}</span>
@@ -807,12 +932,12 @@ const RecordingView = () => {
                     ))}
                   </div>
                 </div>
-                <div className="glass-card border-none rounded-[2.5rem] p-8 space-y-8 shadow-2xl backdrop-blur-3xl">
+                <div className="glass-card rounded-[2.2rem] p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-3xl">
                   <div className="flex items-center gap-3 font-black text-[var(--crm-text)] uppercase tracking-widest text-[11px]">
                     <div className="w-2 h-2 rounded-full bg-cyan-500"></div> Action Items
                   </div>
                   <div className="space-y-4">
-                    {(recording.aiInsights.tasks || []).map((t: any, i: number) => (
+                    {taskItems.map((t: any, i: number) => (
                       <div key={i} className={`flex items-start gap-5 p-5 rounded-3xl border-none transition-all ${t.completed ? "bg-emerald-500/5" : "bg-white/5"} backdrop-blur-md shadow-lg`}>
                         <div className={`p-1.5 rounded-xl ${t.completed ? "bg-emerald-500/20 text-emerald-500" : "bg-white/5 text-white/10"}`}>
                           <CheckCircle2 size={18} />
@@ -830,9 +955,10 @@ const RecordingView = () => {
                 </div>
               </>
             ) : (
-              <div className="glass-card border-none rounded-[3rem] p-12 text-center space-y-8 shadow-2xl backdrop-blur-3xl">
+              <div className="glass-card rounded-[2.4rem] p-10 sm:p-12 text-center space-y-6 shadow-2xl backdrop-blur-3xl">
                 <Sparkles size={32} className="text-indigo-500 mx-auto animate-pulse" />
-                <p className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest">Synthesis Pending</p>
+                <p className="text-[10px] font-bold text-[var(--crm-text-muted)] uppercase tracking-widest">Analytics Pending</p>
+                <p className="text-sm text-[var(--crm-text-muted)] max-w-sm mx-auto">This record is saved, but AI insights have not been generated yet.</p>
               </div>
             )}
           </div>
@@ -1024,7 +1150,7 @@ const GlobalRecorder = ({ onQuickLead }: { onQuickLead: () => void }) => {
     } catch (e: any) {
       console.error(e);
       if (e?.status === 429 || e?.message?.includes('quota') || e?.message?.includes('exhausted')) {
-        alert(GEMINI_FALLBACK_MESSAGE);
+        alert('Groq intelligence is temporarily unavailable. The recording was saved, and you can retry analytics later.');
         // Attempt to save basic record anyway if we have the audioUrl
         if (recordId && audioUrl) {
           try {

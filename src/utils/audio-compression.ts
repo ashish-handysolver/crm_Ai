@@ -4,52 +4,145 @@
  * file size and improve transcription accuracy while staying within free-tier limits.
  */
 
+export const GROQ_MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+const GROQ_TARGET_AUDIO_BYTES = 24 * 1024 * 1024;
+
+type CompressionMode = 'standard' | 'low';
+type PreparedGroqChunk = {
+  blob: Blob;
+  durationSeconds: number;
+};
+
 /**
  * Compresses an audio Blob by downsampling.
  * 'standard' mode: 16kHz, 16-bit Mono (~31KB/s)
  * 'low' mode: 8kHz, 8-bit Mono (~8KB/s) - Ideal for very long files to fit Groq 25MB limit.
  */
-export async function compressAudio(audioBlob: Blob, mode: 'standard' | 'low' = 'standard'): Promise<Blob> {
+export async function compressAudio(audioBlob: Blob, mode: CompressionMode = 'standard'): Promise<Blob> {
   // Safety check: 400MB is likely to crash most browser tabs during decoding
   if (audioBlob.size > 400 * 1024 * 1024) {
     console.warn("File too large for browser-based compression. Proceeding with raw file.");
     return audioBlob;
   }
-
-  const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-  const audioContext = new AudioContextClass();
   
   try {
-    const arrayBuffer = await audioBlob.arrayBuffer();
-    let audioBuffer;
-    
-    try {
-      audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    } catch (decodeErr) {
-      console.error("Audio decoding failed. The file might be corrupted or too large for browser memory.", decodeErr);
+    const audioBuffer = await decodeAudioBlob(audioBlob);
+    if (!audioBuffer) {
       return audioBlob;
     }
-    
-    const targetSampleRate = mode === 'standard' ? 16000 : 8000;
-    const bitDepth = mode === 'standard' ? 16 : 8;
 
-    const offlineContext = new OfflineAudioContext(
-      1, // Mono
-      Math.ceil(audioBuffer.duration * targetSampleRate),
-      targetSampleRate
-    );
-    
-    const source = offlineContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(offlineContext.destination);
-    source.start();
-    
-    const renderedBuffer = await offlineContext.startRendering();
-    
-    return audioBufferToWav(renderedBuffer, bitDepth);
+    return compressDecodedAudio(audioBuffer, mode);
+  } catch (err) {
+    console.error("Audio compression failed. Proceeding with raw file.", err);
+    return audioBlob;
+  }
+}
+
+export async function prepareAudioForGroq(audioBlob: Blob, maxBytes: number = GROQ_MAX_AUDIO_BYTES): Promise<PreparedGroqChunk[]> {
+  let standardBlob = await compressAudio(audioBlob, 'standard');
+  if (standardBlob.size <= maxBytes) {
+    return [{ blob: standardBlob, durationSeconds: await getAudioDurationSeconds(standardBlob) }];
+  }
+
+  const audioBuffer = await decodeAudioBlob(audioBlob);
+  if (!audioBuffer) {
+    if (audioBlob.size <= maxBytes) {
+      return [{ blob: audioBlob, durationSeconds: await getAudioDurationSeconds(audioBlob) }];
+    }
+    throw new Error('Audio could not be decoded for Groq compression.');
+  }
+
+  const lowBlob = await compressDecodedAudio(audioBuffer, 'low');
+  if (lowBlob.size <= maxBytes) {
+    return [{ blob: lowBlob, durationSeconds: audioBuffer.duration }];
+  }
+
+  const chunkSampleCount = getMaxChunkSamples(8000, 8, 1, Math.min(maxBytes, GROQ_TARGET_AUDIO_BYTES));
+  if (chunkSampleCount <= 0) {
+    throw new Error('Unable to calculate a valid Groq audio chunk size.');
+  }
+
+  const normalizedBuffer = await renderSpeechOptimizedBuffer(audioBuffer, 'low');
+  const chunks: PreparedGroqChunk[] = [];
+
+  for (let start = 0; start < normalizedBuffer.length; start += chunkSampleCount) {
+    const length = Math.min(chunkSampleCount, normalizedBuffer.length - start);
+    const chunkBuffer = sliceAudioBuffer(normalizedBuffer, start, length);
+    const chunkBlob = audioBufferToWav(chunkBuffer, 8);
+
+    if (chunkBlob.size > maxBytes) {
+      throw new Error('Compressed audio chunk still exceeds Groq 25MB limit.');
+    }
+
+    chunks.push({
+      blob: chunkBlob,
+      durationSeconds: length / normalizedBuffer.sampleRate,
+    });
+  }
+
+  return chunks;
+}
+
+async function decodeAudioBlob(audioBlob: Blob): Promise<AudioBuffer | null> {
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  const audioContext = new AudioContextClass();
+
+  try {
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    return await audioContext.decodeAudioData(arrayBuffer);
+  } catch (decodeErr) {
+    console.error("Audio decoding failed. The file might be corrupted or too large for browser memory.", decodeErr);
+    return null;
   } finally {
     await audioContext.close();
   }
+}
+
+async function compressDecodedAudio(audioBuffer: AudioBuffer, mode: CompressionMode): Promise<Blob> {
+  const renderedBuffer = await renderSpeechOptimizedBuffer(audioBuffer, mode);
+  const bitDepth = mode === 'standard' ? 16 : 8;
+  return audioBufferToWav(renderedBuffer, bitDepth);
+}
+
+async function renderSpeechOptimizedBuffer(audioBuffer: AudioBuffer, mode: CompressionMode): Promise<AudioBuffer> {
+  const targetSampleRate = mode === 'standard' ? 16000 : 8000;
+  const offlineContext = new OfflineAudioContext(
+    1,
+    Math.ceil(audioBuffer.duration * targetSampleRate),
+    targetSampleRate
+  );
+
+  const source = offlineContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineContext.destination);
+  source.start();
+
+  return offlineContext.startRendering();
+}
+
+function getMaxChunkSamples(sampleRate: number, bitDepth: number, channels: number, maxBytes: number): number {
+  const bytesPerSample = (bitDepth / 8) * channels;
+  return Math.floor((maxBytes - 44) / bytesPerSample);
+}
+
+function sliceAudioBuffer(buffer: AudioBuffer, start: number, length: number): AudioBuffer {
+  const slicedBuffer = new AudioBuffer({
+    length,
+    numberOfChannels: buffer.numberOfChannels,
+    sampleRate: buffer.sampleRate,
+  });
+
+  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+    const channelData = buffer.getChannelData(channel).subarray(start, start + length);
+    slicedBuffer.copyToChannel(channelData, channel, 0);
+  }
+
+  return slicedBuffer;
+}
+
+async function getAudioDurationSeconds(audioBlob: Blob): Promise<number> {
+  const decoded = await decodeAudioBlob(audioBlob);
+  return decoded?.duration || 0;
 }
 
 /**
