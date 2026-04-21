@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE, extractJsonFromText } from './utils/gemini';
 import { db, storage } from './firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { transcribeWithGroq } from './utils/ai-service';
+import { transcribeDocumentWithGroq, transcribeWithGroq } from './utils/ai-service';
 import { UploadCloud, FileAudio, FileText, Loader2, CheckCircle2, AlertCircle, Sparkles, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
@@ -85,66 +84,13 @@ export default function ManualUpload({ user }: { user: any }) {
             finalTranscript = groqResult.fullText;
             transcriptData = groqResult.segments;
           } catch (e) {
-            console.error("Groq Transcription failed", e);
-            finalTranscript = "Intelligence services temporarily unavailable. Please try re-syncing this record later.";
+            console.error('Groq Transcription failed', e);
+            finalTranscript = 'Intelligence services temporarily unavailable. Please try re-syncing this record later.';
           }
         } else if (isDoc) {
-          const apiKey = getGeminiApiKey();
-          if (!apiKey) {
-            throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your Vercel environment variables.");
-          }
-          if (apiKey) {
-            const fileUri = await uploadFileToGemini(uploadFile, apiKey);
-            const promptText = `Read this ${isWord ? 'Word Document' : isPdf ? 'PDF' : 'Text-based Prompt'}. Extract all relevant call notes, objectives, and next steps, and translate them into English. Return a JSON object with a 'fullText' string (the English summary) and a 'segments' array (leave this empty []). Provide ONLY JSON.`;
-
-            const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-            let success = false;
-            let rawText = "{}";
-
-            for (const modelName of validModels) {
-              try {
-                console.log(`Attempting extraction with model: ${modelName}`);
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: promptText }, { fileData: { mimeType: uploadFile.type || (isPdf ? 'application/pdf' : isWord ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain'), fileUri } }] }],
-                    generationConfig: { maxOutputTokens: 8192, responseMimeType: "application/json" }
-                  })
-                });
-                if (!response.ok) {
-                  throw new Error(`Gemini API Error: ${response.status}`);
-                }
-                const data = await response.json();
-                rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-                success = true;
-                break;
-              } catch (err: any) {
-                const status = err?.status || err?.code;
-                if (status === 429) { await new Promise(resolve => setTimeout(resolve, 3000)); continue; }
-                else if (status === 404) continue;
-                console.warn(`Model ${modelName} failed, trying next…`, err);
-              }
-            }
-
-            if (!success) {
-              console.warn("Manual processing exhausted Gemini models.");
-              alert(GEMINI_FALLBACK_MESSAGE);
-              finalTranscript = "Intelligence services temporarily unavailable. Please try re-syncing this record later.";
-            } else {
-              try {
-                const parsed = extractJsonFromText(rawText);
-                if (parsed) {
-                  finalTranscript = String(parsed.fullText || 'No info extracted.');
-                  transcriptData = parsed.segments || [];
-                } else {
-                  finalTranscript = String(rawText || 'No info extracted.');
-                }
-              } catch (e) {
-                finalTranscript = String(rawText || 'No info extracted.');
-              }
-            }
-          }
+          const groqResult = await transcribeDocumentWithGroq(uploadFile);
+          finalTranscript = groqResult.fullText || 'No info extracted.';
+          transcriptData = groqResult.segments || [];
         }
       }
 
@@ -168,11 +114,7 @@ export default function ManualUpload({ user }: { user: any }) {
 
     } catch (err: any) {
       console.error(err);
-      if (err?.status === 429 || err?.message?.toLowerCase().includes('quota')) {
-        alert(GEMINI_FALLBACK_MESSAGE);
-      } else {
-        setError(err.message || 'Failed to save information.');
-      }
+      setError(err.message || 'Failed to save information.');
     } finally {
       setIsSubmitting(false);
     }
@@ -206,7 +148,7 @@ export default function ManualUpload({ user }: { user: any }) {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/5 to-transparent pointer-events-none"></div>
               <motion.div
-                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}
+                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}
                 className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20"
               >
                 <CheckCircle2 size={48} className="text-white" />

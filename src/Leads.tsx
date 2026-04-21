@@ -3,9 +3,7 @@ import {
   Bell, Settings, TrendingUp, Search, Filter, Mic, Square, Loader2, Edit2, CheckCircle2, AlertCircle, ChevronDown, Play, Share2, Copy, Users, ArrowUpRight, BarChart3, Plus, Eye, LayoutGrid, List, Pause, ShieldAlert, Trash2, Sparkles, UploadCloud, CalendarDays, ScanQrCode, ThumbsUp, ThumbsDown, History, MessageSquare, X, Send, MoreVertical, Mail, Phone
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { GoogleGenAI } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadFileToGemini, getGeminiApiKey, GEMINI_FALLBACK_MESSAGE, extractJsonFromText } from './utils/gemini';
 import { doc, setDoc, Timestamp, collection, query, where, onSnapshot, getDocs, deleteDoc, getDoc, updateDoc, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from './firebase';
@@ -18,6 +16,7 @@ import { compressAudio } from './utils/audio-compression';
 import { logActivity } from './utils/activity';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import SearchableSelect from './components/SearchableSelect';
+import { transcribeWithGroq } from './utils/ai-service';
 
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
@@ -257,67 +256,16 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
       await uploadBytes(storageRef, audioBlob);
       audioUrl = await getDownloadURL(storageRef);
 
-      // 2. Transcription logic via Gemini File API
-      let transcriptText = "No info generated.";
-      let transcriptData = null;
+      let transcriptText = 'No transcript generated.';
+      let transcriptData: any[] = [];
       try {
-        const apiKey = getGeminiApiKey();
-        if (apiKey) {
-          const fileUri = await uploadFileToGemini(audioBlob, apiKey);
-          const genAI = new GoogleGenAI({ apiKey });
-
-          const validModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-          let success = false;
-          let rawText = "{}";
-
-          for (const modelName of validModels) {
-            try {
-              const result = await genAI.models.generateContent({
-                model: modelName,
-                config: {
-                  responseMimeType: "application/json",
-                },
-                contents: [
-                  { text: "Transcribe and translate this audio recording into English. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text' (the word or short phrase translated to English), 'startTime' (in seconds as a float), and 'endTime' (in seconds as a float). Provide ONLY the raw JSON string." },
-                  { fileData: { mimeType: audioBlob.type || "audio/webm", fileUri } }
-                ]
-              });
-
-              rawText = result.text || '{}';
-              success = true;
-              break;
-            } catch (modelErr: any) {
-              console.warn(`Model ${modelName} failed, trying next...`, modelErr);
-              if (modelErr?.status === 429) {
-                // Wait briefly on rate limit before trying next model
-                await new Promise(resolve => setTimeout(resolve, 2000));
-              }
-            }
-          }
-
-          if (!success) {
-            console.warn("Transcription models exhausted.");
-            alert(GEMINI_FALLBACK_MESSAGE);
-          }
-
-          try {
-            const parsed = extractJsonFromText(rawText);
-            if (parsed) {
-              transcriptText = String(parsed.fullText || "No transcript generated.");
-              transcriptData = parsed.segments || [];
-            } else {
-              transcriptText = String(rawText || "No transcript generated.");
-            }
-          } catch (e) {
-            console.error("JSON Parse Error on Transcript:", e);
-            transcriptText = String(rawText || "No transcript generated."); // Fallback
-          }
-        }
+        const groqResult = await transcribeWithGroq(audioBlob);
+        transcriptText = groqResult.fullText || 'No transcript generated.';
+        transcriptData = groqResult.segments || [];
       } catch (e: any) {
-        console.warn("Transcription failed", e);
-        if (e?.status === 429 || e?.message?.toLowerCase().includes('quota')) {
-          alert(GEMINI_FALLBACK_MESSAGE);
-        }
+        console.warn('Lead call transcription failed', e);
+        transcriptText = 'Transcription is temporarily unavailable. The call recording is saved and ready for review.';
+        transcriptData = [];
       }
 
       await setDoc(doc(db, 'recordings', recordId), {
@@ -328,7 +276,8 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
         createdAt: Timestamp.now(),
         authorUid: user?.uid || '',
         companyId,
-        leadId
+        leadId,
+        fileType: 'audio'
       });
       setSuccess("Call recorded safely!");
       setTimeout(() => setSuccess(''), 4000);

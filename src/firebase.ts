@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
@@ -15,10 +15,17 @@ export const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const isLocalDev =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-// Using the specific named database the user created, with modern persistence
+// Firestore persistent IndexedDB cache can become unstable in local multi-tab dev.
+// Use memory cache on localhost to avoid internal assertion loops, and keep
+// persistent cache for deployed environments.
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}),
+  localCache: isLocalDev
+    ? memoryLocalCache()
+    : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   experimentalForceLongPolling: true
 }, 'handydash-firestore');
 

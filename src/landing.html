@@ -5,13 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>handycrm.ai | Multi-Tenant AI Sales CRM</title>
+    <meta name="description"
+        content="Handycrm.ai is a next-generation multi-tenant AI Sales CRM with meeting transcription, lead scoring, team workflows, secure organization isolation, and real-time sales intelligence.">
+    <meta name="keywords"
+        content="AI Sales CRM, Multi-Tenant CRM, Sales Automation, Lead Scoring AI, Meeting Transcription, SaaS CRM, Enterprise CRM, HandyCRM, AI Voice Analysis, Sales Intelligence">
+    <meta name="author" content="HandyCRM Team">
+
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://handycrm.ai/">
+    <meta property="og:title" content="handycrm.ai | Multi-Tenant AI Sales CRM">
+    <meta property="og:description"
+        content="Empower your sales organization with AI that listens, analyzes, scores, and automates customer workflows.">
+    <meta property="og:image" content="logo.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://handycrm.ai/">
+    <meta property="twitter:title" content="handycrm.ai | Multi-Tenant AI Sales CRM">
+    <meta property="twitter:description"
+        content="A complete AI CRM for multi-company teams, recordings, reports, calendars, analytics, and workflow automation.">
+    <meta property="twitter:image" content="logo.png">
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-
     <script src="https://cdn.tailwindcss.com"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
@@ -25,20 +45,15 @@
                     animation: {
                         'float': 'float 5s ease-in-out infinite',
                         'slow-pulse': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'shine': 'shine 8s linear infinite',
                         'fade-up': 'fadeUp 0.7s ease-out forwards',
                     },
                     keyframes: {
                         float: {
                             '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-12px)' },
-                        },
-                        shine: {
-                            '0%': { backgroundPosition: '200% 0' },
-                            '100%': { backgroundPosition: '-200% 0' },
+                            '50%': { transform: 'translateY(-10px)' },
                         },
                         fadeUp: {
-                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '0%': { opacity: '0', transform: 'translateY(22px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
                         }
                     }
@@ -49,44 +64,81 @@
 
     <style>
         :root {
-            --bg: #030014;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --glass-bg: rgba(15, 23, 42, 0.55);
-            --border: rgba(255, 255, 255, 0.06);
-            --card-hover: rgba(129, 140, 248, 0.5);
+            --crm-bg: #080910;
+            --crm-surface: rgba(18, 20, 30, 0.78);
+            --crm-surface-strong: rgba(18, 20, 30, 0.94);
+            --crm-card-bg: rgba(20, 22, 32, 0.74);
+            --crm-card-border: rgba(255, 255, 255, 0.08);
+            --crm-card-shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.55);
+            --crm-sidebar-bg: rgba(12, 13, 20, 0.96);
+            --crm-text: #f1f5f9;
+            --crm-text-muted: #98a2b3;
+            --crm-border: rgba(255, 255, 255, 0.08);
+            --crm-glass-bg: rgba(20, 22, 32, 0.82);
+            --crm-hover-bg: rgba(255, 255, 255, 0.07);
+            --crm-control-bg: rgba(255, 255, 255, 0.06);
+            --crm-control-hover-bg: rgba(255, 255, 255, 0.11);
+            --crm-overlay-bg: rgba(8, 9, 16, 0.72);
+            --crm-glow-opacity: 0.11;
+            --crm-input-bg: rgba(255, 255, 255, 0.045);
+            --color-primary: #6366f1;
+            --color-primary-dark: #4f46e5;
+            --color-secondary: #d946ef;
+            --color-accent: #a5b4fc;
+            color-scheme: dark;
         }
 
-        [data-theme='light'] {
-            --bg: #f8fafc;
-            --text: #0f172a;
-            --text-muted: #64748b;
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --border: rgba(0, 0, 0, 0.08);
-            --card-hover: rgba(99, 102, 241, 0.3);
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
+            margin: 0;
+            background:
+                radial-gradient(circle at top left, rgba(99, 102, 241, 0.11), transparent 34rem),
+                radial-gradient(circle at bottom right, rgba(6, 182, 212, 0.08), transparent 30rem),
+                var(--crm-bg);
+            color: var(--crm-text);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-            transition: background-color 0.3s, color 0.3s;
         }
 
-        .glass-modern {
-            background: var(--glass-bg);
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .glass-card {
+            background: var(--crm-card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--crm-card-border);
+            box-shadow: var(--crm-card-shadow);
+        }
+
+        .glass-nav {
+            background: var(--crm-glass-bg);
             backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 2rem;
+            border: 1px solid var(--crm-border);
         }
 
-        .text-theme {
-            color: var(--text);
+        .section-shell {
+            position: relative;
+            z-index: 2;
         }
 
-        .text-theme-muted {
-            color: var(--text-muted);
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal-on-scroll.revealed {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .text-gradient-flow {
@@ -96,6 +148,58 @@
             background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: gradientShift 6s linear infinite;
+        }
+
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(115deg, rgba(255, 255, 255, 0) 10%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 90%);
+            transform: rotate(25deg);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+
+        .btn-primary:hover::after {
+            opacity: 1;
+            transform: rotate(25deg) translate(10%, 10%);
+        }
+
+        .hover-lift {
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-6px);
+            border-color: rgba(99, 102, 241, 0.32);
+            box-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.25);
+        }
+
+        .hero-preview::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(217, 70, 239, 0.25), rgba(255, 255, 255, 0.06));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .mobile-menu-open {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateY(0) !important;
         }
 
         @keyframes gradientShift {
@@ -112,900 +216,827 @@
             }
         }
 
-        .noise-bg::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1), transform 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-        }
-
-        .reveal-on-scroll.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .hover-lift {
-            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-6px) scale(1.01);
-            border-color: var(--card-hover);
-            box-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.25);
-        }
-
-        .btn-shine {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-shine::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -60%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(115deg, rgba(255, 255, 255, 0) 10%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 90%);
-            transform: rotate(25deg);
-            transition: all 0.5s;
-            opacity: 0;
-        }
-
-        .btn-shine:hover::after {
-            opacity: 1;
-            transform: rotate(25deg) translate(10%, 10%);
-        }
-
-        .keyword-highlight {
-            color: #a5b4fc;
-            font-weight: 600;
-        }
-
         ::-webkit-scrollbar {
-            width: 5px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg);
+            background: var(--crm-bg);
         }
 
         ::-webkit-scrollbar-thumb {
             background: #4f46e5;
-            border-radius: 20px;
+            border-radius: 999px;
         }
     </style>
 </head>
 
-<body class="noise-bg antialiased">
-
-    <div class="fixed inset-0 pointer-events-none -z-5 overflow-hidden">
-        <div
-            class="absolute top-[-30%] left-[-10%] w-[80%] h-[80%] bg-indigo-600/15 rounded-full blur-[130px] animate-float">
-        </div>
+<body class="antialiased">
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute top-[-30%] left-[-10%] w-[80%] h-[80%] bg-indigo-600/15 rounded-full blur-[130px] animate-float"></div>
         <div class="absolute bottom-[-20%] right-[-15%] w-[70%] h-[70%] bg-fuchsia-600/10 rounded-full blur-[120px] animate-float"
             style="animation-delay: -2s;"></div>
+        <div class="absolute top-[25%] right-[15%] w-[28rem] h-[28rem] bg-cyan-500/10 rounded-full blur-[120px]"></div>
     </div>
 
-    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-400 px-5 pt-5">
-        <div
-            class="max-w-6xl mx-auto glass-modern px-6 py-3 flex justify-between items-center shadow-2xl shadow-black/20 transition-all duration-400 border border-white/5">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
-                    <i data-lucide="building2" class="w-5 h-5 text-white"></i>
+    <nav id="navbar" class="fixed top-0 w-full z-50 px-4 pt-4 md:px-6">
+        <div class="max-w-6xl mx-auto glass-nav rounded-[1.7rem] px-4 py-3 md:px-6 shadow-2xl shadow-black/20">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
+                        <img src="logo-icon.png" alt="HandyCRM Logo" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <div class="text-xl font-display font-bold tracking-tight text-[var(--crm-text)]">handycrm<span
+                                class="text-indigo-400">.ai</span></div>
+                        <div class="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--crm-text-muted)]">AI sales
+                            operating layer</div>
+                    </div>
                 </div>
-                <div>
-                    <span class="text-xl font-display font-bold tracking-tight text-theme">handycrm<span
-                            class="text-indigo-400">.ai</span></span>
+
+                <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
+                    <a href="#features" class="hover:text-white transition">Features</a>
+                    <a href="#multi-tenant" class="hover:text-white transition">Multi-Tenant</a>
+                    <a href="#pricing" class="hover:text-white transition">Pricing</a>
+                    <a href="#contact" class="hover:text-white transition">Contact</a>
                 </div>
-            </div>
 
-            <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
-                <a href="#features" class="hover:text-white transition">Features</a>
-                <a href="#multi-tenant" class="hover:text-white transition">Multi-Tenant</a>
-                <a href="#pricing" class="hover:text-white transition">Pricing</a>
-                <a href="#contact" class="hover:text-white transition">Contact</a>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <!-- <button id="theme-toggle" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all active:scale-95 shadow-lg group">
-                    <i data-lucide="sun" class="w-5 h-5 group-[[data-theme='light']]:hidden"></i>
-                    <i data-lucide="moon" class="w-5 h-5 hidden group-[[data-theme='light']]:block"></i>
-                </button> -->
-                <a href="https://handydashcrmai.vercel.app/register-company"
-                    class="px-5 py-2 rounded-xl bg-white/10 text-sm font-bold text-white border border-white/10 hover:bg-white/20 transition-all duration-300 shadow-lg shadow-indigo-500/10">
-                    Register
-                </a>
-                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-300 hover:text-white transition">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
+                <div class="flex items-center gap-3">
+                    <a href="https://handydashcrmai.vercel.app/register-company"
+                        class="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-indigo-600 text-sm font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20">
+                        Register
+                    </a>
+                    <button id="mobile-menu-btn"
+                        class="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[var(--crm-text)]">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
         <div id="mobile-menu"
-            class="fixed inset-x-0 top-[72px] mx-5 glass-modern p-6 flex flex-col gap-6 opacity-0 invisible -translate-y-4 transition-all duration-300 z-40 border border-white/10">
-            <a href="#features" class="mobile-link text-base font-bold text-theme">Features</a>
-            <a href="#multi-tenant" class="mobile-link text-base font-bold text-theme">Multi-Tenant</a>
-            <a href="#pricing" class="mobile-link text-base font-bold text-theme">Pricing</a>
-            <a href="#contact" class="mobile-link text-base font-bold text-theme">Contact</a>
-            <hr class="border-white/10">
-            <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-theme">Theme Mode</span>
-                <button id="theme-toggle-mobile"
-                    class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-theme hover:bg-white/10 transition-all active:scale-95 shadow-lg group">
-                    <i data-lucide="sun" class="w-5 h-5 group-[[data-theme='light']]:hidden"></i>
-                    <i data-lucide="moon" class="w-5 h-5 hidden group-[[data-theme='light']]:block"></i>
-                </button>
+            class="fixed inset-x-0 top-[82px] mx-4 glass-nav rounded-[1.5rem] p-5 opacity-0 invisible -translate-y-4 transition-all duration-300 z-40 md:hidden">
+            <div class="flex flex-col gap-5 text-sm font-bold text-[var(--crm-text)]">
+                <a href="#features" class="mobile-link">Features</a>
+                <a href="#multi-tenant" class="mobile-link">Multi-Tenant</a>
+                <a href="#pricing" class="mobile-link">Pricing</a>
+                <a href="#contact" class="mobile-link">Contact</a>
+                <a href="https://handydashcrmai.vercel.app/register-company"
+                    class="text-center py-3 rounded-xl bg-indigo-600 text-white font-bold">Register Now</a>
             </div>
-            <a href="https://handydashcrmai.vercel.app/register-company"
-                class="text-center py-3 rounded-xl bg-indigo-600 text-white font-bold">Register Now</a>
         </div>
     </nav>
 
-    <section class="relative pt-32 md:pt-44 pb-20 px-6 overflow-hidden">
-        <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-            <div class="text-center lg:text-left space-y-7">
-                <div
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider mx-auto lg:mx-0 backdrop-blur-sm">
-                    <span class="relative flex h-2 w-2">
+    <main class="section-shell">
+        <section class="px-4 pt-28 pb-18 md:px-6 md:pt-40 md:pb-24">
+            <div class="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
+                <div class="text-center lg:text-left space-y-7 reveal-on-scroll">
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider mx-auto lg:mx-0 backdrop-blur-sm">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        Multi-tenant AI CRM · v3.0
+                    </div>
+
+                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-display font-black tracking-tight leading-[1.04]">
+                        AI that <span
+                            class="text-white underline decoration-indigo-500/50 decoration-4 underline-offset-8">listens</span>,<br>
+                        <span class="text-gradient-flow">multi-tenant</span> by design.
+                    </h1>
+
+                    <p class="text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed mx-auto lg:mx-0">
+                        One platform for your entire <span class="text-slate-200 font-semibold italic">sales
+                            organization</span>. Company-wide workspaces, <span
+                            class="text-slate-200 font-semibold">role-based access</span>, and a powerful AI that
+                        <span class="text-indigo-300 font-semibold">transcribes</span>,
+                        <span class="text-indigo-300 font-semibold">analyzes</span>,
+                        <span class="text-indigo-300 font-semibold">scores</span>, and
+                        <span class="text-indigo-300 font-semibold">automates</span> every customer interaction.
+                    </p>
+
+                    <div
+                        class="flex flex-wrap items-center gap-3 justify-center lg:justify-start text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <span>Built for:</span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 shadow-inner">B2B
+                            SaaS</span>
                         <span
-                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                    </span>
-                    Multi-tenant AI CRM · v3.0
-                </div>
-
-                <h1 class="text-5xl md:text-7xl lg:text-8xl font-display font-black tracking-tight leading-[1.1]">
-                    AI that <span
-                        class="text-white underline decoration-indigo-500/50 decoration-4 underline-offset-8">listens</span>,<br>
-                    <span class="text-gradient-flow">multi‑tenant</span> by design.
-                </h1>
-
-                <p class="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed mx-auto lg:mx-0">
-                    One platform for your entire <span class="text-slate-200 font-semibold italic">sales
-                        organization</span>.
-                    Company‑wide workspaces, <span class="text-slate-200 font-semibold">role‑based access</span>, and a
-                    powerful AI that <span class="keyword-highlight">transcribes</span>, <span
-                        class="keyword-highlight">analyzes</span>,
-                    and <span class="keyword-highlight">automates</span> every customer interaction.
-                </p>
-
-                <div
-                    class="flex flex-wrap items-center gap-4 justify-center lg:justify-start text-xs font-bold text-slate-500 uppercase tracking-widest mt-4">
-                    <span>Built for:</span>
-                    <span
-                        class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 shadow-inner">B2B
-                        SaaS</span>
-                    <span
-                        class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 shadow-inner">Agencies</span>
-                    <span
-                        class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 shadow-inner">Enterprises</span>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
-                    <a href="https://handydashcrmai.vercel.app/register-company"
-                        class="btn-shine px-8 py-4 rounded-xl bg-indigo-600 text-white text-sm font-bold uppercase tracking-wide shadow-xl hover:bg-indigo-500 transition-all duration-200 flex items-center gap-2 justify-center group">
-                        <i data-lucide="zap" class="w-4 h-4 group-hover:rotate-12 transition"></i>
-                        Start free company trial
-                    </a>
-
-                </div>
-            </div>
-
-            <div class="relative animate-float" style="animation-duration: 6s;">
-                <div class="absolute -inset-8 bg-indigo-500/20 blur-[80px] rounded-full"></div>
-                <div
-                    class="relative rounded-3xl border border-white/10 bg-slate-900/50 p-3 backdrop-blur-2xl shadow-2xl">
-                    <div
-                        class="aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col justify-center p-6">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center"><i
-                                    data-lucide="users" class="w-4 h-4 text-indigo-300"></i></div>
-                            <span class="text-xs font-mono text-indigo-300">Acme Inc. · <span
-                                    class="text-white">Enterprise workspace</span></span>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="flex justify-between text-sm"><span>🎙️ Meeting: Q1 review</span><span
-                                    class="text-green-400 font-bold">AI processed</span></div>
-                            <div class="h-1 bg-white/10 rounded-full">
-                                <div class="w-3/4 h-full bg-indigo-500 rounded-full"></div>
-                            </div>
-                            <div class="flex text-xs text-slate-400 gap-4"><span>📝 Transcript ready</span><span>🧠
-                                    Summary + follow-ups</span></div>
-                        </div>
+                            class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 shadow-inner">Agencies</span>
+                        <span
+                            class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 shadow-inner">Enterprises</span>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <section id="features" class="py-24 px-6 relative bg-slate-950/20">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16 space-y-4 reveal-on-scroll">
-                <span class="text-indigo-400 text-xs uppercase tracking-[0.3em] font-bold">The Intelligence layer</span>
-                <h2 class="text-4xl md:text-5xl font-display font-black text-white">Full-stack <span
-                        class="text-indigo-400">Sales Intelligence</span></h2>
-                <p class="text-slate-400 max-w-2xl mx-auto">Everything you need to scale your sales organization, from
-                    AI voice processing to multi-tenant security.</p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Card 1: AI Meeting Analysis -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="mic" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3 flex items-center gap-2">
-                        AI <span class="text-indigo-400">Voice Analysis</span>
-                    </h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Gemini 2.0 Flash transcribes meetings with 99% accuracy, extracting action items and mapping
-                        insights directly to your CRM fields.
-                    </p>
-                </div>
-
-                <!-- Card 2: Neural Lead Scoring -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-fuchsia-500/20 flex items-center justify-center text-fuchsia-400 mb-6 group-hover:bg-fuchsia-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="brain-circuit" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Neural <span class="text-fuchsia-400">Scoring</span>
-                    </h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Predict conversion probability using behavioral data. Our neural engine identifies patterns
-                        that signal a lead's readiness to close.
-                    </p>
-                </div>
-
-                <!-- Card 3: Multi-Tenant Org -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="layers" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Multi-Tenant <span
-                            class="text-emerald-400">Workspaces</span></h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Perfect for agencies or enterprises. Switch between company-wide workspaces with complete data
-                        isolation and secure RBAC per tenant.
-                    </p>
-                </div>
-
-                <!-- Card 4: PWA / Mobile Native -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 mb-6 group-hover:bg-amber-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="smartphone" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">PWA <span class="text-amber-400">Experience</span>
-                    </h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Install on any device as a native app. Full offline support, push notifications, and biometric
-                        security built for field sales teams.
-                    </p>
-                </div>
-
-                <!-- Card 5: Custom Data Schema -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="database" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Custom <span class="text-blue-400">Schemas</span>
-                    </h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Don't adapt your business to a CRM. Adapt the CRM to your business. Create custom fields,
-                        tags, and workflows for every tenant.
-                    </p>
-                </div>
-
-                <!-- Card 6: Calendar & Sync -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400 mb-6 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="calendar" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Deep <span class="text-rose-400">Calendar Sync</span>
-                    </h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Automatic two-way sync with Google and Outlook. Receive real-time browser alerts and native
-                        push notifications for every event.
-                    </p>
-                </div>
-
-                <!-- Card 7: Smart Automations -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-6 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="zap" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Smart <span class="text-purple-400">Workflows</span>
-                    </h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Automate the mundane. Trigger email follow-ups, lead rotations, and status updates based on AI
-                        insights and custom rule-sets.
-                    </p>
-                </div>
-
-                <!-- Card 8: Advanced RBAC -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 mb-6 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="shield-check" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Secure <span class="text-cyan-400">RBAC</span></h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Bank-grade security with granular permissions. Manage multi-level hierarchies, guest access,
-                        and secure data sharing with ease.
-                    </p>
-                </div>
-
-                <!-- Card 9: Visual Analytics -->
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-sm hover-lift group">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 mb-6 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300">
-                        <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-3">Pipeline <span
-                            class="text-orange-400">Intelligence</span></h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">
-                        Real-time dashboards for management. Visualize funnel health, team performance, and AI-predicted
-                        revenue and growth metrics.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- Trust & Testimonials Section -->
-    <!-- <section id="testimonials" class="py-24 px-6 relative bg-slate-900/20">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16 space-y-4 reveal-on-scroll">
-                <span class="text-indigo-400 text-xs uppercase tracking-[0.3em] font-bold">Trusted by Top Teams</span>
-                <h2 class="text-4xl md:text-5xl font-display font-black text-white">Don't just take our <span
-                        class="text-indigo-400">word for it</span></h2>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div
-                    class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-sm hover-lift">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div
-                            class="w-12 h-12 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-300">
-                            SJ</div>
-                        <div>
-                            <h4 class="text-white font-bold">Sarah Jenkins</h4>
-                            <span class="text-xs text-slate-400">VP of Sales, TechFlow</span>
-                        </div>
-                    </div>
-                    <p class="text-slate-300 italic">"handycrm.ai completely transformed how our agency handles leads.
-                        The AI transcription alone saves us 20 hours a week in manual entry."</p>
-                </div>
-                <div class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-sm hover-lift"
-                    style="transition-delay: 100ms;">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div
-                            class="w-12 h-12 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 flex items-center justify-center font-bold text-fuchsia-300">
-                            MR</div>
-                        <div>
-                            <h4 class="text-white font-bold">Michael Ross</h4>
-                            <span class="text-xs text-slate-400">Founder, ScaleB2B</span>
-                        </div>
-                    </div>
-                    <p class="text-slate-300 italic">"The multi-tenant architecture is perfect for our enterprise needs.
-                        We can isolate our workspaces securely while maintaining global oversight."</p>
-                </div>
-                <div class="reveal-on-scroll p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-sm hover-lift"
-                    style="transition-delay: 200ms;">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div
-                            class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center font-bold text-emerald-300">
-                            AL</div>
-                        <div>
-                            <h4 class="text-white font-bold">Anita Lee</h4>
-                            <span class="text-xs text-slate-400">Sales Director, CloudSync</span>
-                        </div>
-                    </div>
-                    <p class="text-slate-300 italic">"Finally, a CRM that does the heavy lifting. The AI lead scoring
-                        helps my team focus only on the deals that are ready to close."</p>
-                </div>
-            </div>
-        </div>
-    </section> -->
-
-    <!-- Multi-Tenant & Role Based Section (Actual System Implementation) -->
-    <section id="multi-tenant" class="py-24 px-6 bg-slate-950 relative overflow-hidden">
-        <div
-            class="absolute top-0 right-0 w-[600px] h-[600px] bg-fuchsia-600/5 rounded-full blur-[120px] pointer-events-none">
-        </div>
-        <div class="max-w-6xl mx-auto relative z-10">
-            <div class="text-center mb-16 reveal-on-scroll">
-                <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">System Architecture</span>
-                <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Organization <span
-                        class="text-fuchsia-400">Node</span> Isolation</h2>
-                <p class="text-slate-400 max-w-2xl mx-auto mt-4">Built on top of a highly secure Firebase foundation,
-                    Handycrm.ai ensures that every tenant operates in a completely siloed environment.</p>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-16 items-center">
-                <div class="space-y-10 reveal-on-scroll">
-                    <div class="group flex gap-6">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">
-                            <i data-lucide="server" class="w-7 h-7 text-indigo-400 group-hover:text-white"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-bold text-white mb-2">Isolated Data Silos</h3>
-                            <p class="text-slate-400 leading-relaxed text-sm">Every registration creates a unique
-                                <b>Organization ID</b>. Advanced Firestore rules ensure that data never leaks between
-                                tenants, providing enterprise-grade privacy.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="group flex gap-6">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-fuchsia-500 group-hover:text-white transition-all duration-300">
-                            <i data-lucide="users-2" class="w-7 h-7 text-fuchsia-400 group-hover:text-white"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-bold text-white mb-2">Hierarchical Roles</h3>
-                            <p class="text-slate-400 leading-relaxed text-sm">Manage your team with precision. Assign
-                                <b>Admin</b>, <b>Management</b>, or <b>Team Member</b> roles to control visibility and
-                                editing permissions across your workspace.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="group flex gap-6">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
-                            <i data-lucide="globe" class="w-7 h-7 text-emerald-400 group-hover:text-white"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-bold text-white mb-2">Slug-Based Networking</h3>
-                            <p class="text-slate-400 leading-relaxed text-sm">Create human-readable organization nodes
-                                instantly. Use your custom slug to anchor your team's identity and collaborative
-                                workspace.</p>
-                        </div>
+                    <div class="flex flex-col sm:flex-row gap-4 pt-3 justify-center lg:justify-start">
+                        <a href="https://handydashcrmai.vercel.app/register-company"
+                            class="btn-primary inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-indigo-600 text-white text-sm font-bold uppercase tracking-wide shadow-xl hover:bg-indigo-500 transition-all duration-200">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            Start free company trial
+                        </a>
+                        <a href="#features"
+                            class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] text-sm font-bold text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] transition-all">
+                            <i data-lucide="layers-3" class="w-4 h-4"></i>
+                            Explore Features
+                        </a>
                     </div>
                 </div>
 
-                <div class="reveal-on-scroll relative">
-                    <!-- Dashboard Mockup Element -->
-                    <div class="rounded-3xl bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 p-px shadow-2xl">
-                        <div
-                            class="rounded-[1.4rem] bg-slate-900/90 backdrop-blur-3xl p-5 md:p-8 border border-white/5">
-                            <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                <div class="relative reveal-on-scroll">
+                    <div class="absolute -inset-8 bg-indigo-500/20 blur-[80px] rounded-full"></div>
+                    <div class="hero-preview relative glass-card rounded-[2rem] p-4 md:p-5 overflow-hidden">
+                        <div class="rounded-[1.7rem] bg-[var(--crm-sidebar-bg)] p-4 md:p-5 border border-white/5">
+                            <div class="flex items-center justify-between gap-4 mb-5">
                                 <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center p-2">
-                                        <img src="/logo.png" class="w-full h-full object-contain" alt="Logo">
+                                    <div class="w-10 h-10 rounded-2xl bg-indigo-500/15 flex items-center justify-center border border-indigo-500/20">
+                                        <i data-lucide="building-2" class="w-5 h-5 text-indigo-300"></i>
                                     </div>
                                     <div>
-                                        <div
-                                            class="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1">
-                                            Organization Node</div>
-                                        <div class="text-sm font-bold text-white">Handy CRM AI</div>
-                                    </div>
-                                </div>
-                                <div
-                                    class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-tighter shadow-sm">
-                                    Secure Connection
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div
-                                    class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all cursor-default">
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-inner">
-                                            <i data-lucide="shield" class="w-4 h-4"></i>
+                                        <div class="text-xs font-black uppercase tracking-[0.2em] text-indigo-300">Acme Inc.
                                         </div>
-                                        <span class="text-xs font-bold text-slate-200">System Admin</span>
+                                        <div class="text-sm font-semibold text-slate-300">Enterprise Workspace</div>
                                     </div>
-                                    <span class="text-[10px] font-mono text-slate-500 italic">uid: uR8...9kL</span>
                                 </div>
-                                <div
-                                    class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all cursor-default">
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-8 h-8 rounded-lg bg-fuchsia-500/20 flex items-center justify-center text-fuchsia-400 shadow-inner">
-                                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                <div class="rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-2 text-[10px] font-black uppercase tracking-widest">
+                                    Live Sync
+                                </div>
+                            </div>
+
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div class="rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-300">
+                                            <i data-lucide="mic" class="w-5 h-5"></i>
                                         </div>
-                                        <span class="text-xs font-bold text-slate-200">Regional Manager</span>
-                                    </div>
-                                    <div
-                                        class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
-                                        <div class="w-1 h-1 rounded-full bg-green-500"></div>
-                                        <span class="text-[8px] font-black text-slate-400">Active</span>
-                                    </div>
-                                </div>
-                                <div
-                                    class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all cursor-default">
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 shadow-inner">
-                                            <i data-lucide="briefcase" class="w-4 h-4"></i>
+                                        <div>
+                                            <div class="text-sm font-black text-white">Q1 Review Call</div>
+                                            <div class="text-[11px] uppercase tracking-widest text-slate-500">AI processed
+                                            </div>
                                         </div>
-                                        <span class="text-xs font-bold text-slate-200">Sales Representative</span>
                                     </div>
-                                    <span
-                                        class="text-[9px] font-bold text-slate-500 uppercase tracking-widest underline decoration-white/10">Team
-                                        Member</span>
+                                    <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                                        <div class="h-full w-4/5 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500"></div>
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-widest">
+                                        <span class="px-2 py-1 rounded-full bg-white/5 text-slate-300">Transcript</span>
+                                        <span class="px-2 py-1 rounded-full bg-white/5 text-slate-300">Summary</span>
+                                        <span class="px-2 py-1 rounded-full bg-white/5 text-slate-300">Tasks</span>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">
+                                                Lead Score</div>
+                                            <div class="text-4xl font-black text-[var(--crm-text)] leading-none mt-2">92%
+                                            </div>
+                                        </div>
+                                        <div class="w-12 h-12 rounded-2xl bg-fuchsia-500/15 flex items-center justify-center text-fuchsia-300">
+                                            <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 text-sm text-slate-400 leading-relaxed">
+                                        Qualified opportunity. Follow-up scheduled. Pricing shared.
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="mt-8 flex items-center justify-between pt-6 border-t border-white/5">
-                                <div class="flex flex-col gap-1">
-                                    <div class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Network
-                                        Status</div>
-                                    <div class="text-[10px] font-mono text-indigo-400">Node Sync Complete [200 OK]</div>
+                            <div class="mt-4 rounded-[1.5rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4">
+                                <div class="flex items-center justify-between gap-3 mb-4">
+                                    <div>
+                                        <div class="text-[10px] uppercase tracking-[0.2em] text-cyan-300 font-black">Today’s
+                                            flow</div>
+                                        <div class="text-lg font-black text-white">Operations Snapshot</div>
+                                    </div>
+                                    <i data-lucide="layout-dashboard" class="w-5 h-5 text-indigo-300"></i>
                                 </div>
-                                <div class="flex -space-x-2">
-                                    <div
-                                        class="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-[8px] text-white">
-                                        JD</div>
-                                    <div
-                                        class="w-6 h-6 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-[8px] text-white">
-                                        AS</div>
-                                    <div
-                                        class="w-6 h-6 rounded-full bg-indigo-600 border-2 border-slate-900 flex items-center justify-center text-[8px] text-white">
-                                        +3</div>
+                                <div class="grid grid-cols-3 gap-3 text-center">
+                                    <div class="rounded-2xl bg-white/5 p-3">
+                                        <div class="text-2xl font-black text-white">18</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Leads
+                                        </div>
+                                    </div>
+                                    <div class="rounded-2xl bg-white/5 p-3">
+                                        <div class="text-2xl font-black text-white">6</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Meetings
+                                        </div>
+                                    </div>
+                                    <div class="rounded-2xl bg-white/5 p-3">
+                                        <div class="text-2xl font-black text-white">11</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Reports
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Ambient Glow -->
-                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-[80px]"></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Additional Tech & Integration -->
-    <section class="py-20 px-6">
-        <div class="max-w-6xl mx-auto text-center reveal-on-scroll">
-            <div class="flex flex-wrap justify-center gap-4 md:gap-8 items-center text-slate-500 text-sm font-mono">
-                <span class="flex items-center gap-2"><i data-lucide="database" class="w-4 h-4"></i> Firebase /
-                    Firestore</span>
-                <span class="flex items-center gap-2"><i data-lucide="brain" class="w-4 h-4"></i> Gemini AI 2.0
-                    Flash</span>
-                <span class="flex items-center gap-2"><i data-lucide="cloud" class="w-4 h-4"></i> Real‑time sync</span>
-                <span class="flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i> Bank‑grade
-                    encryption</span>
-                <span class="flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4"></i> Multi‑tenant
-                    isolation</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-24 px-6 relative bg-slate-900/40 overflow-hidden">
-        <div
-            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none">
-        </div>
-        <div class="max-w-6xl mx-auto relative z-10">
-            <div class="text-center mb-16 reveal-on-scroll">
-                <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">The Handycrm Edge</span>
-                <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Why wait for <span
-                        class="text-indigo-400">Legacy Systems</span>?</h2>
-                <p class="text-slate-400 mt-4 max-w-2xl mx-auto">Traditional CRMs require months of setup and endless
-                    manual entry.
-                    HandyCRM works at the speed of your voice.</p>
-            </div>
-
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
-                <div class="space-y-4 reveal-on-scroll">
-                    <div
-                        class="p-6 rounded-3xl bg-white/[0.03] border border-white/5 flex gap-5 items-start hover:border-indigo-500/30 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="clock" class="w-6 h-6 text-indigo-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-xl font-bold text-white mb-1">Instant Deployment</h4>
-                            <p class="text-sm text-slate-400">Launch your company workspace in under 3 minutes. No IT
-                                degree required, just your domain name.</p>
-                        </div>
-                    </div>
-                    <div
-                        class="p-6 rounded-3xl bg-indigo-600/5 border border-indigo-500/20 flex gap-5 items-start hover:border-indigo-500/40 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="mic-2" class="w-6 h-6 text-indigo-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-xl font-bold text-white mb-1">Zero-Manual Entry</h4>
-                            <p class="text-sm text-slate-400">Stop wasting time filling forms. Our AI listens to your
-                                meetings and populates leads automatically.</p>
-                        </div>
-                    </div>
-                    <div
-                        class="p-6 rounded-3xl bg-white/[0.03] border border-white/5 flex gap-5 items-start hover:border-indigo-500/30 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="shield-check" class="w-6 h-6 text-indigo-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-xl font-bold text-white mb-1">Modern Multi-Tenancy</h4>
-                            <p class="text-sm text-slate-400">Built-in isolation for every tenant. Perfect for scaling
-                                from a single team to a global agency.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="reveal-on-scroll lg:pl-12">
-                    <div class="glass-modern p-1 overflow-hidden border-indigo-500/20 shadow-2xl shadow-indigo-500/10">
-                        <div class="bg-slate-900/80 rounded-[1.8rem] overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-sm min-w-[500px]">
-                                    <thead class="bg-white/5 text-slate-300">
-                                        <tr>
-                                            <th class="px-6 py-5 font-bold uppercase tracking-wider text-[10px]">
-                                                Comparison
-                                            </th>
-                                            <th class="px-6 py-5 font-bold text-indigo-400 flex items-center gap-2">
-                                                <div class="w-2 h-2 rounded-full bg-indigo-400"></div> Handycrm
-                                            </th>
-                                            <th class="px-6 py-5 font-bold text-slate-500">Traditional</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="text-slate-400 divide-y divide-white/5">
-                                        <tr>
-                                            <td class="px-6 py-4 font-medium text-slate-200">AI Transcription</td>
-                                            <td class="px-6 py-4"><i data-lucide="check-circle-2"
-                                                    class="w-5 h-5 text-emerald-400"></i></td>
-                                            <td class="px-6 py-4"><i data-lucide="minus"
-                                                    class="w-5 h-5 text-slate-700"></i>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-6 py-4 font-medium text-slate-200">Multi-tenant Isolation</td>
-                                            <td class="px-6 py-4"><i data-lucide="check-circle-2"
-                                                    class="w-5 h-5 text-emerald-400"></i></td>
-                                            <td class="px-6 py-4"><i data-lucide="help-circle"
-                                                    class="w-5 h-5 text-amber-500/40"></i></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-6 py-4 font-medium text-slate-200">Mobile PWA App</td>
-                                            <td class="px-6 py-4"><i data-lucide="check-circle-2"
-                                                    class="w-5 h-5 text-emerald-400"></i></td>
-                                            <td class="px-6 py-4"><i data-lucide="x-circle"
-                                                    class="w-5 h-5 text-rose-500/30"></i></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-6 py-4 font-medium text-slate-200">Implementation Time</td>
-                                            <td class="px-6 py-4 text-white font-bold">Minutes</td>
-                                            <td class="px-6 py-4">Months</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-6 py-4 font-medium text-slate-200">Cost per User</td>
-                                            <td class="px-6 py-4 text-emerald-400 font-bold">Low/Fixed</td>
-                                            <td class="px-6 py-4">Scaling $$$</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="pricing" class="py-28 px-6 relative bg-slate-950/20">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-20 reveal-on-scroll">
-                <span class="text-indigo-400 text-xs uppercase tracking-[0.3em] font-bold">Transparent Pricing</span>
-                <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Simple, <span
-                        class="text-indigo-400">Human</span> Pricing</h2>
-                <p class="text-slate-400 mt-4 max-w-lg mx-auto">Start with a <span class="keyword-highlight">14‑day free
-                        trial</span>.
-                    Switch plans as your team grows.</p>
-
-                <!-- Plan Toggle (UI Only) -->
-                <div class="mt-8 inline-flex items-center p-1 rounded-2xl bg-white/5 border border-white/10">
-                    <button
-                        class="px-6 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg">Monthly</button>
-                    <button
-                        class="px-6 py-2 rounded-xl text-slate-400 text-sm font-bold hover:text-white transition">Yearly
-                        <span class="text-[10px] text-emerald-400 ml-1">Save 20%</span></button>
+        <section class="px-4 pb-8 md:px-6">
+            <div class="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-[1.6rem] p-5 reveal-on-scroll">
+                    <div class="text-3xl font-black text-[var(--crm-text)]">AI</div>
+                    <div class="mt-2 text-sm text-[var(--crm-text-muted)]">Transcription, scoring, summaries, and insights
+                    </div>
+                </div>
+                <div class="glass-card rounded-[1.6rem] p-5 reveal-on-scroll">
+                    <div class="text-3xl font-black text-[var(--crm-text)]">PWA</div>
+                    <div class="mt-2 text-sm text-[var(--crm-text-muted)]">Mobile-ready workflows for field and desk teams
+                    </div>
+                </div>
+                <div class="glass-card rounded-[1.6rem] p-5 reveal-on-scroll">
+                    <div class="text-3xl font-black text-[var(--crm-text)]">RBAC</div>
+                    <div class="mt-2 text-sm text-[var(--crm-text-muted)]">Role-based workspace visibility and control</div>
+                </div>
+                <div class="glass-card rounded-[1.6rem] p-5 reveal-on-scroll">
+                    <div class="text-3xl font-black text-[var(--crm-text)]">Live</div>
+                    <div class="mt-2 text-sm text-[var(--crm-text-muted)]">Realtime updates across leads, meetings, and
+                        reports</div>
                 </div>
             </div>
+        </section>
 
-            <div class="grid md:grid-cols-3 gap-8 items-stretch">
-                <!-- Trial Plan -->
-                <div
-                    class="reveal-on-scroll p-1 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-indigo-500/20 transition-all group flex flex-col">
-                    <div class="p-8 flex-1 flex flex-col">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 mb-8">
-                            <i data-lucide="flask" class="w-7 h-7"></i>
+        <section id="features" class="px-4 py-20 md:px-6 bg-slate-950/20">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-14 space-y-4 reveal-on-scroll">
+                    <span class="text-indigo-400 text-xs uppercase tracking-[0.3em] font-bold">The Intelligence layer</span>
+                    <h2 class="text-4xl md:text-5xl font-display font-black text-white">Nine core <span
+                            class="text-indigo-400">CRM features</span></h2>
+                    <p class="text-slate-400 max-w-3xl mx-auto">
+                        These are the main features inside handycrm.ai for sales teams, managers, and growing companies.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">
+                            <i data-lucide="mic" class="w-6 h-6"></i>
                         </div>
-                        <h3 class="text-2xl font-black text-white mb-2">Free Trial</h3>
-                        <p class="text-slate-400 font-medium text-sm mb-6">Test the waters with AI</p>
-                        <div class="mb-8">
-                            <span class="text-4xl font-black text-white">₹0</span>
-                            <span class="text-slate-500 ml-1">/14 days</span>
+                        <h3 class="text-2xl font-bold text-white mb-3">AI Meeting Transcription</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Record or upload calls and turn them into transcripts, summaries, and next steps inside the
+                            CRM.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-fuchsia-500/20 flex items-center justify-center text-fuchsia-400 mb-6">
+                            <i data-lucide="brain-circuit" class="w-6 h-6"></i>
                         </div>
-                        <ul class="space-y-4 mb-10 flex-1">
-                            <li class="flex items-center gap-3 text-slate-300 text-sm italic">
-                                <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> Up to 5 team members
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> 1 Company Workspace
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> AI Meeting Analysis (50
-                                mins)
-                            </li>
-                        </ul>
-                        <a href="https://handydashcrmai.vercel.app/register-company"
-                            class="w-full py-4 rounded-2xl border border-white/10 text-sm font-bold text-center text-white hover:bg-white/5 transition-all">Start
-                            Free Trial</a>
+                        <h3 class="text-2xl font-bold text-white mb-3">Lead Scoring & Health</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            See lead score, hot-warm-cold status, and which leads need attention first.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6">
+                            <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Executive Dashboard</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            See your main numbers, pipeline stages, recent leads, and team progress in one place.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 mb-6">
+                            <i data-lucide="users" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Lead Management Workflow</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Manage leads in list or kanban view, assign team members, update stages, and save notes on each
+                            lead.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 mb-6">
+                            <i data-lucide="audio-waveform" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Reports & Call Intelligence</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Keep call records, transcripts, and reports connected to the right lead activity.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400 mb-6">
+                            <i data-lucide="calendar-days" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Meeting Calendar & Reminders</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Schedule meetings, add notes, assign team members, and keep follow-ups organized in one calendar.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400 mb-6">
+                            <i data-lucide="scan-face" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Public Lead Capture</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Collect leads through your own capture page and send them straight into your pipeline.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-300 mb-6">
+                            <i data-lucide="sliders-horizontal" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Custom Fields & Pipelines</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Add custom fields, stages, lead types, and sources to match how your team works.
+                        </p>
+                    </article>
+
+                    <article class="reveal-on-scroll glass-card rounded-[2rem] p-7 hover-lift">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-300 mb-6">
+                            <i data-lucide="shield-check" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Team Roles & Management Activity</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Control access by role and track updates, notes, and activity across your team.
+                        </p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="multi-tenant" class="px-4 py-20 md:px-6">
+            <div class="max-w-6xl mx-auto grid lg:grid-cols-[0.92fr_1.08fr] gap-8 items-start">
+                <div class="reveal-on-scroll">
+                    <div class="glass-card rounded-[2.5rem] p-7 md:p-9 h-full">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                            <i data-lucide="layers-3" class="w-4 h-4"></i>
+                            Multi-Tenant Engine
+                        </div>
+                        <h2 class="mt-5 text-3xl md:text-4xl font-display font-black text-white">
+                            Organization isolation without workflow friction.
+                        </h2>
+                        <p class="mt-4 text-slate-400 leading-relaxed">
+                            handycrm.ai is made for multi-company use. Each workspace keeps its own leads, meetings,
+                            recordings, custom fields, users, and settings.
+                        </p>
+                        <div class="mt-7 space-y-4">
+                            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+                                <div class="text-sm font-black text-white">Separate company workspaces</div>
+                                <div class="mt-1 text-sm text-slate-400">Each company keeps its own data, reports, and
+                                    workflow.</div>
+                            </div>
+                            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+                                <div class="text-sm font-black text-white">Role-based access</div>
+                                <div class="mt-1 text-sm text-slate-400">Admins, managers, and team members only see what
+                                    they need.</div>
+                            </div>
+                            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+                                <div class="text-sm font-black text-white">Real-time sync</div>
+                                <div class="mt-1 text-sm text-slate-400">Changes update across leads, meetings, recordings,
+                                    and reports right away.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Business Plan -->
-                <div
-                    class="reveal-on-scroll p-1 rounded-[2.5rem] bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 shadow-2xl shadow-indigo-500/10 relative md:scale-105 z-10 flex flex-col">
-                    <div
-                        class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl">
-                        Most Popular</div>
-                    <div class="p-8 flex-1 flex flex-col bg-slate-950/40 backdrop-blur-xl rounded-[2.4rem]">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center text-white mb-8 shadow-lg shadow-indigo-500/50">
-                            <i data-lucide="rocket" class="w-7 h-7"></i>
+                <div class="grid sm:grid-cols-2 gap-5 reveal-on-scroll">
+                    <div class="glass-card rounded-[2rem] p-6">
+                        <div class="w-11 h-11 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-300 mb-5">
+                            <i data-lucide="building" class="w-5 h-5"></i>
                         </div>
-                        <h3 class="text-2xl font-black text-white mb-2">Business</h3>
-                        <p class="text-slate-200 font-medium text-sm mb-6">Perfect for growing startups</p>
-                        <div class="mb-8">
-                            <span class="text-5xl font-black text-white">₹499</span>
-                            <span class="text-slate-400 ml-1">/mo</span>
-                        </div>
-                        <ul class="space-y-4 mb-10 flex-1">
-                            <li class="flex items-center gap-3 text-slate-200 text-sm font-bold">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> Multi-tenant Org
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-200 text-sm">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> 1500 Mins AI
-                                Processing
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-200 text-sm">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> Neural Lead Scoring
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-200 text-sm">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> Custom Fields / PWA
-                            </li>
-                        </ul>
-                        <a href="https://handydashcrmai.vercel.app/register-company"
-                            class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-center hover:bg-indigo-500 hover:scale-[1.02] transition-all shadow-lg shadow-indigo-600/30">Get
-                            Started Now</a>
+                        <h3 class="text-xl font-black text-white">Register Company</h3>
+                        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+                            Onboard a company workspace and provision CRM access for the entire organization.
+                        </p>
                     </div>
-                </div>
-
-                <!-- Enterprise Plan -->
-                <div
-                    class="reveal-on-scroll p-1 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-fuchsia-500/20 transition-all group flex flex-col">
-                    <div class="p-8 flex-1 flex flex-col">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 mb-8">
-                            <i data-lucide="shield-check" class="w-7 h-7"></i>
+                    <div class="glass-card rounded-[2rem] p-6">
+                        <div class="w-11 h-11 rounded-xl bg-fuchsia-500/15 flex items-center justify-center text-fuchsia-300 mb-5">
+                            <i data-lucide="users-round" class="w-5 h-5"></i>
                         </div>
-                        <h3 class="text-2xl font-black text-white mb-2">Enterprise</h3>
-                        <p class="text-slate-400 font-medium text-sm mb-6">Built for scale and security</p>
-                        <div class="mb-8">
-                            <span class="text-4xl font-black text-white">Custom</span>
+                        <h3 class="text-xl font-black text-white">Team Management</h3>
+                        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+                            Add users, assign responsibilities, and manage member-level access from settings.
+                        </p>
+                    </div>
+                    <div class="glass-card rounded-[2rem] p-6">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 mb-5">
+                            <i data-lucide="badge-check" class="w-5 h-5"></i>
                         </div>
-                        <ul class="space-y-4 mb-10 flex-1">
-                            <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                <i data-lucide="star" class="w-4 h-4 text-fuchsia-400"></i> Unlimited Team Members
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                <i data-lucide="star" class="w-4 h-4 text-fuchsia-400"></i> Dedicated Support
-                            </li>
-                            <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                <i data-lucide="star" class="w-4 h-4 text-fuchsia-400"></i> Custom AI Implementation
-                            </li>
-                        </ul>
-                        <a href="#contact"
-                            class="w-full py-4 rounded-2xl border border-white/10 text-sm font-bold text-center text-white hover:bg-white/5 transition-all">Contact
-                            Sales</a>
+                        <h3 class="text-xl font-black text-white">Management Oversight</h3>
+                        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+                            Track updates, notes, status changes, and productivity signals in one management activity view.
+                        </p>
+                    </div>
+                    <div class="glass-card rounded-[2rem] p-6">
+                        <div class="w-11 h-11 rounded-xl bg-cyan-500/15 flex items-center justify-center text-cyan-300 mb-5">
+                            <i data-lucide="smartphone" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white">Mobile-Ready PWA</h3>
+                        <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+                            Built for mobile and desktop, with responsive workflows suitable for on-field sales teams.
+                        </p>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
+        <section id="system-architecture" class="px-4 py-20 md:px-6 bg-slate-950/20">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16 reveal-on-scroll">
+                    <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">System Architecture</span>
+                    <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Organization <span
+                            class="text-fuchsia-400">Node</span> Isolation</h2>
+                    <p class="text-slate-400 max-w-2xl mx-auto mt-4">
+                        Handycrm.ai is built on a secure Firebase setup, so each company works in its own safe space.
+                    </p>
+                </div>
 
-    <!-- Contact Section -->
-    <section id="contact" class="py-24 px-6 relative bg-slate-950/40">
-        <div class="max-w-4xl mx-auto">
-            <div class="text-center mb-16 reveal-on-scroll">
-                <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">Get In Touch</span>
-                <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Let's talk about <span
-                        class="text-indigo-400">your workflow</span></h2>
-                <p class="text-slate-400 mt-4">Have questions? Want a custom enterprise plan? Drop us a message below.
-                </p>
-                <div class="flex items-center gap-4 pt-2">
-                    <a href="#" aria-label="Instagram"
-                        class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white transition-all shadow-lg hover:shadow-indigo-500/25">
-                        <i data-lucide="instagram" class="w-4 h-4"></i>
-                    </a>
-                    <a href="#" aria-label="LinkedIn"
-                        class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white transition-all shadow-lg hover:shadow-indigo-500/25">
-                        <i data-lucide="linkedin" class="w-4 h-4"></i>
-                    </a>
-                </div>
-            </div>
-            <div class="reveal-on-scroll glass-modern p-8 md:p-10 relative overflow-hidden">
-                <div
-                    class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none">
-                </div>
-                <form class="relative z-10 space-y-6">
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Full Name</label>
-                            <input type="text" required placeholder="John Doe"
-                                class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                <div class="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+                    <div class="space-y-8 reveal-on-scroll">
+                        <div class="group flex gap-5">
+                            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="server" class="w-7 h-7 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Isolated Data Silos</h3>
+                                <p class="text-slate-400 leading-relaxed text-sm">
+                                    Every company gets its own <b>Organization ID</b>. Rules help keep data private and
+                                    separate.
+                                </p>
+                            </div>
                         </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Email
-                                Address</label>
-                            <input type="email" required placeholder="john@company.com"
-                                class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+
+                        <div class="group flex gap-5">
+                            <div class="w-14 h-14 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="users-2" class="w-7 h-7 text-fuchsia-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Hierarchical Roles</h3>
+                                <p class="text-slate-400 leading-relaxed text-sm">
+                                    Give people the right role like <b>Admin</b>, <b>Management</b>, or
+                                    <b>Team Member</b> so access stays clear and controlled.
+                                </p>
+                            </div>
                         </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Mobile
-                                Number</label>
-                            <input type="tel" required placeholder="+1 (555) 000-0000"
-                                class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Company
-                                Name</label>
-                            <input type="text" required placeholder="Acme Corp"
-                                class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+
+                        <div class="group flex gap-5">
+                            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="globe" class="w-7 h-7 text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Slug-Based Networking</h3>
+                                <p class="text-slate-400 leading-relaxed text-sm">
+                                    Create a simple company slug so your team has a clear workspace identity.
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Message
-                        </label>
-                        <textarea rows="3" required placeholder="Type Your Message Here...."
-                            class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none"></textarea>
-                    </div>
-                    <button type="button" onclick="alert('Form submitted! Our team will contact you soon.')"
-                        class="w-full py-4 rounded-xl bg-indigo-600 text-white font-bold uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">Send
-                        Message</button>
-                </form>
-            </div>
-        </div>
-    </section>
 
-    <footer class="py-20 px-6 border-t border-white/5 bg-black">
-        <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-12 mb-12">
+                    <div class="reveal-on-scroll relative">
+                        <div class="rounded-3xl bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 p-px shadow-2xl">
+                            <div class="rounded-[1.6rem] bg-slate-900/90 backdrop-blur-3xl p-5 md:p-8 border border-white/5">
+                                <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center p-2">
+                                            <img src="logo-icon.png" class="w-full h-full object-contain" alt="Logo">
+                                        </div>
+                                        <div>
+                                            <div class="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1">
+                                                Organization Node
+                                            </div>
+                                            <div class="text-sm font-bold text-white">Handy CRM AI</div>
+                                        </div>
+                                    </div>
+                                    <div class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-tighter shadow-sm">
+                                        Secure Connection
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                                <i data-lucide="shield" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-bold text-white">Tenant Security</div>
+                                                <div class="text-[10px] uppercase tracking-widest text-slate-500">Rules enforced</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-emerald-400 text-xs font-black uppercase tracking-wider">Active</div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-lg bg-fuchsia-500/20 flex items-center justify-center text-fuchsia-400">
+                                                <i data-lucide="user-cog" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-bold text-white">Role Matrix</div>
+                                                <div class="text-[10px] uppercase tracking-widest text-slate-500">Admin · Management · Team</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-slate-300 text-xs font-black uppercase tracking-wider">Synced</div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                                <i data-lucide="network" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-bold text-white">Workspace Slug</div>
+                                                <div class="text-[10px] uppercase tracking-widest text-slate-500">handycrm-ai-node</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-cyan-400 text-xs font-black uppercase tracking-wider">Live</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="why-choose-us" class="px-4 py-20 md:px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16 reveal-on-scroll">
+                    <span class="text-indigo-400 text-xs uppercase tracking-[0.3em] font-bold">Why Choose Us</span>
+                    <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Better than Traditional
+                        CRMs</h2>
+                    <p class="text-slate-400 mt-4 max-w-2xl mx-auto">
+                        Traditional CRMs take too much setup and too much manual work. HandyCRM helps your team move faster.
+                    </p>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-4 reveal-on-scroll">
+                        <div class="p-6 rounded-3xl bg-white/[0.03] border border-white/5 flex gap-5 items-start hover:border-indigo-500/30 transition-all">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="clock" class="w-6 h-6 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold text-white mb-1">Instant Deployment</h4>
+                                <p class="text-sm text-slate-400">
+                                    Start your company workspace in minutes. No complex setup needed.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 rounded-3xl bg-indigo-600/5 border border-indigo-500/20 flex gap-5 items-start hover:border-indigo-500/40 transition-all">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="mic-2" class="w-6 h-6 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold text-white mb-1">Zero-Manual Entry</h4>
+                                <p class="text-sm text-slate-400">
+                                    Spend less time typing. AI listens to meetings and fills important lead details for you.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 rounded-3xl bg-white/[0.03] border border-white/5 flex gap-5 items-start hover:border-indigo-500/30 transition-all">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="shield-check" class="w-6 h-6 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold text-white mb-1">Modern Multi-Tenancy</h4>
+                                <p class="text-sm text-slate-400">
+                                    Each company stays separate and secure, whether you have one team or many.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reveal-on-scroll lg:pl-8">
+                        <div class="glass-card p-1 overflow-hidden border-indigo-500/20 shadow-2xl shadow-indigo-500/10 rounded-[2rem]">
+                            <div class="bg-slate-900/80 rounded-[1.8rem] overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm min-w-[520px]">
+                                        <thead class="bg-white/5 text-slate-300">
+                                            <tr>
+                                                <th class="px-6 py-5 font-bold uppercase tracking-wider text-[10px]">
+                                                    Comparison
+                                                </th>
+                                                <th class="px-6 py-5 font-bold text-indigo-400">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
+                                                        Handycrm
+                                                    </div>
+                                                </th>
+                                                <th class="px-6 py-5 font-bold text-slate-500">Traditional</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="text-slate-400 divide-y divide-white/5">
+                                            <tr>
+                                                <td class="px-6 py-4 font-medium text-slate-200">AI Transcription</td>
+                                                <td class="px-6 py-4"><i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i></td>
+                                                <td class="px-6 py-4"><i data-lucide="minus" class="w-5 h-5 text-slate-700"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 font-medium text-slate-200">Multi-tenant Isolation</td>
+                                                <td class="px-6 py-4"><i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i></td>
+                                                <td class="px-6 py-4"><i data-lucide="help-circle" class="w-5 h-5 text-amber-500/40"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 font-medium text-slate-200">Mobile PWA App</td>
+                                                <td class="px-6 py-4"><i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i></td>
+                                                <td class="px-6 py-4"><i data-lucide="minus" class="w-5 h-5 text-slate-700"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 font-medium text-slate-200">Role Based Access</td>
+                                                <td class="px-6 py-4"><i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i></td>
+                                                <td class="px-6 py-4"><i data-lucide="help-circle" class="w-5 h-5 text-amber-500/40"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 font-medium text-slate-200">Custom CRM Logic</td>
+                                                <td class="px-6 py-4"><i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i></td>
+                                                <td class="px-6 py-4"><i data-lucide="minus" class="w-5 h-5 text-slate-700"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-6 py-4 font-medium text-slate-200">Manual Data Entry</td>
+                                                <td class="px-6 py-4 text-emerald-400 font-bold">Minimal</td>
+                                                <td class="px-6 py-4 text-rose-400 font-bold">Heavy</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="px-4 py-20 md:px-6 bg-slate-950/20">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-14 reveal-on-scroll">
+                    <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">Pricing</span>
+                    <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Built for growth, from trial to
+                        enterprise</h2>
+                    <p class="text-slate-400 mt-4 max-w-2xl mx-auto">
+                        Start with an AI-powered workspace, scale team operations, and expand to enterprise rollout when you
+                        need more users, more processing, and more support.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 items-stretch">
+                    <div class="reveal-on-scroll p-1 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-indigo-500/20 transition-all group flex flex-col">
+                        <div class="p-8 flex-1 flex flex-col">
+                            <div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 mb-8">
+                                <i data-lucide="flask" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-2xl font-black text-white mb-2">Free Trial</h3>
+                            <p class="text-slate-400 font-medium text-sm mb-6">Test the waters with AI</p>
+                            <div class="mb-8">
+                                <span class="text-4xl font-black text-white">₹0</span>
+                                <span class="text-slate-500 ml-1">/14 days</span>
+                            </div>
+                            <ul class="space-y-4 mb-10 flex-1">
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> Up to 5 team members
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> 1 company workspace
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i> AI meeting analysis
+                                </li>
+                            </ul>
+                            <a href="https://handydashcrmai.vercel.app/register-company"
+                                class="w-full py-4 rounded-2xl border border-white/10 text-sm font-bold text-center text-white hover:bg-white/5 transition-all">Start
+                                Free Trial</a>
+                        </div>
+                    </div>
+
+                    <div class="reveal-on-scroll p-1 rounded-[2.5rem] bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 shadow-2xl shadow-indigo-500/10 relative md:scale-105 z-10 flex flex-col">
+                        <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl">
+                            Most Popular
+                        </div>
+                        <div class="p-8 flex-1 flex flex-col bg-slate-950/40 backdrop-blur-xl rounded-[2.4rem]">
+                            <div class="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center text-white mb-8 shadow-lg shadow-indigo-500/50">
+                                <i data-lucide="rocket" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-2xl font-black text-white mb-2">Business</h3>
+                            <p class="text-slate-200 font-medium text-sm mb-6">Perfect for growing startups</p>
+                            <div class="mb-8">
+                                <span class="text-5xl font-black text-white">₹499</span>
+                                <span class="text-slate-400 ml-1">/mo</span>
+                            </div>
+                            <ul class="space-y-4 mb-10 flex-1">
+                                <li class="flex items-center gap-3 text-slate-200 text-sm">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> Multi-tenant
+                                    organization support
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-200 text-sm">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> AI processing minutes
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-200 text-sm">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> Lead scoring and
+                                    analytics
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-200 text-sm">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-indigo-400"></i> Custom fields and
+                                    mobile-ready workflows
+                                </li>
+                            </ul>
+                            <a href="https://handydashcrmai.vercel.app/register-company"
+                                class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-center hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30">Get
+                                Started Now</a>
+                        </div>
+                    </div>
+
+                    <div class="reveal-on-scroll p-1 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-fuchsia-500/20 transition-all group flex flex-col">
+                        <div class="p-8 flex-1 flex flex-col">
+                            <div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 mb-8">
+                                <i data-lucide="shield-check" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-2xl font-black text-white mb-2">Enterprise</h3>
+                            <p class="text-slate-400 font-medium text-sm mb-6">Built for scale and security</p>
+                            <div class="mb-8">
+                                <span class="text-4xl font-black text-white">Custom</span>
+                            </div>
+                            <ul class="space-y-4 mb-10 flex-1">
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <i data-lucide="star" class="w-4 h-4 text-fuchsia-400"></i> Unlimited team members
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <i data-lucide="star" class="w-4 h-4 text-fuchsia-400"></i> Dedicated support
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <i data-lucide="star" class="w-4 h-4 text-fuchsia-400"></i> Custom AI implementation
+                                </li>
+                            </ul>
+                            <a href="#contact"
+                                class="w-full py-4 rounded-2xl border border-white/10 text-sm font-bold text-center text-white hover:bg-white/5 transition-all">Contact
+                                Sales</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="px-4 py-20 md:px-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-14 reveal-on-scroll">
+                    <span class="text-fuchsia-400 text-xs uppercase tracking-[0.3em] font-bold">Get In Touch</span>
+                    <h2 class="text-4xl md:text-5xl font-display font-black text-white mt-3">Let's talk about <span
+                            class="text-indigo-400">your workflow</span></h2>
+                    <p class="text-slate-400 mt-4">Have questions? Want a custom enterprise plan? Drop us a message below.</p>
+                </div>
+
+                <div class="reveal-on-scroll glass-card rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+                    <form id="contact-form" class="relative z-10 space-y-6">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Full Name
+                                    *</label>
+                                <input type="text" id="form-name" required placeholder="John Doe"
+                                    class="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Email Address
+                                    *</label>
+                                <input type="email" id="form-email" required placeholder="john@company.com"
+                                    class="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Phone Number</label>
+                                <input type="tel" id="form-phone" placeholder="+1 (555) 000-0000"
+                                    class="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Company Name
+                                    *</label>
+                                <input type="text" id="form-company" required placeholder="Acme Corp"
+                                    class="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-300 uppercase tracking-widest">Message *</label>
+                            <textarea id="form-message" rows="3" required placeholder="Tell us about your workflow..."
+                                class="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none"></textarea>
+                        </div>
+                        <button type="submit" id="submit-btn"
+                            class="w-full py-4 rounded-xl bg-indigo-600 text-white font-bold uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span id="btn-text">Send Message</span>
+                        </button>
+
+                        <div id="success-msg"
+                            class="hidden p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center font-medium animate-fade-up">
+                            Thank you! We've received your data and will contact you shortly.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="px-4 pb-10 md:px-6">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-12 mb-8 glass-card rounded-[2rem] p-8">
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
@@ -1014,22 +1045,13 @@
                     <span class="text-xl font-display font-bold text-white">handycrm.ai</span>
                 </div>
                 <p class="text-slate-500 text-sm leading-relaxed">
-                    Empowering sales teams with invisible AI technology and scalable multi-tenant architecture.
+                    Empowering sales teams with AI intelligence, secure multi-company workspaces, and mobile-ready CRM
+                    workflows.
                 </p>
-
-                <div class="flex items-center gap-4 pt-4">
-                    <div class="flex items-center justify-center text-slate-500 hover:text-indigo-400 transition-colors"
-                        title="Firebase">
-                        <i data-lucide="database" class="w-5 h-5"></i>
-                    </div>
-                    <div class="flex items-center justify-center text-slate-500 hover:text-fuchsia-400 transition-colors"
-                        title="Gemini AI">
-                        <i data-lucide="brain" class="w-5 h-5"></i>
-                    </div>
-                    <div class="flex items-center justify-center text-slate-500 hover:text-emerald-400 transition-colors"
-                        title="Real-time Sync">
-                        <i data-lucide="cloud" class="w-5 h-5"></i>
-                    </div>
+                <div class="flex items-center gap-4 pt-2">
+                    <i data-lucide="database" class="w-5 h-5 text-slate-500"></i>
+                    <i data-lucide="brain" class="w-5 h-5 text-slate-500"></i>
+                    <i data-lucide="cloud" class="w-5 h-5 text-slate-500"></i>
                 </div>
             </div>
 
@@ -1042,85 +1064,55 @@
                     </li>
                     <li class="flex items-start gap-3">
                         <i data-lucide="map-pin" class="w-4 h-4 text-indigo-400 mt-1"></i>
-                        <span>C705 Pioneer Urban Squre,<br>Sector 62, Gurugram, India</span>
+                        <span>C705 Pioneer Urban Square,<br>Sector 62, Gurugram, India</span>
                     </li>
                 </ul>
             </div>
 
-            <div class="space-y-4 text-right md:text-left">
-                <h4 class="text-white font-bold uppercase text-xs tracking-widest">System Status</h4>
-                <div
-                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                    ALL SYSTEMS OPERATIONAL
+            <div class="space-y-4">
+                <h4 class="text-white font-bold uppercase text-xs tracking-widest">Follow Us</h4>
+                <div class="flex items-center gap-4">
+                    <a href="https://www.instagram.com/myhandydash_mhd" target="_blank" rel="noopener noreferrer"
+                        class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all">
+                        <i class="fab fa-instagram text-lg"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/company/handysolver/" target="_blank" rel="noopener noreferrer"
+                        class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all">
+                        <i class="fab fa-linkedin-in text-lg"></i>
+                    </a>
                 </div>
-                <div class="flex items-center gap-4 pt-2">
-                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"
-                        class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all shadow-lg hover:shadow-indigo-500/25">
-                        <i data-lucide="twitter" class="w-4 h-4"></i>
-                    </a>
-                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
-                        class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all shadow-lg hover:shadow-indigo-500/25">
-                        <i data-lucide="instagram" class="w-4 h-4"></i>
-                    </a>
-                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
-                        class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all shadow-lg hover:shadow-indigo-500/25">
-                        <i data-lucide="linkedin" class="w-4 h-4"></i>
-                    </a>
-                    <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub"
-                        class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all shadow-lg hover:shadow-indigo-500/25">
-                        <i data-lucide="github" class="w-4 h-4"></i>
-                    </a>
+                <div class="pt-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        ALL SYSTEMS OPERATIONAL
+                    </div>
                 </div>
             </div>
         </div>
-
-
+        <div class="max-w-6xl mx-auto text-center text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">
+            © 2026 handycrm.ai. All rights reserved.
+        </div>
     </footer>
 
     <script>
-        // --- Theme Management ---
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeToggleMobile = document.getElementById('theme-toggle-mobile');
-        const html = document.documentElement;
-
-        const getTheme = () => localStorage.getItem('theme') || 'dark';
-        const setTheme = (theme) => {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-            if (theme === 'light') {
-                html.classList.add('light');
-            } else {
-                html.classList.remove('light');
-            }
-        };
-
-        // Initialize theme
-        setTheme(getTheme());
-
-        const handleThemeToggle = () => {
-            const currentTheme = getTheme();
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            setTheme(newTheme);
-        };
-
-        themeToggle?.addEventListener('click', handleThemeToggle);
-        themeToggleMobile?.addEventListener('click', handleThemeToggle);
-
-        // --- Lucide Icons ---
         lucide.createIcons();
 
-        // --- Mobile Menu ---
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
 
-        mobileMenuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('opacity-0');
-            mobileMenu.classList.toggle('invisible');
-            mobileMenu.classList.toggle('-translate-y-4');
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('mobile-menu-open');
+            });
+        }
+
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('mobile-menu-open');
+            });
         });
 
-        // --- Scroll Reveal ---
         const revealElements = document.querySelectorAll('.reveal-on-scroll');
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -1132,39 +1124,49 @@
 
         revealElements.forEach(el => revealObserver.observe(el));
 
-        // --- Navbar Scroll Effect ---
-        window.addEventListener('scroll', () => {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('pt-2');
-                navbar.classList.remove('pt-5');
-            } else {
-                navbar.classList.add('pt-5');
-                navbar.classList.remove('pt-2');
-            }
-        });
+        const contactForm = document.getElementById('contact-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const successMsg = document.getElementById('success-msg');
+        const SCRIPT_URL = 'https://handysolver.myhandydash.com/backend/web/mii/api/v1/mii-business-logic/crm-leads';
+
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                submitBtn.disabled = true;
+                btnText.innerText = 'Sending...';
+
+                const formData = {
+                    name: document.getElementById('form-name').value,
+                    email: document.getElementById('form-email').value,
+                    phone: document.getElementById('form-phone').value,
+                    company: document.getElementById('form-company').value,
+                    message: document.getElementById('form-message').value,
+                    product: 'CRM-121'
+                };
+
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(() => {
+                        contactForm.reset();
+                        submitBtn.classList.add('hidden');
+                        successMsg.classList.remove('hidden');
+                    })
+                    .catch((error) => {
+                        console.error('Error!', error.message);
+                        submitBtn.disabled = false;
+                        btnText.innerText = 'Error! Try Again';
+                        alert('Something went wrong. Please check your internet connection and try again.');
+                    });
+            });
+        }
     </script>
 </body>
-
-
-<script>
-    // Add this to your existing script block to handle the live time
-    function updateClock() {
-        const now = new Date();
-        const options = {
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        };
-        document.getElementById('live-clock').innerText = 'Local Time: ' + now.toLocaleString('en-US', options);
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-</script>
 
 </html>

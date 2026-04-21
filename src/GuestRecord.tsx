@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { v4 as uuidv4 } from 'uuid';
-import { getGeminiApiKey, GEMINI_FALLBACK_MESSAGE } from './utils/gemini';
 import { transcribeWithGroq } from './utils/ai-service';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -167,7 +166,11 @@ export default function GuestRecord() {
 
       const recordingDoc: any = {
         id: generatedId, audioUrl, transcript: transcriptText, transcriptData,
-        createdAt: Timestamp.now(), companyId: meeting.companyId,
+        createdAt: Timestamp.now(),
+        companyId: meeting.companyId,
+        authorUid: meeting.ownerUid || '',
+        ownerUid: meeting.ownerUid || '',
+        fileType: 'audio',
       };
       if (meetingId) recordingDoc.meetingId = meetingId;
       if (leadParam || meeting.leadId) recordingDoc.leadId = leadParam || meeting.leadId;

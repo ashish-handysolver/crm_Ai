@@ -1,5 +1,15 @@
-import { getGeminiApiKey, uploadFileToGemini, extractJsonFromText } from './gemini';
-import { compressAudio } from './audio-compression';
+import { GROQ_MAX_AUDIO_BYTES, prepareAudioForGroq } from './audio-compression';
+
+export interface DocumentTranscriptionResult {
+  fullText: string;
+  segments: any[];
+}
+
+const GROQ_DOCUMENT_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+const GROQ_ANALYTICS_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+const GROQ_DOCUMENT_CHUNK_CHARS = 3000;
+const GROQ_DOCUMENT_MERGE_GROUP_SIZE = 6;
+const GROQ_DOCUMENT_MAX_RETRIES = 4;
 
 /**
  * Interface for AI Insights structure
@@ -70,7 +80,7 @@ export async function analyzeWithGroq(transcript: string): Promise<AIInsights> {
         { role: 'system', content: 'You are a high-performance sales intelligence agent. Output ONLY valid JSON.' },
         { role: 'user', content: prompt }
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_ANALYTICS_MODEL,
       response_format: { type: 'json_object' }
     })
   });
@@ -156,70 +166,129 @@ export async function transcribeWithGroq(audioBlob: Blob): Promise<{ fullText: s
     throw new Error('Groq API Key (VITE_GROQ_API_KEY) is missing.');
   }
 
-  // 1. Always attempt to compress audio firstly for stability and speed
-  let processedBlob = audioBlob;
-  try {
-    processedBlob = await compressAudio(audioBlob);
-  } catch (err) {
-    console.warn("Global audio compression failed, using raw file.", err);
+  const preparedChunks = await prepareAudioForGroq(audioBlob, GROQ_MAX_AUDIO_BYTES);
+  if (!preparedChunks.length) {
+    throw new Error('No audio data was available for Groq transcription.');
   }
 
-  // 2. Recursive compression if file is still too large for Groq (25MB)
-  if (processedBlob.size > 25 * 1024 * 1024) {
-    console.warn(`Standard compression (${(processedBlob.size / 1024 / 1024).toFixed(1)}MB) still exceeds Groq limit. Triggering Deep Compression (8kHz 8-bit)...`);
-    try {
-      processedBlob = await compressAudio(audioBlob, 'low');
-    } catch (err) {
-      console.warn("Deep compression failed, sticking with standard result.", err);
+  const combinedSegments: Array<{ text: string; startTime: number; endTime: number }> = [];
+  const combinedTexts: string[] = [];
+  let timeOffset = 0;
+
+  for (let index = 0; index < preparedChunks.length; index++) {
+    const chunk = preparedChunks[index];
+    const data = await transcribeGroqChunk(chunk.blob, apiKey, index + 1, preparedChunks.length);
+    const chunkSegments = (data.segments || []).map((seg: any) => ({
+      text: seg.text,
+      startTime: seg.start + timeOffset,
+      endTime: seg.end + timeOffset
+    }));
+
+    combinedSegments.push(...chunkSegments);
+    if (data.text?.trim()) {
+      combinedTexts.push(data.text.trim());
+    }
+
+    timeOffset += chunk.durationSeconds;
+  }
+
+  return {
+    fullText: combinedTexts.join('\n\n').trim(),
+    segments: combinedSegments
+  };
+}
+
+export async function transcribeDocumentWithGroq(file: File): Promise<DocumentTranscriptionResult> {
+  const extractedText = await extractDocumentText(file);
+  if (!extractedText.trim()) {
+    throw new Error('No readable text was found in the uploaded document.');
+  }
+
+  return {
+    fullText: normalizeExtractedDocumentText(extractedText),
+    segments: []
+  };
+}
+
+async function extractDocumentText(file: File): Promise<string> {
+  const fileName = file.name.toLowerCase();
+  const mimeType = file.type || '';
+
+  if (mimeType === 'text/plain' || fileName.endsWith('.txt')) {
+    return file.text();
+  }
+
+  if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) {
+    return extractPdfText(file);
+  }
+
+  if (
+    mimeType.includes('word') ||
+    mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    fileName.endsWith('.docx')
+  ) {
+    return extractDocxText(file);
+  }
+
+  if (fileName.endsWith('.doc')) {
+    throw new Error('Legacy .doc files are not supported for Groq document transcription. Please upload .docx, .pdf, or .txt.');
+  }
+
+  throw new Error('Unsupported document format. Please upload .pdf, .docx, or .txt.');
+}
+
+async function extractPdfText(file: File): Promise<string> {
+  const pdfjs = await import('pdfjs-dist');
+  const workerSrc = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
+  const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages: string[] = [];
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const text = content.items
+      .map((item: any) => ('str' in item ? item.str : ''))
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (text) {
+      pages.push(text);
     }
   }
 
-  // 3. Fallback logic: If even Deep Compression is > 25MB (or if it failed), use Gemini
-  if (processedBlob.size > 25 * 1024 * 1024) {
-    console.warn(`Final audio size (${(processedBlob.size / 1024 / 1024).toFixed(1)}MB) still exceeds Groq limit. Falling back to Gemini 1.5/2.0 Flash...`);
-    const geminiKey = getGeminiApiKey();
-    if (!geminiKey) {
-      throw new Error('Audio file exceeds 25MB, and VITE_GEMINI_API_KEY is missing for the large-file fallback.');
-    }
+  return pages.join('\n\n');
+}
 
-    const fileUri = await uploadFileToGemini(processedBlob, geminiKey);
+async function extractDocxText(file: File): Promise<string> {
+  const mammoth = await import('mammoth');
+  const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+  return (result.value || '').replace(/\s+\n/g, '\n').trim();
+}
 
-    const promptText = `Transcribe and translate this recording into English. Return a JSON object with a 'fullText' string and a 'segments' array. Each segment must be an object with 'text', 'startTime' (float), and 'endTime' (float). Provide ONLY JSON.`;
+function normalizeExtractedDocumentText(text: string): string {
+  return text
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          role: 'user',
-          parts: [
-            { text: promptText },
-            { fileData: { mimeType: processedBlob.type || 'audio/wav', fileUri } }
-          ]
-        }],
-        generationConfig: { maxOutputTokens: 8192, responseMimeType: 'application/json' }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gemini Fallback Error: ${response.status} ${await response.text()}`);
-    }
-
-    const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    const parsed = extractJsonFromText(rawText);
-    return {
-      fullText: parsed?.fullText || "Transcription extraction failed.",
-      segments: parsed?.segments || []
-    };
-  }
-
+async function transcribeGroqChunk(
+  audioBlob: Blob,
+  apiKey: string,
+  chunkNumber: number,
+  chunkCount: number
+): Promise<any> {
   const formData = new FormData();
-  const audioFile = new File([processedBlob], 'audio.wav', { type: processedBlob.type || 'audio/wav' });
+  const fileName = chunkCount > 1 ? `audio-part-${chunkNumber}.wav` : 'audio.wav';
+  const audioFile = new File([audioBlob], fileName, { type: audioBlob.type || 'audio/wav' });
   formData.append('file', audioFile);
   formData.append('model', 'whisper-large-v3');
   formData.append('response_format', 'verbose_json');
-  formData.append('language', 'en'); // Explicit language prevents timeouts on long silence
+  formData.append('language', 'en');
 
   const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST',
@@ -231,20 +300,8 @@ export async function transcribeWithGroq(audioBlob: Blob): Promise<{ fullText: s
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Groq Whisper API Error: ${response.status} ${err}`);
+    throw new Error(`Groq Whisper API Error (chunk ${chunkNumber}/${chunkCount}): ${response.status} ${err}`);
   }
 
-  const data = await response.json();
-
-  // Map Groq's verbose_json output to our expected segments format
-  const segments = (data.segments || []).map((seg: any) => ({
-    text: seg.text,
-    startTime: seg.start,
-    endTime: seg.end
-  }));
-
-  return {
-    fullText: data.text,
-    segments
-  };
+  return response.json();
 }
