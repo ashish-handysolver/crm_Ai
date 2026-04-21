@@ -602,12 +602,56 @@ const RecordingView = () => {
     setIsSyncing(true);
     try {
       const exportRecording = recording;
+      let resolvedLead: any = exportRecording.lead || null;
+      if (!resolvedLead && exportRecording.leadId && exportRecording.leadId !== 'general') {
+        try {
+          const leadSnap = await getDoc(doc(db, 'leads', exportRecording.leadId));
+          if (leadSnap.exists()) {
+            resolvedLead = { id: leadSnap.id, ...leadSnap.data() };
+          }
+        } catch (leadErr) {
+          console.warn('Unable to resolve lead details for PDF export', leadErr);
+        }
+      }
+      if (!resolvedLead && exportRecording.meetingId) {
+        try {
+          const meetingSnap = await getDoc(doc(db, 'meetings', exportRecording.meetingId));
+          if (meetingSnap.exists()) {
+            const meetingData = meetingSnap.data() as any;
+            if (meetingData?.leadId) {
+              const leadSnap = await getDoc(doc(db, 'leads', meetingData.leadId));
+              if (leadSnap.exists()) {
+                resolvedLead = { id: leadSnap.id, ...leadSnap.data() };
+              }
+            }
+            if (!resolvedLead && meetingData?.leadName) {
+              resolvedLead = {
+                name: meetingData.leadName,
+                company: meetingData.company || meetingData.companyName || ''
+              };
+            }
+          }
+        } catch (meetingErr) {
+          console.warn('Unable to resolve meeting details for PDF export', meetingErr);
+        }
+      }
+
       const exportInsights = exportRecording.aiInsights || {};
       const exportMeetingMinutes = Array.isArray(exportInsights.meetingMinutes) ? exportInsights.meetingMinutes : [];
       const exportTasks = Array.isArray(exportInsights.tasks) ? exportInsights.tasks : [];
       const exportTranscript = exportRecording.transcript || 'No transcript available.';
-      const leadLabel = exportRecording.lead?.name || exportRecording.leadName || 'Unlinked Record';
-      const companyLabel = exportRecording.lead?.company || exportRecording.company || 'No company';
+      const leadLabel =
+        resolvedLead?.name ||
+        exportRecording.leadName ||
+        exportRecording.lead?.name ||
+        'Unlinked Record';
+      const companyLabel =
+        resolvedLead?.company ||
+        resolvedLead?.companyName ||
+        exportRecording.company ||
+        (exportRecording as any).companyName ||
+        exportRecording.lead?.company ||
+        'No company';
       const createdLabel = exportRecording.createdAt?.toDate?.().toLocaleString(undefined, {
         dateStyle: 'medium',
         timeStyle: 'short'
@@ -616,24 +660,44 @@ const RecordingView = () => {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 16;
+      const margin = 14;
       const maxTextWidth = pageWidth - margin * 2;
-      let y = 20;
+      let y = 18;
+
+      const drawFooter = () => {
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.setTextColor(37, 99, 235);
+        pdf.text('handycrm.ai', margin, pageHeight - 8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text('HANDYSOLVER', margin + 28, pageHeight - 8);
+        pdf.text(`Page ${pdf.getNumberOfPages()}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+      };
 
       const ensureSpace = (heightNeeded: number) => {
-        if (y + heightNeeded > pageHeight - 18) {
+        if (y + heightNeeded > pageHeight - 22) {
+          drawFooter();
           pdf.addPage();
-          y = 20;
+          y = 18;
         }
       };
 
-      const addSectionTitle = (title: string) => {
-        ensureSpace(12);
+      const addSectionTitle = (title: string, accent: [number, number, number] = [79, 70, 229]) => {
+        ensureSpace(16);
+        pdf.setFillColor(248, 250, 252);
+        pdf.roundedRect(margin, y - 1.5, maxTextWidth, 11, 3, 3, 'F');
+        pdf.setDrawColor(...accent);
+        pdf.setLineWidth(0.8);
+        pdf.line(margin + 3, y + 1, margin + 3, y + 7);
         pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(13);
+        pdf.setFontSize(12);
         pdf.setTextColor(30, 41, 59);
-        pdf.text(title, margin, y);
-        y += 8;
+        pdf.text(title, margin + 7, y + 5);
+        y += 14;
       };
 
       const addParagraph = (text: string, fontSize = 10, color: [number, number, number] = [71, 85, 105]) => {
@@ -654,38 +718,86 @@ const RecordingView = () => {
         }
 
         items.forEach((item) => {
-          const bulletLines = pdf.splitTextToSize(`• ${item}`, maxTextWidth - 2);
-          ensureSpace(bulletLines.length * 5 + 2);
-          pdf.text(bulletLines, margin, y);
-          y += bulletLines.length * 5 + 2;
+          const bulletLines = pdf.splitTextToSize(item, maxTextWidth - 10);
+          ensureSpace(bulletLines.length * 5 + 5);
+          pdf.setFillColor(99, 102, 241);
+          pdf.circle(margin + 2, y + 1.5, 1, 'F');
+          pdf.setTextColor(51, 65, 85);
+          pdf.text(bulletLines, margin + 6, y + 3);
+          y += bulletLines.length * 5 + 3;
         });
       };
 
+      const addDetailGrid = (entries: Array<{ label: string; value: string }>) => {
+        const colGap = 4;
+        const colWidth = (maxTextWidth - colGap) / 2;
+        const rowHeight = 16;
+        entries.forEach((entry, index) => {
+          const col = index % 2;
+          if (col === 0 && index !== 0) {
+            y += rowHeight + 3;
+          }
+          ensureSpace(rowHeight + 4);
+          const boxX = margin + (col * (colWidth + colGap));
+          const boxY = y;
+          pdf.setFillColor(248, 250, 252);
+          pdf.setDrawColor(226, 232, 240);
+          pdf.roundedRect(boxX, boxY, colWidth, rowHeight, 3, 3, 'FD');
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(entry.label.toUpperCase(), boxX + 4, boxY + 5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(10);
+          pdf.setTextColor(30, 41, 59);
+          const valueLines = pdf.splitTextToSize(entry.value || 'Not available', colWidth - 8);
+          pdf.text(valueLines.slice(0, 2), boxX + 4, boxY + 11);
+        });
+        if (entries.length % 2 !== 0) {
+          y += rowHeight + 3;
+        } else if (entries.length) {
+          y += 19;
+        }
+      };
+
       pdf.setFillColor(15, 23, 42);
-      pdf.rect(0, 0, pageWidth, 34, 'F');
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      pdf.setFillColor(99, 102, 241);
+      pdf.circle(pageWidth - 20, 12, 18, 'F');
+      pdf.setFillColor(6, 182, 212);
+      pdf.circle(pageWidth - 6, 28, 10, 'F');
+
       pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(18);
+      pdf.setFontSize(20);
       pdf.text('HandyCRM Record Report', margin, 16);
-      pdf.setFontSize(9);
+      pdf.setFontSize(9.5);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Record ID: ${exportRecording.id.slice(0, 8)}`, margin, 24);
-      pdf.text(`Created: ${createdLabel}`, pageWidth - margin, 24, { align: 'right' });
+      pdf.text(`Record ID ${exportRecording.id.slice(0, 8)}`, margin, 24);
+      pdf.text(`Created ${createdLabel}`, margin, 30);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text('handycrm', pageWidth - margin, 18, { align: 'right' });
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8.5);
+      pdf.text('Sales call intelligence report', pageWidth - margin, 24, { align: 'right' });
 
-      y = 44;
-      addSectionTitle('Record Details');
-      addParagraph(`Lead: ${leadLabel}`);
-      addParagraph(`Company: ${companyLabel}`);
-      addParagraph(`Type: ${exportRecording.fileType === 'document' ? 'Document' : 'Audio'}`);
-      addParagraph(`Status: ${exportRecording.aiInsights ? 'Analyzed' : 'Saved'}`);
+      y = 50;
+      addSectionTitle('Record Details', [59, 130, 246]);
+      addDetailGrid([
+        { label: 'Lead', value: leadLabel },
+        { label: 'Company', value: companyLabel },
+        { label: 'Type', value: exportRecording.fileType === 'document' ? 'Document' : 'Audio' },
+        { label: 'Status', value: exportRecording.aiInsights ? 'Analyzed' : 'Saved' },
+      ]);
 
-      addSectionTitle('Executive Summary');
+      addSectionTitle('Executive Summary', [99, 102, 241]);
       addParagraph(exportInsights.overview || 'Analytics not generated yet.');
 
-      addSectionTitle('Key Notes');
+      addSectionTitle('Key Notes', [6, 182, 212]);
       addBulletList(exportMeetingMinutes);
 
-      addSectionTitle('Action Items');
+      addSectionTitle('Action Items', [16, 185, 129]);
       addBulletList(
         exportTasks.map((task: any) => {
           const assignee = task?.assignee ? ` | Owner: ${task.assignee}` : '';
@@ -694,13 +806,7 @@ const RecordingView = () => {
           return `${task?.title || 'Untitled task'} | Status: ${status}${assignee}${dueDate}`;
         })
       );
-
-      addSectionTitle('Transcript');
-      addParagraph(exportTranscript, 9, [51, 65, 85]);
-
-      pdf.setFontSize(8);
-      pdf.setTextColor(148, 163, 184);
-      pdf.text('Generated by HandyCRM', pageWidth / 2, pageHeight - 8, { align: 'center' });
+      drawFooter();
       pdf.save(`Intelligence_${exportRecording.id.slice(0, 8)}.pdf`);
     } catch (err) {
       console.error("PDF Export failed", err);
