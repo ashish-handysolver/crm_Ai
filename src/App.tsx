@@ -835,28 +835,46 @@ const RecordingView = () => {
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-blue-500 bg-blue-500/5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-500/80">📝 Summary Notes</div>
-                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{meetingMinutes.length}</div>
+                  <div className="rounded-[1.45rem] p-4 sm:p-5 shadow-sm border border-[var(--crm-border)] border-l-[4px] border-l-blue-500 bg-blue-500/5 min-h-[104px] flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-blue-500">
+                      <span className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
+                        <FileText size={12} />
+                      </span>
+                      Summary Notes
+                    </div>
+                    <div className="mt-3 text-3xl font-black text-[var(--crm-text)]">{meetingMinutes.length}</div>
                   </div>
-                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-emerald-500 bg-emerald-500/5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500/80">✅ Tasks</div>
-                    <div className="mt-2 text-2xl font-black text-[var(--crm-text)]">{taskItems.length}</div>
+                  <div className="rounded-[1.45rem] p-4 sm:p-5 shadow-sm border border-[var(--crm-border)] border-l-[4px] border-l-emerald-500 bg-emerald-500/5 min-h-[104px] flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-500">
+                      <span className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
+                        <CheckCircle2 size={12} />
+                      </span>
+                      Tasks
+                    </div>
+                    <div className="mt-3 text-3xl font-black text-[var(--crm-text)]">{taskItems.length}</div>
                   </div>
-                  <div className="glass-card rounded-[1.8rem] p-4 sm:p-5 shadow-xl border-l-[3px] border-l-purple-500 bg-purple-500/5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-purple-500/80">🎭 Sentiment</div>
-                    <div className="mt-2 text-sm font-black text-[var(--crm-text)]">{recording.aiInsights.sentiment || 'N/A'}</div>
+                  <div className="rounded-[1.45rem] p-4 sm:p-5 shadow-sm border border-[var(--crm-border)] border-l-[4px] border-l-purple-500 bg-purple-500/5 min-h-[104px] flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-purple-500">
+                      <span className="w-6 h-6 rounded-lg bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
+                        <Sparkles size={12} />
+                      </span>
+                      Sentiment
+                    </div>
+                    <div className="mt-3 text-xl font-black text-[var(--crm-text)]">{recording.aiInsights.sentiment || 'Neutral'}</div>
                   </div>
 
                   {[
                     { label: 'Transcript', value: recording.transcript ? 'Ready' : 'Pending', tone: recording.transcript ? 'text-emerald-500' : 'text-amber-500' },
                     { label: 'Analytics', value: recording.aiInsights ? 'Ready' : 'Pending', tone: recording.aiInsights ? 'text-indigo-500' : 'text-amber-500' },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-[1.45rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4 sm:p-4.5 shadow-sm min-h-[104px] flex flex-col justify-between">
+                    <div
+                      key={item.label}
+                      className={`rounded-[1.45rem] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] border-l-[4px] p-4 sm:p-5 shadow-sm min-h-[104px] flex flex-col justify-between ${item.tone.replace('text-', 'border-l-')}`}
+                    >
                       <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">{item.label}</div>
-                      <div className={`mt-3 text-base sm:text-lg font-black ${item.tone}`}>{item.value}</div>
-                      <div className="mt-2 h-1.5 w-12 rounded-full bg-[var(--crm-border)] overflow-hidden">
-                        <div className={`h-full rounded-full ${item.tone.replace('text-', 'bg-')}`}></div>
+                      <div className="space-y-1.5 mt-3">
+                        <div className={`text-xl font-black ${item.tone}`}>{item.value}</div>
+                        <div className={`h-[5px] w-10 rounded-full ${item.tone.replace('text-', 'bg-')}`}></div>
                       </div>
                     </div>
                   ))}

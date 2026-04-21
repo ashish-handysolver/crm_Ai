@@ -195,7 +195,7 @@ export default function Reports({ user }: { user: any }) {
 
   const getTranscriptPreview = (transcript?: string) => {
     if (!transcript) return 'No transcript available for this record.';
-    return transcript.length > 220 ? `${transcript.slice(0, 220).trim()}...` : transcript;
+    return transcript.length > 800 ? `${transcript.slice(0, 800).trim()}...` : transcript;
   };
 
   if (loading) {
@@ -383,20 +383,13 @@ export default function Reports({ user }: { user: any }) {
                           </div>
                         </div>
                       )}
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                        <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-black text-[var(--crm-text)] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] py-3 px-3 sm:px-4 rounded-xl shadow-sm uppercase tracking-widest">
-                          <Calendar size={14} className="text-indigo-400" />
-                          {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { dateStyle: 'medium' }) : 'No Date'}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-black text-[var(--crm-text)] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] py-3 px-3 sm:px-4 rounded-xl shadow-sm uppercase tracking-widest">
-                          <Clock size={14} className="text-indigo-400" />
-                          {rec.createdAt?.toDate ? rec.createdAt.toDate().toLocaleString(undefined, { timeStyle: 'short' }) : '00:00'}
-                        </div>
-                      </div>
                     </div>
 
                     <div className="mt-6 flex flex-col sm:flex-row xl:flex-col gap-3">
+                      <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-black text-[var(--crm-text)] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] py-3 px-3 sm:px-4 rounded-xl shadow-sm uppercase tracking-widest">
+                        <Calendar size={14} className="text-indigo-400" />
+                        {formatRecordingDate(rec)}
+                      </div>
                       <Link
                         to={`/r/${rec.id}`}
                         className="w-full px-4 py-3.5 sm:py-4 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border border-indigo-500/20 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/20 active:scale-95 group/btn relative z-10"
@@ -404,12 +397,15 @@ export default function Reports({ user }: { user: any }) {
                         <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" />
                         <span>Open Record</span>
                       </Link>
-                      {rec.lead && (
+                      {/* {rec.lead && (
                         <div className="w-full px-4 py-3 rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] text-center">
                           {rec.lead.company || rec.lead.name}
                         </div>
-                      )}
+                      )} */}
+
+
                     </div>
+
                   </div>
 
                   {/* Intelligence Manifest column */}
@@ -429,7 +425,7 @@ export default function Reports({ user }: { user: any }) {
                     <div className="absolute top-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-indigo-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-all duration-700 pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
 
                     <div className="space-y-5 relative z-10 h-full">
-                      <div className="flex flex-col gap-3 lg:gap-4">
+                      {/* <div className="flex flex-col gap-3 lg:gap-4">
                         <div className="flex flex-wrap items-center gap-3 pr-2">
                           <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-indigo-300 tracking-[0.2em] uppercase bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20 w-fit">
                             <Sparkles size={14} /> Transcript Preview
@@ -438,8 +434,11 @@ export default function Reports({ user }: { user: any }) {
                             {rec.fileType === 'document' ? 'Document File' : 'Audio File'}
                           </div>
                         </div>
-                      </div>
+                      </div> */}
 
+
+
+                      {/* 
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div className="rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4">
                           <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Record ID</div>
@@ -449,7 +448,7 @@ export default function Reports({ user }: { user: any }) {
                           <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Status</div>
                           <div className="mt-2 text-sm font-bold text-[var(--crm-text)]">{rec.aiInsights ? 'Analyzed' : 'Saved'}</div>
                         </div>
-                      </div>
+                      </div> */}
 
                       <div className="relative group/transcript">
                         <div className="absolute -inset-4 bg-indigo-500/10 rounded-[2.5rem] opacity-0 group-hover/transcript:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
@@ -458,12 +457,12 @@ export default function Reports({ user }: { user: any }) {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2.5 pt-5 sm:pt-6 border-t border-[var(--crm-border)] mt-auto">
-                        <div className="w-8 h-8 rounded-full bg-[var(--crm-card-bg)] flex items-center justify-center border border-[var(--crm-border)]">
+                      {/* <div className="flex items-center gap-2.5 pt-5 sm:pt-6 border-t border-[var(--crm-border)] mt-auto"> */}
+                      {/* <div className="w-8 h-8 rounded-full bg-[var(--crm-card-bg)] flex items-center justify-center border border-[var(--crm-border)]">
                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                        </div>
-                        <span className="text-[9px] sm:text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Ready for review and sharing</span>
-                      </div>
+                        </div> */}
+                      {/* <span className="text-[9px] sm:text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Ready for review and sharing</span> */}
+                      {/* </div> */}
                     </div>
                   </div>
                 </motion.div>
