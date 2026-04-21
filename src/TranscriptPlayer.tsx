@@ -78,7 +78,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
     return (
       <div className="flex flex-col gap-4">
         {audioUrl && (
-          <div className="bg-black/40 rounded-2xl p-4 flex items-center gap-4 border border-white/10 shadow-xl">
+          <div className="bg-[var(--crm-control-bg)] rounded-2xl p-4 flex items-center gap-4 border border-[var(--crm-border)] shadow-xl">
             <audio
               ref={audioRef}
               src={audioUrl}
@@ -105,14 +105,14 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
                   style={{ width: `${(currentTime / duration) * 100}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest tabular-nums">
+              <div className="flex justify-between text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest tabular-nums">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
           </div>
         )}
-        <p className="text-[14px] text-slate-300 font-medium leading-[1.8] italic select-text">
+        <p className="text-[14px] text-[var(--crm-text)] font-medium leading-[1.8] italic select-text">
           "{fallbackText}"
         </p>
       </div>
@@ -122,7 +122,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
   return (
     <div className="flex flex-col gap-6">
       {/* Audio Control Bar */}
-      <div className="bg-black/40 rounded-3xl p-4 sm:p-5 flex items-center gap-5 border border-white/10 shadow-2xl relative overflow-hidden group backdrop-blur-md">
+      <div className="bg-[var(--crm-control-bg)] rounded-3xl p-4 sm:p-5 flex items-center gap-5 border border-[var(--crm-border)] shadow-sm relative overflow-hidden group backdrop-blur-md">
         <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none"></div>
 
         <audio
@@ -148,7 +148,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
             <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
               <Volume2 size={12} /> Live Sync Active
             </span>
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest tabular-nums">
+            <span className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest tabular-nums">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
@@ -174,7 +174,7 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
       {/* Interactive Transcript */}
       <div
         ref={transcriptRef}
-        className="flex flex-wrap gap-x-1.5 gap-y-1 text-base leading-relaxed select-text text-slate-300"
+        className="flex flex-wrap gap-x-1.5 gap-y-1 text-base leading-relaxed select-text text-[var(--crm-text)]"
       >
         {transcriptData.map((segment, idx) => {
           const isActive = currentTime >= segment.startTime && currentTime <= segment.endTime;
@@ -186,8 +186,8 @@ export default function TranscriptPlayer({ audioUrl, transcriptData, fallbackTex
               className={`cursor-pointer px-1.5 py-0.5 rounded-lg transition-all duration-200 font-medium ${isActive
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
                   : currentTime > segment.endTime
-                    ? 'text-slate-500 font-normal grayscale'
-                    : 'text-slate-300 hover:bg-indigo-500/20 hover:text-white border border-transparent hover:border-indigo-500/30'
+                    ? 'text-[var(--crm-text-muted)] font-normal grayscale opacity-70'
+                    : 'text-[var(--crm-text)] hover:bg-[var(--crm-control-bg)] hover:text-indigo-400 border border-transparent hover:border-[var(--crm-border)]'
                 }`}
             >
               {segment.text}
