@@ -10,9 +10,9 @@ export default function Settings({ user }: { user: any }) {
   const { companyId } = useAuth();
 
   return (
-    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto relative">
+    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto overflow-x-hidden relative">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-      <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12 relative z-10">
+      <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-12 relative z-10 overflow-x-hidden">
 
         {/* Header Section */}
         <header>
@@ -56,7 +56,7 @@ export default function Settings({ user }: { user: any }) {
                 transition={{ duration: 0.3 }}
                 className="h-full"
               >
-                <CustomFields user={user} />
+                <CustomFields user={user} embedded />
               </motion.div>
             ) : (
               <motion.div
@@ -67,19 +67,11 @@ export default function Settings({ user }: { user: any }) {
                 transition={{ duration: 0.3 }}
                 className="h-full"
               >
-                <Team user={user} companyId={companyId || ''} />
+                <Team user={user} companyId={companyId || ''} embedded />
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
-
-        {/* Administrative Badge */}
-        <div className="flex justify-center pt-6 opacity-40">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-4">
-            <ShieldCheck size={12} /> Admin Permissions Required
-          </p>
-        </div>
-
       </div>
     </div>
   );

@@ -403,6 +403,7 @@ export default function LeadInsights({ user }: { user: any }) {
     meetingMinutes: ['Identifying meeting minutes...'],
     tasks: []
   };
+  const lightCardClass = "glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] border-[var(--crm-border)] shadow-[0_18px_42px_-30px_rgba(15,23,42,0.32)]";
 
   const getPhaseProgress = (phase: string) => {
     switch (phase?.toUpperCase()) {
@@ -754,9 +755,9 @@ export default function LeadInsights({ user }: { user: any }) {
                           </div>
                         </div>
                       ) : (
-                        <li key={i} className="group/item relative pl-4 leading-relaxed bg-white/[0.03] hover:bg-white/[0.07] p-5 rounded-[1.8rem] border border-white/5 hover:border-white/10 transition-all shadow-sm flex items-start gap-3">
+                        <li key={i} className="group/item relative pl-4 leading-relaxed bg-[var(--crm-control-bg)] hover:bg-[var(--crm-control-hover-bg)] p-5 rounded-[1.8rem] border border-[var(--crm-border)] transition-all shadow-sm flex items-start gap-3">
                           <div className={`mt-2 w-1.5 h-1.5 rounded-full shrink-0 ${col.color.replace('text-', 'bg-')} shadow-[0_0_8px_currentColor]`}></div>
-                          <span className="text-xs font-semibold text-slate-300 pr-16 leading-relaxed">{item}</span>
+                          <span className="text-xs font-semibold text-[var(--crm-text)] pr-16 leading-relaxed">{item}</span>
                           <div className="absolute top-5 right-5 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
                             <button onClick={() => setEditingItem({ field: col.id, index: i, value: item })} className="p-2 text-[var(--crm-text-muted)] hover:text-cyan-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-lg shadow-lg transition-all"><Edit size={12} /></button>
                             <button onClick={() => handleArrayDelete(col.id, i)} className="p-2 text-[var(--crm-text-muted)] hover:text-rose-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-lg shadow-lg transition-all"><Trash2 size={12} /></button>
@@ -765,7 +766,7 @@ export default function LeadInsights({ user }: { user: any }) {
                       );
                     })}
                     {dataArr.length === 0 && (
-                      <li className="text-[10px] font-black text-slate-600 uppercase italic tracking-[0.2em] text-center py-10">No data points captured.</li>
+                      <li className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase italic tracking-[0.2em] text-center py-10">No data points captured.</li>
                     )}
                   </ul>
                 </div>
@@ -782,22 +783,22 @@ export default function LeadInsights({ user }: { user: any }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
 
             {/* Executive Summary Card */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="lg:col-span-2 glass-card !bg-slate-900/60 !rounded-[2.5rem] p-10 shadow-2xl text-[var(--crm-text)] relative overflow-hidden group/summary border-white/5">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`lg:col-span-2 ${lightCardClass} p-10 text-[var(--crm-text)] relative overflow-hidden group/summary`}>
               <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/15 to-purple-500/15 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-40"></div>
 
               <div className="relative z-10 space-y-10">
                 <div className="flex justify-between items-start">
                   <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-lg uppercase tracking-[0.3em] font-display">
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 backdrop-blur-xl shadow-2xl shadow-cyan-500/10"><Sparkles className="text-cyan-400" size={24} /></div>
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--crm-control-bg)] flex items-center justify-center border border-[var(--crm-border)] backdrop-blur-xl shadow-2xl shadow-cyan-500/10"><Sparkles className="text-cyan-400" size={24} /></div>
                     AI Summary
                   </h3>
                   <div className="flex gap-3">
                     {editingOverview === null ? (
                       <>
-                        <button onClick={handleRegenerate} disabled={generatingAI} title="Recalibrate Analysis" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-white/10 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl disabled:opacity-50 active:scale-95">
+                        <button onClick={handleRegenerate} disabled={generatingAI} title="Recalibrate Analysis" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl disabled:opacity-50 active:scale-95">
                           <RotateCcw size={18} className={generatingAI ? "animate-spin" : ""} />
                         </button>
-                        <button onClick={() => setEditingOverview(insights.overview)} title="Override Content" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-white/10 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95">
+                        <button onClick={() => setEditingOverview(insights.overview)} title="Override Content" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95">
                           <Edit size={18} />
                         </button>
                       </>
@@ -819,7 +820,7 @@ export default function LeadInsights({ user }: { user: any }) {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xl md:text-2xl leading-relaxed font-medium text-slate-300 pr-10 italic font-serif opacity-90">
+                  <p className="text-xl md:text-2xl leading-relaxed font-medium text-[var(--crm-text)] pr-10 italic font-serif opacity-90">
                     "{insights.overview}"
                   </p>
                 )}
@@ -827,14 +828,14 @@ export default function LeadInsights({ user }: { user: any }) {
             </motion.div>
 
             {/* Pipeline Stage Visualizer */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass-card !bg-slate-900/60 !rounded-[2.5rem] border-white/5 p-12 shadow-2xl flex flex-col justify-center relative overflow-hidden group/stage">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className={`${lightCardClass} p-12 flex flex-col justify-center relative overflow-hidden group/stage`}>
               <div className="absolute -top-10 -right-10 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] -z-0 group-hover:bg-cyan-500/20 transition-all duration-1000"></div>
 
               <div className="relative z-10 space-y-12">
                 <div className="text-[10px] font-black text-[var(--crm-text-muted)] tracking-[0.4em] uppercase">Intelligence Confidence</div>
 
                 <div className="space-y-8">
-                  <div className="w-full bg-white/5 h-6 rounded-full relative overflow-hidden shadow-inner flex items-center p-1.5 border border-white/5">
+                  <div className="w-full bg-[var(--crm-control-bg)] h-6 rounded-full relative overflow-hidden shadow-inner flex items-center p-1.5 border border-[var(--crm-border)]">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${getPhaseProgress(lead.phase)}%` }}
@@ -875,7 +876,7 @@ export default function LeadInsights({ user }: { user: any }) {
             </div>
             <button
               onClick={() => setShowMeetingModal(true)}
-              className="px-8 py-4 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] text-slate-300 hover:text-cyan-400 hover:border-cyan-500/50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl active:scale-95 flex items-center gap-2"
+              className="px-8 py-4 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] text-[var(--crm-text)] hover:text-cyan-500 hover:border-cyan-500/50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl active:scale-95 flex items-center gap-2"
             >
               <Plus size={14} /> Schedule Meetings
             </button>
@@ -889,13 +890,13 @@ export default function LeadInsights({ user }: { user: any }) {
                 return (
                   <motion.div key={m.id}
                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
-                    className={`glass-card !p-6 border-white/5 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/5 group/meet !bg-slate-900/40 ${isPast ? 'opacity-50' : 'hover:border-cyan-500/30'}`}
+                    className={`${lightCardClass} !p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/5 group/meet ${isPast ? 'opacity-60' : 'hover:border-cyan-500/30'}`}
                   >
                     <div className="flex items-start justify-between gap-4 mb-6">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${isPast ? 'bg-white/5 border-white/10 text-[var(--crm-text-muted)]' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 shadow-xl shadow-cyan-500/10'}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${isPast ? 'bg-[var(--crm-control-bg)] border-[var(--crm-border)] text-[var(--crm-text-muted)]' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 shadow-xl shadow-cyan-500/10'}`}>
                         {isPast ? <RotateCcw size={20} /> : <CalendarDays size={20} />}
                       </div>
-                      <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${isPast ? 'bg-slate-800 text-[var(--crm-text-muted)] border-slate-700' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-lg'}`}>
+                      <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${isPast ? 'bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border-[var(--crm-border)]' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-lg'}`}>
                         {isPast ? 'Concluded' : 'Pending'}
                       </span>
                     </div>
@@ -917,11 +918,11 @@ export default function LeadInsights({ user }: { user: any }) {
               })}
             </div>
           ) : (
-            <div className="glass-card !bg-white/5 !py-24 text-center border-white/5 border border-dashed shadow-inner flex flex-col items-center gap-5 rounded-[2.5rem]">
-              <div className="p-5 bg-white/5 rounded-full text-slate-600 border border-white/5">
+            <div className="glass-card !bg-[var(--crm-control-bg)] !py-24 text-center border-[var(--crm-border)] border border-dashed shadow-inner flex flex-col items-center gap-5 rounded-[2.5rem]">
+              <div className="p-5 bg-[var(--crm-control-bg)] rounded-full text-[var(--crm-text-muted)] border border-[var(--crm-border)]">
                 <CalendarDays size={48} />
               </div>
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] italic">No Meetings schedules.</p>
+              <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.3em] italic">No Meetings schedules.</p>
             </div>
           )}
         </motion.div>
@@ -930,16 +931,16 @@ export default function LeadInsights({ user }: { user: any }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Actionable Path */}
-          <div className="glass-card !bg-slate-900/40 !rounded-[2.5rem] border-white/5 p-8 shadow-2xl flex flex-col group/card relative">
-            <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-8 relative z-10">
+          <div className={`${lightCardClass} p-8 flex flex-col group/card relative`}>
+            <div className="flex justify-between items-center mb-8 border-b border-[var(--crm-border)] pb-8 relative z-10">
               <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-sm uppercase tracking-widest font-display">
                 <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-lg"><CheckSquare size={18} /></div> Actionable Path
               </h3>
               <div className="flex gap-2">
-                <button onClick={() => setExpandedSection('tasks')} className="p-2.5 text-[var(--crm-text-muted)] hover:text-cyan-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all shadow-lg active:scale-95">
+                <button onClick={() => setExpandedSection('tasks')} className="p-2.5 text-[var(--crm-text-muted)] hover:text-cyan-500 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-lg active:scale-95">
                   <Maximize2 size={16} />
                 </button>
-                <button onClick={handleTaskAdd} className="p-2.5 text-[var(--crm-text-muted)] hover:text-cyan-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all active:scale-95 shadow-lg">
+                <button onClick={handleTaskAdd} className="p-2.5 text-[var(--crm-text-muted)] hover:text-cyan-500 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all active:scale-95 shadow-lg">
                   <Plus size={18} />
                 </button>
               </div>
@@ -947,19 +948,19 @@ export default function LeadInsights({ user }: { user: any }) {
 
             <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-2 scrollbar-hide relative z-10">
               {insights.tasks.length === 0 && (
-                <div className="text-center p-16 bg-white/[0.02] rounded-[2.5rem] border border-dashed border-white/5 flex flex-col items-center gap-5">
-                  <div className="p-4 bg-white/5 rounded-full text-slate-700"><CheckSquare size={24} /></div>
-                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">No strategic tasks defined.</p>
+                <div className="text-center p-16 bg-[var(--crm-control-bg)] rounded-[2.5rem] border border-dashed border-[var(--crm-border)] flex flex-col items-center gap-5">
+                  <div className="p-4 bg-[var(--crm-control-bg)] rounded-full text-[var(--crm-text-muted)]"><CheckSquare size={24} /></div>
+                  <p className="text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em] italic">No strategic tasks defined.</p>
                 </div>
               )}
 
               {insights.tasks.map((task: any, idx: number) => {
                 const isEditingTask = editingItem?.field === 'tasks' && editingItem?.index === idx;
                 return (
-                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className={`p-5 rounded-2xl border transition-all flex items-start gap-5 group/task ${task.completed ? 'bg-white/[0.02] border-white/5 opacity-50' : 'bg-white/[0.04] border-white/10 hover:border-cyan-500/30 shadow-xl hover:shadow-cyan-500/5'}`}>
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className={`p-5 rounded-2xl border transition-all flex items-start gap-5 group/task ${task.completed ? 'bg-[var(--crm-control-bg)] border-[var(--crm-border)] opacity-60' : 'bg-[var(--crm-control-bg)] border-[var(--crm-border)] hover:border-cyan-500/30 shadow-xl hover:shadow-cyan-500/5'}`}>
                     <button
                       onClick={() => handleTaskToggle(idx)}
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border transition-all ${task.completed ? 'bg-cyan-600 border-cyan-600 text-[var(--crm-text)]' : 'bg-white/5 border-white/20 hover:border-cyan-500'}`}
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border transition-all ${task.completed ? 'bg-cyan-600 border-cyan-600 text-white' : 'bg-[var(--crm-card-bg)] border-[var(--crm-border)] hover:border-cyan-500'}`}
                     >
                       {task.completed && <Check size={14} strokeWidth={4} />}
                     </button>
@@ -985,7 +986,7 @@ export default function LeadInsights({ user }: { user: any }) {
                         </div>
                       ) : (
                         <div className="space-y-2 py-1">
-                          <h4 className={`font-bold text-sm leading-relaxed ${task.completed ? 'text-[var(--crm-text-muted)] line-through' : 'text-slate-200 font-extrabold'}`}>{task.title}</h4>
+                          <h4 className={`font-bold text-sm leading-relaxed ${task.completed ? 'text-[var(--crm-text-muted)] line-through' : 'text-[var(--crm-text)] font-extrabold'}`}>{task.title}</h4>
                           <span className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{task.assignee} &bull; {task.dueDate}</span>
                         </div>
                       )}
@@ -993,8 +994,8 @@ export default function LeadInsights({ user }: { user: any }) {
 
                     {!isEditingTask && (
                       <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover/task:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0 shrink-0">
-                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-2 text-[var(--crm-text-muted)] hover:text-cyan-400 transition-all bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-lg"><Edit size={14} /></button>
-                        <button onClick={() => handleTaskDelete(idx)} className="p-2 text-[var(--crm-text-muted)] hover:text-rose-400 transition-all bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-lg"><Trash2 size={14} /></button>
+                        <button onClick={() => setEditingItem({ field: 'tasks', index: idx, value: JSON.stringify(task) })} className="p-2 text-[var(--crm-text-muted)] hover:text-cyan-500 transition-all bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-lg"><Edit size={14} /></button>
+                        <button onClick={() => handleTaskDelete(idx)} className="p-2 text-[var(--crm-text-muted)] hover:text-rose-500 transition-all bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-lg"><Trash2 size={14} /></button>
                       </div>
                     )}
                   </motion.div>
@@ -1004,18 +1005,18 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
 
           {/* Minutes of Meeting */}
-          <div className="glass-card !bg-slate-900/40 !rounded-[2.5rem] border-white/5 p-8 shadow-2xl flex flex-col group/card relative">
-            <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-8 relative z-10">
+          <div className={`${lightCardClass} p-8 flex flex-col group/card relative`}>
+            <div className="flex justify-between items-center mb-8 border-b border-[var(--crm-border)] pb-8 relative z-10">
               <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-sm uppercase tracking-widest font-display">
                 <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg"><AlignLeft size={18} /></div> Session Minutes
               </h3>
               <div className="flex gap-2">
-                <button onClick={() => setExpandedSection('minutes')} className="p-2.5 text-[var(--crm-text-muted)] hover:text-emerald-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all shadow-lg active:scale-95">
+                <button onClick={() => setExpandedSection('minutes')} className="p-2.5 text-[var(--crm-text-muted)] hover:text-emerald-500 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-lg active:scale-95">
                   <Maximize2 size={16} />
                 </button>
                 <button
                   onClick={() => handleArrayAdd('meetingMinutes')}
-                  className="p-2.5 text-[var(--crm-text-muted)] hover:text-cyan-400 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl transition-all active:scale-95 shadow-lg"
+                  className="p-2.5 text-[var(--crm-text-muted)] hover:text-cyan-500 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all active:scale-95 shadow-lg"
                 >
                   <Plus size={18} />
                 </button>
@@ -1026,7 +1027,7 @@ export default function LeadInsights({ user }: { user: any }) {
               {(Array.isArray(insights.meetingMinutes) ? insights.meetingMinutes : []).map((point: string, idx: number) => {
                 const isEditingThis = editingItem?.field === 'meetingMinutes' && editingItem?.index === idx;
                 return (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className="group/item relative bg-white/[0.03] hover:bg-white/[0.06] p-7 rounded-[1.8rem] border border-white/5 hover:border-white/10 transition-all shadow-xl">
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className="group/item relative bg-[var(--crm-control-bg)] hover:bg-[var(--crm-control-hover-bg)] p-7 rounded-[1.8rem] border border-[var(--crm-border)] transition-all shadow-xl">
                     {isEditingThis ? (
                       <div className="space-y-4">
                         <textarea
@@ -1043,10 +1044,10 @@ export default function LeadInsights({ user }: { user: any }) {
                     ) : (
                       <div className="flex gap-5">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2.5 shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.6)]"></div>
-                        <span className="text-[13px] font-bold text-slate-300 leading-relaxed pr-16">{point}</span>
+                        <span className="text-[13px] font-bold text-[var(--crm-text)] leading-relaxed pr-16">{point}</span>
                         <div className="absolute top-6 right-6 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0">
-                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-2 text-[var(--crm-text-muted)] hover:text-cyan-400 bg-[var(--crm-bg)]/40 border border-white/10 rounded-xl shadow-lg transition-all"><Edit size={14} /></button>
-                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-2 text-[var(--crm-text-muted)] hover:text-rose-400 bg-[var(--crm-bg)]/40 border border-white/10 rounded-xl shadow-lg transition-all"><Trash2 size={14} /></button>
+                          <button onClick={() => setEditingItem({ field: 'meetingMinutes', index: idx, value: point })} className="p-2 text-[var(--crm-text-muted)] hover:text-cyan-500 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-xl shadow-lg transition-all"><Edit size={14} /></button>
+                          <button onClick={() => handleArrayDelete('meetingMinutes', idx)} className="p-2 text-[var(--crm-text-muted)] hover:text-rose-500 bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-xl shadow-lg transition-all"><Trash2 size={14} /></button>
                         </div>
                       </div>
                     )}
@@ -1057,9 +1058,9 @@ export default function LeadInsights({ user }: { user: any }) {
           </div>
 
           {/* Transcript Core */}
-          <div className="glass-card !bg-slate-900/40 !rounded-[2.5rem] border-white/5 p-8 shadow-2xl flex flex-col relative overflow-hidden group/transcript">
+          <div className={`${lightCardClass} p-8 flex flex-col relative overflow-hidden group/transcript`}>
             <div className="absolute top-10 right-10 text-9xl text-[var(--crm-text)]/5 font-serif leading-none italic pointer-events-none select-none z-0 rotate-12 -mr-8 -mt-8">"</div>
-            <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-8 relative z-10">
+            <div className="flex justify-between items-center mb-8 border-b border-[var(--crm-border)] pb-8 relative z-10">
               <h3 className="font-black text-[var(--crm-text)] flex items-center gap-4 text-sm uppercase tracking-widest font-display">
                 <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-lg"><AlignLeft size={18} /></div> Audio Intelligence
               </h3>
@@ -1075,9 +1076,9 @@ export default function LeadInsights({ user }: { user: any }) {
                 </button>
               )} */}
             </div>
-            <div className="flex-1 bg-[var(--crm-bg)]/40 p-8 rounded-[2rem] border border-white/5 overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover/transcript:bg-black/30 transition-all duration-500 scrollbar-hide">
+            <div className="flex-1 bg-[var(--crm-control-bg)] p-8 rounded-[2rem] border border-[var(--crm-border)] overflow-y-auto max-h-[400px] relative z-10 shadow-inner group-hover/transcript:bg-[var(--crm-control-hover-bg)] transition-all duration-500 scrollbar-hide">
               {selectedRec?.transcript ? (
-                <div className="text-slate-100">
+                <div className="text-[var(--crm-text)]">
                   <TranscriptPlayer
                     audioUrl={selectedRec.audioUrl}
                     transcriptData={selectedRec.transcriptData}
@@ -1085,9 +1086,9 @@ export default function LeadInsights({ user }: { user: any }) {
                   />
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] italic text-center py-20 gap-8">
+                <div className="h-full flex flex-col items-center justify-center text-[var(--crm-text-muted)] font-black text-[10px] uppercase tracking-[0.3em] italic text-center py-20 gap-8">
                   <div className="w-24 h-24 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-indigo-500/5">
-                    <Zap size={40} className="text-slate-800 animate-pulse" />
+                    <Zap size={40} className="text-[var(--crm-text-muted)] animate-pulse" />
                   </div>
                   No active payload detected.
                 </div>
@@ -1098,25 +1099,25 @@ export default function LeadInsights({ user }: { user: any }) {
 
 
 
-        <div className="bg-slate-900/60 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-2xl border border-white/5 backdrop-blur-3xl">
+        <div className="bg-[var(--crm-card-bg)] rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden shadow-[0_22px_48px_-34px_rgba(15,23,42,0.34)] border border-[var(--crm-border)] backdrop-blur-3xl">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-50"></div>
 
           <div className="flex flex-col md:flex-row items-center gap-10 relative z-10 text-center md:text-left">
-            <div className="w-28 h-28 bg-white/5 p-2 border-4 border-white/5 rounded-[3rem] flex items-center justify-center overflow-hidden shadow-2xl backdrop-blur-2xl">
+            <div className="w-28 h-28 bg-[var(--crm-control-bg)] p-2 border-4 border-[var(--crm-border)] rounded-[3rem] flex items-center justify-center overflow-hidden shadow-2xl backdrop-blur-2xl">
               <img src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name || 'User'}&background=random`} className="object-cover w-full h-full rounded-[2.5rem]" alt={lead.name || 'Lead'} />
             </div>
             <div className="space-y-3">
               <div className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase font-display">{lead.company}</div>
               <div className="font-black text-[var(--crm-text)] text-3xl md:text-5xl tracking-tight leading-none font-display">{lead.name}</div>
               <div className="text-sm font-semibold text-[var(--crm-text-muted)] mt-4 flex flex-wrap justify-center md:justify-start gap-4 uppercase tracking-[0.2em] text-[9px]">
-                <span className="flex items-center gap-3 shadow-2xl bg-white/5 px-4 py-2 rounded-full border border-white/5 text-slate-300 backdrop-blur-md transition-all hover:bg-white/10">{lead.email || 'NO_EMAIL_VECTOR'}</span>
-                <span className="flex items-center gap-3 shadow-2xl bg-white/5 px-4 py-2 rounded-full border border-white/5 text-slate-300 backdrop-blur-md transition-all hover:bg-white/10">{lead.phone || 'NO_PHONETIC_LINK'}</span>
+                <span className="flex items-center gap-3 shadow-2xl bg-[var(--crm-control-bg)] px-4 py-2 rounded-full border border-[var(--crm-border)] text-[var(--crm-text)] backdrop-blur-md transition-all hover:bg-[var(--crm-control-hover-bg)]">{lead.email || 'NO_EMAIL_VECTOR'}</span>
+                <span className="flex items-center gap-3 shadow-2xl bg-[var(--crm-control-bg)] px-4 py-2 rounded-full border border-[var(--crm-border)] text-[var(--crm-text)] backdrop-blur-md transition-all hover:bg-[var(--crm-control-hover-bg)]">{lead.phone || 'NO_PHONETIC_LINK'}</span>
               </div>
             </div>
           </div>
 
           <div className="relative z-10 md:w-auto w-full">
-            <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-12 py-6 bg-white text-slate-950 hover:bg-cyan-500 hover:text-[var(--crm-text)] rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_25px_50px_-12px_rgba(255,255,255,0.1)] hover:shadow-cyan-500/20 active:scale-95 flex items-center justify-center gap-3 font-display">
+            <Link to={`/clients/${lead.id}/edit`} className="w-full md:w-auto px-12 py-6 bg-[var(--crm-surface-strong)] text-[var(--crm-text)] hover:bg-cyan-500 hover:text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_25px_50px_-12px_rgba(15,23,42,0.12)] hover:shadow-cyan-500/20 active:scale-95 flex items-center justify-center gap-3 font-display">
               <Edit size={18} /> Modify Profile
             </Link>
           </div>

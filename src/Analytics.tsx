@@ -47,6 +47,9 @@ export default function Analytics({ user }: { user: any }) {
   const topLeads = [...leads].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 4);
   const scoreLabel = avgScore >= 70 ? 'Strong pipeline' : avgScore >= 40 ? 'Needs nurturing' : 'Needs attention';
   const scoreTone = avgScore >= 70 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : avgScore >= 40 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+  const softPanelClass = 'rounded-[1.6rem] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] shadow-[0_10px_30px_-24px_rgba(15,23,42,0.45)]';
+  const raisedCardClass = 'glass-card !rounded-[2rem] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] shadow-[0_18px_45px_-32px_rgba(15,23,42,0.38)]';
+  const subtleBadgeClass = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm';
 
   const getScoreTone = (score: number) => {
     if (score >= 70) return 'from-emerald-500 to-teal-500 text-emerald-400 border-emerald-500/20 bg-emerald-500/10';
@@ -86,10 +89,10 @@ export default function Analytics({ user }: { user: any }) {
 
         {/* Header Section */}
         <header>
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="glass-card !rounded-[2rem] p-5 sm:p-7 border border-[var(--crm-border)] overflow-hidden">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className={`${raisedCardClass} p-5 sm:p-7 overflow-hidden`}>
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
               <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                <div className={subtleBadgeClass}>
                   <BarChart3 size={14} /> Lead Performance
                 </div>
                 <div>
@@ -111,7 +114,7 @@ export default function Analytics({ user }: { user: any }) {
 
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {statCards.map((stat) => (
-            <div key={stat.label} className="glass-card !rounded-2xl p-4 sm:p-5 border border-[var(--crm-border)]">
+            <div key={stat.label} className={`${raisedCardClass} !rounded-[1.6rem] p-4 sm:p-5`}>
               <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-4 ${stat.tone}`}>
                 {stat.icon}
               </div>
@@ -122,7 +125,7 @@ export default function Analytics({ user }: { user: any }) {
         </section>
 
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4 sm:gap-6">
-          <div className="glass-card !rounded-[2rem] p-5 sm:p-6 border border-[var(--crm-border)]">
+          <div className={`${raisedCardClass} p-5 sm:p-6`}>
             <div className="flex items-center justify-between gap-4 mb-5">
               <div>
                 <h3 className="text-lg sm:text-xl font-black text-[var(--crm-text)]">Score Distribution</h3>
@@ -130,7 +133,7 @@ export default function Analytics({ user }: { user: any }) {
               </div>
               <TrendingUp className="text-indigo-400 shrink-0" size={22} />
             </div>
-            <div className="space-y-4">
+            <div className={`${softPanelClass} space-y-4 p-4 sm:p-5`}>
               {[
                 { label: 'Prime', count: primeTargets, color: 'bg-emerald-500', text: 'text-emerald-400' },
                 { label: 'Nurture', count: warmTargets, color: 'bg-amber-500', text: 'text-amber-400' },
@@ -152,7 +155,7 @@ export default function Analytics({ user }: { user: any }) {
             </div>
           </div>
 
-          <div className="glass-card !rounded-[2rem] p-5 sm:p-6 border border-[var(--crm-border)]">
+          <div className={`${raisedCardClass} p-5 sm:p-6`}>
             <div className="flex items-center justify-between gap-4 mb-5">
               <div>
                 <h3 className="text-lg sm:text-xl font-black text-[var(--crm-text)]">Priority Leads</h3>
@@ -162,7 +165,7 @@ export default function Analytics({ user }: { user: any }) {
             </div>
             <div className="space-y-3">
               {topLeads.map((lead) => (
-                <Link key={lead.id} to={`/analytics/${lead.id}`} className="flex items-center gap-3 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] p-3 hover:bg-[var(--crm-control-hover-bg)] transition-all">
+                <Link key={lead.id} to={`/analytics/${lead.id}`} className={`${softPanelClass} flex items-center gap-3 p-3 hover:bg-[var(--crm-control-hover-bg)] transition-all`}>
                   <img
                     src={lead.avatar || `https://ui-avatars.com/api/?name=${lead.name}&background=random`}
                     alt={lead.name}
@@ -190,10 +193,10 @@ export default function Analytics({ user }: { user: any }) {
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-black/10">
                   <Users size={32} className="text-[var(--crm-text-muted)] sm:w-10 sm:h-10" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black text-[var(--crm-text)] mb-3 tracking-tight">Intelligence Void</h3>
-                <p className="text-[var(--crm-text-muted)] font-medium max-w-sm text-sm sm:text-base">No lead data available for multi-vector analysis. Initialize new profiles to see performance metrics.</p>
+                <h3 className="text-xl sm:text-2xl font-black text-[var(--crm-text)] mb-3 tracking-tight">No analytics yet</h3>
+                <p className="text-[var(--crm-text-muted)] font-medium max-w-sm text-sm sm:text-base">Add a few leads and HandyCRM will show scores, priority accounts, and pipeline health here.</p>
                 <Link to="/clients/new" className="mt-8 sm:mt-10 btn-primary">
-                  <Plus size={18} /> Initialize Leads
+                  <Plus size={18} /> Add Leads
                 </Link>
               </motion.div>
             ) : (
@@ -203,7 +206,13 @@ export default function Analytics({ user }: { user: any }) {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, type: 'spring', stiffness: 200, damping: 25 }}
-                  className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] group p-4 sm:p-5 lg:p-6 flex flex-col relative overflow-hidden h-full hover:bg-[var(--crm-hover-bg)] hover:border-indigo-500/30 transition-all duration-500 shadow-xl"
+                  className="group flex h-full flex-col overflow-hidden p-4 sm:p-5 lg:p-6 transition-all duration-500 hover:border-indigo-500/30 hover:bg-[var(--crm-hover-bg)]"
+                  style={{
+                    background: 'linear-gradient(180deg, var(--crm-card-bg) 0%, color-mix(in srgb, var(--crm-card-bg) 88%, white 12%) 100%)',
+                    border: '1px solid var(--crm-border)',
+                    borderRadius: '2rem',
+                    boxShadow: '0 20px 42px -30px rgba(15, 23, 42, 0.35)',
+                  }}
                 >
                   <div className="flex items-center sm:items-start gap-3 sm:gap-4 mb-5 sm:mb-6 relative z-10">
                     <div className="relative shrink-0">
@@ -217,14 +226,14 @@ export default function Analytics({ user }: { user: any }) {
                     <div className="flex-1 min-w-0 pt-1">
                       <h3 className="text-base sm:text-lg lg:text-xl font-black text-[var(--crm-text)] tracking-tight truncate group-hover:text-indigo-400 transition-colors">{lead.name}</h3>
                       <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5 w-fit max-w-full">
-                        <ExternalLink size={12} className="text-slate-500 shrink-0" />
-                        <span className="text-[10px] sm:text-xs font-bold text-[var(--crm-text-muted)] uppercase tracking-widest truncate">{lead.company}</span>
+                        <ExternalLink size={12} className="text-[var(--crm-text-muted)] shrink-0" />
+                        <span className="text-[10px] sm:text-xs font-bold text-[var(--crm-text-muted)] uppercase tracking-widest truncate">{lead.company || 'No company'}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-5 flex-1 relative z-10 flex flex-col justify-end">
-                    <div className="bg-[var(--crm-control-bg)] rounded-2xl p-4 border border-[var(--crm-border)] group-hover:border-[var(--crm-border)]/40 transition-colors">
+                    <div className={`${softPanelClass} p-4 group-hover:border-[var(--crm-border)]/60 transition-colors`}>
                       <div className="flex justify-between items-end mb-3">
                         <div className="flex items-center gap-2 text-[var(--crm-text-muted)] font-black uppercase tracking-[0.2em] text-[10px]">
                           <Target size={14} className="text-indigo-400 animate-pulse" /> Conversion AI
@@ -234,7 +243,7 @@ export default function Analytics({ user }: { user: any }) {
                           <span className="font-bold text-[var(--crm-text-muted)] text-xs mb-0.5">%</span>
                         </div>
                       </div>
-                      <div className="w-full bg-[var(--crm-bg)]/20 h-1.5 sm:h-2 rounded-full overflow-hidden shadow-inner relative">
+                      <div className="relative h-1.5 w-full overflow-hidden rounded-full border border-[var(--crm-border)] bg-[var(--crm-bg)]/8 shadow-inner sm:h-2">
                         <motion.div
                           initial={{ width: 0 }}
                           whileInView={{ width: `${lead.score || 0}%` }}
@@ -248,11 +257,11 @@ export default function Analytics({ user }: { user: any }) {
                         <span>Prime Target</span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div className={`rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest ${getScoreTone(lead.score || 0).split(' ').slice(2).join(' ')}`}>
                         {(lead.health || 'WARM').toUpperCase()}
                       </div>
-                      <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] truncate">
+                      <div className={`${softPanelClass} rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] truncate`}>
                         {lead.phase || 'DISCOVERY'}
                       </div>
                     </div>
