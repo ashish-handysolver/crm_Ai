@@ -8,6 +8,7 @@ import { showAppNotification } from '../utils/notifications';
 export const NotificationWatcher: React.FC = () => {
   const { user, companyId, role } = useAuth();
   const alertedMeetingIds = useRef<Set<string>>(new Set());
+  const initializedReminderState = useRef(false);
   const userSettings = useRef<{ notificationMinutes: number; notificationSoundId: SoundProfile }>({
     notificationMinutes: 10,
     notificationSoundId: 'cyber_pulse'
@@ -38,6 +39,7 @@ export const NotificationWatcher: React.FC = () => {
     if (!user || !companyId) return;
 
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     const unsub = onSnapshot(q, (snap) => {
       const allMeetings = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
@@ -45,39 +47,58 @@ export const NotificationWatcher: React.FC = () => {
         ? allMeetings
         : allMeetings.filter((m: any) => m.ownerUid === user.uid || (m.assignedTo || []).includes(user.uid));
 
-      const checkReminders = () => {
+      const getReminderState = (meeting: any) => {
         const now = new Date();
         const leadTimeMin = userSettings.current.notificationMinutes;
+        const scheduledAt = meeting.scheduledAt instanceof Timestamp ? meeting.scheduledAt.toDate() : (meeting.scheduledAt?.toDate?.() || null);
+        if (!scheduledAt) return null;
 
-        myMeetings.forEach(m => {
-          if (alertedMeetingIds.current.has(m.id)) return;
+        const diffMs = scheduledAt.getTime() - now.getTime();
+        const diffMin = diffMs / 60000;
+        return { diffMin, leadTimeMin };
+      };
 
-          const scheduledAt = m.scheduledAt instanceof Timestamp ? m.scheduledAt.toDate() : (m.scheduledAt?.toDate?.() || null);
-          if (!scheduledAt) return;
+      if (!initializedReminderState.current) {
+        myMeetings.forEach((meeting) => {
+          const state = getReminderState(meeting);
+          if (!state) return;
 
-          const diffMs = scheduledAt.getTime() - now.getTime();
-          const diffMin = diffMs / 60000;
+          if (state.diffMin > 0 && state.diffMin <= state.leadTimeMin) {
+            alertedMeetingIds.current.add(meeting.id);
+          }
+        });
+        initializedReminderState.current = true;
+      }
 
-          if (diffMin > 0 && diffMin <= leadTimeMin) {
-            alertedMeetingIds.current.add(m.id);
+      const checkReminders = () => {
+        myMeetings.forEach((meeting) => {
+          if (alertedMeetingIds.current.has(meeting.id)) return;
+
+          const state = getReminderState(meeting);
+          if (!state) return;
+
+          if (state.diffMin > 0 && state.diffMin <= state.leadTimeMin) {
+            alertedMeetingIds.current.add(meeting.id);
             playNotificationSound(userSettings.current.notificationSoundId);
 
             if ('Notification' in window && Notification.permission === 'granted') {
               void showAppNotification('Upcoming Session', {
-                body: `"${m.title}" starts in ${Math.ceil(diffMin)} minute(s).`,
-                tag: m.id
+                body: `"${meeting.title}" starts in ${Math.ceil(state.diffMin)} minute(s).`,
+                tag: meeting.id
               });
             }
           }
         });
       };
 
-      checkReminders();
-      const interval = setInterval(checkReminders, 30000);
-      return () => clearInterval(interval);
+      if (interval) clearInterval(interval);
+      interval = setInterval(checkReminders, 30000);
     });
 
-    return () => unsub();
+    return () => {
+      if (interval) clearInterval(interval);
+      unsub();
+    };
   }, [user, companyId, role]);
 
   return null;
