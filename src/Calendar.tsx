@@ -327,8 +327,8 @@ export default function CalendarPage({ user }: { user: any }) {
 
   return (
     <PageLayout>
-      <PageHeader 
-        title="Meeting Scheduler"
+      <PageHeader
+        title=""
         description="Organize your team's schedule and keep track of client engagements with ease."
         badge="Strategic Calendar"
         icon={CalendarIcon}

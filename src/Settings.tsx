@@ -13,8 +13,8 @@ export default function Settings({ user }: { user: any }) {
 
   return (
     <PageLayout>
-      <PageHeader 
-        title="Workspace Settings"
+      <PageHeader
+        title=""
         description="Configure your custom fields, manage team members, and update your preferences."
         badge="System Settings"
         icon={SettingsIcon}

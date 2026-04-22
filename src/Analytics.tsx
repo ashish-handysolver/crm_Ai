@@ -88,20 +88,6 @@ export default function Analytics({ user }: { user: any }) {
 
   return (
     <PageLayout>
-      <PageHeader 
-        title="Intelligence Analytics"
-        description="Track conversion score, lead temperature, and the accounts worth immediate follow-up."
-        badge="Lead Performance"
-        icon={BarChart3}
-        actions={
-          <div className={`rounded-2xl border px-6 py-3 text-left lg:text-right ${scoreTone}`}>
-            <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Pipeline Health</div>
-            <div className="text-lg font-black text-[var(--crm-text)]">{scoreLabel}</div>
-            <div className="text-xs font-bold opacity-80">{avgScore}% average score</div>
-          </div>
-        }
-      />
-
       <div className="space-y-12">
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {statCards.map((stat) => (

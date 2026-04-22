@@ -139,8 +139,8 @@ export default function ManualUpload({ user }: { user: any }) {
 
   return (
     <PageLayout>
-      <PageHeader 
-        title="Intelligence Injection"
+      <PageHeader
+        title=""
         description="Manually upload conversation recordings, documents, or strategic notes to the neural archive."
         badge="Manual Upload"
         icon={UploadCloud}

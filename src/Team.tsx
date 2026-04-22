@@ -137,12 +137,7 @@ export default function Team({ user, companyId, embedded = false }: { user: any,
 
         {/* Header Section */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-10">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <Users size={14} className="animate-pulse" /> Team Settings
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-none">Team Members</h1>
-          </motion.div>
+
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-3">
             {!isDemoMode && (
