@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getMessaging } from 'firebase/messaging';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore, memoryLocalCache, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -32,4 +33,5 @@ export const db = initializeFirestore(app, {
 
 export const auth = getAuth();
 export const storage = getStorage(app);
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 

@@ -29,6 +29,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
+    "firebase-admin": "^13.0.2",
     "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
     "jspdf": "^4.2.1",
