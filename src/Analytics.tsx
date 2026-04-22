@@ -7,6 +7,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
+
 export default function Analytics({ user }: { user: any }) {
   const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
@@ -66,8 +69,8 @@ export default function Analytics({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-        <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 animate-pulse">
+      <PageLayout>
+        <div className="space-y-8 sm:space-y-12 animate-pulse">
           <div className="space-y-3 sm:space-y-4">
             <div className="w-48 h-6 bg-[var(--crm-bg)]/20 rounded-full"></div>
             <div className="w-64 sm:w-96 h-8 sm:h-12 bg-[var(--crm-bg)]/20 rounded-xl"></div>
@@ -79,39 +82,27 @@ export default function Analytics({ user }: { user: any }) {
             ))}
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="flex-1 bg-transparent min-h-full overflow-y-auto">
-      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8">
+    <PageLayout>
+      <PageHeader 
+        title="Intelligence Analytics"
+        description="Track conversion score, lead temperature, and the accounts worth immediate follow-up."
+        badge="Lead Performance"
+        icon={BarChart3}
+        actions={
+          <div className={`rounded-2xl border px-6 py-3 text-left lg:text-right ${scoreTone}`}>
+            <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Pipeline Health</div>
+            <div className="text-lg font-black text-[var(--crm-text)]">{scoreLabel}</div>
+            <div className="text-xs font-bold opacity-80">{avgScore}% average score</div>
+          </div>
+        }
+      />
 
-        {/* Header Section */}
-        <header>
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className={`${raisedCardClass} p-5 sm:p-7 overflow-hidden`}>
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
-              <div className="space-y-3">
-                <div className={subtleBadgeClass}>
-                  <BarChart3 size={14} /> Lead Performance
-                </div>
-                <div>
-                  <h2 className="text-2xl sm:text-4xl font-black text-[var(--crm-text)] tracking-tight">Analytics</h2>
-                  <p className="mt-2 text-sm sm:text-base font-medium text-[var(--crm-text-muted)] max-w-2xl">
-                    Track conversion score, lead temperature, and the accounts worth immediate follow-up.
-                  </p>
-                </div>
-              </div>
-
-              <div className={`rounded-2xl border px-4 py-3 text-left lg:text-right ${scoreTone}`}>
-                <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Pipeline Health</div>
-                <div className="text-lg font-black text-[var(--crm-text)]">{scoreLabel}</div>
-                <div className="text-xs font-bold opacity-80">{avgScore}% average score</div>
-              </div>
-            </div>
-          </motion.div>
-        </header>
-
+      <div className="space-y-12">
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {statCards.map((stat) => (
             <div key={stat.label} className={`${raisedCardClass} !rounded-[1.6rem] p-4 sm:p-5`}>
@@ -281,6 +272,6 @@ export default function Analytics({ user }: { user: any }) {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

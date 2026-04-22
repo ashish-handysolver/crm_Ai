@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { v4 as uuidv4 } from 'uuid';
 import { logActivity } from './utils/activity';
 import SearchableSelect from './components/SearchableSelect';
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
 
 export default function Reports({ user }: { user: any }) {
   const { companyId, role } = useAuth();
@@ -73,7 +75,7 @@ export default function Reports({ user }: { user: any }) {
     );
 
     return () => { unsubLeads(); unsubRecs(); };
-  }, [companyId, isDemoMode, demoData]);
+  }, [companyId, isDemoMode, demoData, leads, role, user.uid]);
 
   const handleLinkRecordToLead = async (recordId: string, leadId: string) => {
     if (leadId === 'ADD_NEW') {
@@ -200,16 +202,13 @@ export default function Reports({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-        <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 animate-pulse">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="space-y-4 w-full">
-              <div className="w-48 h-6 bg-[var(--crm-border)] rounded-full"></div>
-              <div className="w-64 sm:w-96 h-8 sm:h-12 bg-[var(--crm-border)] rounded-xl"></div>
-              <div className="w-full max-w-2xl h-4 bg-[var(--crm-border)] rounded"></div>
-            </div>
+      <PageLayout>
+        <div className="space-y-8 sm:space-y-12 animate-pulse">
+          <div className="space-y-4 w-full">
+            <div className="w-48 h-6 bg-[var(--crm-border)] rounded-full"></div>
+            <div className="w-64 sm:w-96 h-8 sm:h-12 bg-[var(--crm-border)] rounded-xl"></div>
+            <div className="w-full max-w-2xl h-4 bg-[var(--crm-border)] rounded"></div>
           </div>
-
           <div className="h-16 sm:h-20 bg-[var(--crm-border)] rounded-2xl w-full"></div>
           <div className="space-y-6 sm:space-y-8">
             {[...Array(4)].map((_, i) => (
@@ -217,45 +216,39 @@ export default function Reports({ user }: { user: any }) {
             ))}
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12">
+    <PageLayout>
+      <PageHeader 
+        title="Call Intelligence"
+        description="Access all captured conversation data and AI-generated insights across your client portfolio."
+        badge="Intelligence Network"
+        icon={AudioWaveform}
+      />
 
-        {/* Header */}
-        <header className="flex flex-col gap-6 sm:gap-8">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <AudioWaveform size={14} className="animate-pulse" /> Call Intelligence
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
+        {[
+          { label: 'Total Records', value: enrichedRecordings.length, icon: <AudioWaveform size={18} />, tone: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
+          { label: 'Linked Leads', value: linkedCount, icon: <UserPlus size={18} />, tone: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20' },
+          { label: 'Audio Files', value: audioCount, icon: <Play size={18} />, tone: 'text-cyan-300 bg-cyan-500/10 border-cyan-500/20' },
+          { label: 'Documents', value: documentCount, icon: <Calendar size={18} />, tone: 'text-fuchsia-300 bg-fuchsia-500/10 border-fuchsia-500/20' },
+        ].map((stat) => (
+          <div key={stat.label} className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] rounded-[1.6rem] p-4 sm:p-5">
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-4 ${stat.tone}`}>
+              {stat.icon}
             </div>
-            {/* <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--crm-text)] leading-tight">Call Intelligence</h1> */}
-            {/* <p className="text-[var(--crm-text-muted)] font-medium max-w-2xl text-sm sm:text-base leading-relaxed">Access all captured conversation data and AI-generated insights across your client portfolio.</p> */}
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
-          >
-            {[
-              { label: 'Total Records', value: enrichedRecordings.length, icon: <AudioWaveform size={18} />, tone: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' },
-              { label: 'Linked Leads', value: linkedCount, icon: <UserPlus size={18} />, tone: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20' },
-              { label: 'Audio Files', value: audioCount, icon: <Play size={18} />, tone: 'text-cyan-300 bg-cyan-500/10 border-cyan-500/20' },
-              { label: 'Documents', value: documentCount, icon: <Calendar size={18} />, tone: 'text-fuchsia-300 bg-fuchsia-500/10 border-fuchsia-500/20' },
-            ].map((stat) => (
-              <div key={stat.label} className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] rounded-[1.6rem] p-4 sm:p-5">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-4 ${stat.tone}`}>
-                  {stat.icon}
-                </div>
-                <div className="text-2xl sm:text-3xl font-black text-[var(--crm-text)] leading-none">{stat.value}</div>
-                <div className="mt-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div>
-        </header>
+            <div className="text-2xl sm:text-3xl font-black text-[var(--crm-text)] leading-none">{stat.value}</div>
+            <div className="mt-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">{stat.label}</div>
+          </div>
+        ))}
+      </motion.div>
 
         <AnimatePresence>
           {(error || success) && (
@@ -374,6 +367,7 @@ export default function Reports({ user }: { user: any }) {
                                 onAddNew={() => handleLinkRecordToLead(rec.id, 'ADD_NEW')}
                                 placeholder="Link to Client..."
                                 compact={true}
+                                hideSearch={true}
                               />
                             ) : (
                               <button onClick={() => setSyncingRecordId(rec.id)} className="px-4 py-2 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 hover:text-white border border-indigo-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-1.5 w-fit active:scale-95">
@@ -397,13 +391,6 @@ export default function Reports({ user }: { user: any }) {
                         <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" />
                         <span>Open Record</span>
                       </Link>
-                      {/* {rec.lead && (
-                        <div className="w-full px-4 py-3 rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] text-[10px] font-black uppercase tracking-widest text-[var(--crm-text-muted)] text-center">
-                          {rec.lead.company || rec.lead.name}
-                        </div>
-                      )} */}
-
-
                     </div>
 
                   </div>
@@ -425,44 +412,12 @@ export default function Reports({ user }: { user: any }) {
                     <div className="absolute top-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-indigo-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-all duration-700 pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
 
                     <div className="space-y-5 relative z-10 h-full">
-                      {/* <div className="flex flex-col gap-3 lg:gap-4">
-                        <div className="flex flex-wrap items-center gap-3 pr-2">
-                          <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-indigo-300 tracking-[0.2em] uppercase bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20 w-fit">
-                            <Sparkles size={14} /> Transcript Preview
-                          </div>
-                          <div className="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-black text-[var(--crm-text)] tracking-[0.2em] uppercase bg-[var(--crm-card-bg)] px-3 py-1.5 rounded-lg border border-[var(--crm-border)] w-fit">
-                            {rec.fileType === 'document' ? 'Document File' : 'Audio File'}
-                          </div>
-                        </div>
-                      </div> */}
-
-
-
-                      {/* 
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        <div className="rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4">
-                          <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Record ID</div>
-                          <div className="mt-2 text-sm font-bold text-[var(--crm-text)]">{rec.id.slice(0, 8)}</div>
-                        </div>
-                        <div className="rounded-2xl bg-[var(--crm-card-bg)] border border-[var(--crm-border)] p-4">
-                          <div className="text-[9px] font-black uppercase tracking-widest text-[var(--crm-text-muted)]">Status</div>
-                          <div className="mt-2 text-sm font-bold text-[var(--crm-text)]">{rec.aiInsights ? 'Analyzed' : 'Saved'}</div>
-                        </div>
-                      </div> */}
-
                       <div className="relative group/transcript">
                         <div className="absolute -inset-4 bg-indigo-500/10 rounded-[2.5rem] opacity-0 group-hover/transcript:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
                         <p className="text-sm sm:text-base lg:text-lg text-[var(--crm-text)] leading-relaxed font-medium relative z-10 line-clamp-5">
                           {getTranscriptPreview(rec.transcript)}
                         </p>
                       </div>
-
-                      {/* <div className="flex items-center gap-2.5 pt-5 sm:pt-6 border-t border-[var(--crm-border)] mt-auto"> */}
-                      {/* <div className="w-8 h-8 rounded-full bg-[var(--crm-card-bg)] flex items-center justify-center border border-[var(--crm-border)]">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                        </div> */}
-                      {/* <span className="text-[9px] sm:text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest">Ready for review and sharing</span> */}
-                      {/* </div> */}
                     </div>
                   </div>
                 </motion.div>
@@ -493,7 +448,7 @@ export default function Reports({ user }: { user: any }) {
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-md bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10"
+                className="relative w-full max-md bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10"
               >
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
@@ -591,7 +546,7 @@ export default function Reports({ user }: { user: any }) {
                 className="relative w-full max-w-md bg-[var(--crm-card-bg)] border border-rose-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 sm:p-10 text-center"
               >
                 <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
-                  <Trash2 size={32} className="text-rose-500" />
+                   <Trash2 size={32} className="text-rose-500" />
                 </div>
                 <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Confirm Purge</h3>
                 <p className="text-sm font-bold text-slate-400 leading-relaxed mb-8">
@@ -615,7 +570,6 @@ export default function Reports({ user }: { user: any }) {
             </div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+    </PageLayout>
   );
 }

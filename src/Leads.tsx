@@ -29,6 +29,9 @@ const DEFAULT_LEAD_TYPES = (import.meta as any).env.VITE_LEAD_TYPES
   ? (import.meta as any).env.VITE_LEAD_TYPES.split(',').map((s: string) => s.trim().toUpperCase())
   : ['B2B', 'B2C', 'ENTERPRISE'];
 
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
+
 export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActiveOnlyRoute?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,6 +51,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isDeletingLead, setIsDeletingLead] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
   const [activityFilter, setActivityFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>(isActiveOnlyRoute ? 'ACTIVE' : 'ALL');
@@ -1381,24 +1385,20 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   };
 
   return (
-    <div className={`flex-1 bg-transparent min-h-full ${viewMode === 'kanban' ? 'overflow-x-hidden' : ''}`}>
-      <div className={`max-w-[1600px] mx-auto ${viewMode === 'kanban' ? 'p-0 sm:p-7 lg:p-10' : 'p-3 sm:p-7 lg:p-10'} space-y-4 sm:space-y-8`}>
-
-        {/* Header Section */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 px-2 sm:px-0">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <Users size={14} /> All leads
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+    <PageLayout maxWidth="1600px" className={viewMode === 'kanban' ? 'p-0 sm:p-7 lg:p-10' : ''}>
+      <PageHeader 
+        title="Leads Management"
+        description="Oversee your entire sales pipeline and manage client relationships with precision."
+        badge="Lead Portfolio"
+        icon={Users}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
             {!isDemoMode ? (
               <>
-                <button onClick={() => setIsImportModalOpen(true)} className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 sm:px-5 py-3 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-[var(--crm-control-hover-bg)] transition-all shadow-sm">
-                  <UploadCloud size={18} /> <span>Import Excel</span>
+                <button onClick={() => setIsImportModalOpen(true)} className="btn-secondary">
+                  <UploadCloud size={18} /> <span>Import</span>
                 </button>
-                <Link to="/clients/new" className="w-full sm:w-auto justify-center flex items-center gap-3 px-4 sm:px-5 py-3 bg-indigo-600 text-white rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20">
+                <Link to="/clients/new" className="btn-primary">
                   <Plus size={18} />
                   <span>New Lead</span>
                 </Link>
@@ -1408,8 +1408,9 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                 Demo Territory
               </div>
             )}
-          </motion.div>
-        </header>
+          </div>
+        }
+      />
 
         <ImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} user={user} />
 
@@ -2372,6 +2373,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 }
