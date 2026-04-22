@@ -61,6 +61,8 @@ import { SyncManager } from './components/SyncManager';
 import { Plus } from 'lucide-react';
 import { analyzeWithGroq, transcribeWithGroq } from './utils/ai-service';
 import jsPDF from 'jspdf';
+import { requestNotificationPermission, showAppNotification } from './utils/notifications';
+import { registerDeviceForPush } from './utils/push';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
@@ -119,9 +121,8 @@ const NotificationBell = () => {
           if (!isInitialLoad && !seenNotifications.has(n.id)) {
             seenNotifications.add(n.id);
             if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification(n.title || 'New Notification', {
+              void showAppNotification(n.title || 'New Notification', {
                 body: n.message,
-                icon: '/logo.png',
                 tag: n.id
               });
             }
@@ -194,12 +195,20 @@ const NotificationBell = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!user || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    registerDeviceForPush(user.uid, companyId || null)
+      .then((enabled) => setPushEnabled(enabled))
+      .catch((error) => console.error('Push sync failed:', error));
+  }, [user, companyId]);
+
   const handleRequestPush = () => {
-    if (typeof Notification !== 'undefined') {
-      Notification.requestPermission().then(permission => {
-        setPushEnabled(permission === 'granted');
+    if (!user) return;
+    registerDeviceForPush(user.uid, companyId || null)
+      .then((enabled) => setPushEnabled(enabled))
+      .catch((error) => {
+        console.error('Push registration failed:', error);
       });
-    }
   };
 
   const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
@@ -245,9 +254,9 @@ const NotificationBell = () => {
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute right-0 mt-4 w-80 bg-[var(--crm-glass-bg)] backdrop-blur-3xl rounded-2xl !p-0 border border-[var(--crm-border)] shadow-2xl z-[100] overflow-hidden"
+            className="absolute right-0 mt-4 w-80 bg-[var(--crm-sidebar-bg)] rounded-2xl !p-0 border border-[var(--crm-border)] shadow-2xl shadow-black/20 z-[100] overflow-hidden"
           >
-            <div className="p-5 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 flex justify-between items-center">
+            <div className="p-5 border-b border-[var(--crm-border)] bg-[var(--crm-surface-strong)] flex justify-between items-center">
               <h3 className="text-[10px] font-black text-[var(--crm-text)] uppercase tracking-[0.2em]">Notifications</h3>
               <div className="flex items-center gap-3">
                 {notifications.length > 0 && (
@@ -268,14 +277,14 @@ const NotificationBell = () => {
                     <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 shadow-sm"><Bell size={14} /></div>
                     <div className="flex-1">
                       <div className="font-black text-[var(--crm-text)] text-[11px] uppercase tracking-wider mb-0.5">Enable Notifications</div>
-                      <div className="text-[10px] text-[var(--crm-text-muted)] font-bold uppercase tracking-tight opacity-80">Get alerted for upcoming meetings & leads</div>
+                      <div className="text-[10px] text-[var(--crm-text-muted)] font-bold uppercase tracking-tight opacity-80">Install the app and allow notifications for best mobile alerts</div>
                     </div>
                   </div>
                 </div>
               )}
 
               {notifications.length > 0 && notifications.map((n) => (
-                <div key={n.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group relative">
+                <div key={n.id} className="px-4 py-4 hover:bg-[var(--crm-control-bg)] transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group relative bg-[var(--crm-sidebar-bg)]">
                   <button
                     onClick={(e) => handleMarkAsRead(n.id, e)}
                     className="absolute top-4 right-4 p-1 rounded-lg text-[var(--crm-text-muted)] hover:bg-rose-500/10 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
@@ -291,7 +300,7 @@ const NotificationBell = () => {
                   {(n.leadName || n.assignedByName) && (
                     <div className="flex items-center gap-2 mt-2">
                       {n.leadName && (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[9px] font-black uppercase tracking-widest">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-widest border border-indigo-500/20">
                           <Users size={10} /> {n.leadName}
                         </div>
                       )}
@@ -306,19 +315,19 @@ const NotificationBell = () => {
               ))}
 
               {meetings.length > 0 && (
-                <div className="px-4 py-2 bg-[var(--crm-control-bg)] border-y border-[var(--crm-border)] text-[10px] font-black tracking-widest uppercase text-[var(--crm-text-muted)]">
+                <div className="px-4 py-2 bg-[var(--crm-surface-strong)] border-y border-[var(--crm-border)] text-[10px] font-black tracking-widest uppercase text-[var(--crm-text-muted)]">
                   Upcoming Meetings
                 </div>
               )}
               {meetings.length > 0 && meetings.map((m, idx) => (
-                <div key={m.id} className="px-4 py-4 hover:bg-[var(--crm-bg)]/20 transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group">
+                <div key={m.id} className="px-4 py-4 hover:bg-[var(--crm-control-bg)] transition-all cursor-pointer border-b border-[var(--crm-border)] last:border-0 group bg-[var(--crm-sidebar-bg)]">
                   <div className="font-bold text-[var(--crm-text)] text-sm mb-1 group-hover:text-indigo-500 transition-colors">{m.title}</div>
                   <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-black uppercase tracking-wider">
                     <Clock size={10} className="text-indigo-500/50" />
                     {m.scheduledAt?.toDate?.().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', hour12: false })}
                   </div>
                   {m.leadName && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-900 text-indigo-300 text-[9px] font-black uppercase tracking-widest">
+                      <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-widest border border-indigo-500/20">
                       <Users size={10} /> {m.leadName}
                     </div>
                   )}
@@ -335,7 +344,7 @@ const NotificationBell = () => {
               )}
             </div>
 
-            <div className="p-4 border-t border-[var(--crm-border)] bg-[var(--crm-bg)]/20 text-center">
+            <div className="p-4 border-t border-[var(--crm-border)] bg-[var(--crm-surface-strong)] text-center">
               <Link to="/calendar" className="text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-all">View Calendar &rarr;</Link>
             </div>
           </motion.div>
