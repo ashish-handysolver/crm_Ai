@@ -11,6 +11,8 @@ type PushPayload = {
 };
 
 const SEND_ENDPOINT = '/api/push/send';
+const FCM_SW_URL = '/firebase-messaging-sw.js';
+const FCM_SW_SCOPE = '/firebase-cloud-messaging-push-scope';
 
 const savePushSubscription = async (userId: string, token: string) => {
   const userRef = doc(db, 'users', userId);
@@ -36,11 +38,18 @@ export const registerDeviceForPush = async (userId: string, companyId: string | 
   }
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    if (!vapidKey || vapidKey === 'YOUR_PUBLIC_VAPID_KEY') {
+      console.warn('Push registration skipped: missing VITE_VAPID_PUBLIC_KEY.');
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.register(FCM_SW_URL, {
+      scope: FCM_SW_SCOPE,
+    });
+
     const token = await getToken(messaging, {
-      // NOTE: Replace this with your actual VAPID key from Firebase Console
-      vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY || 'YOUR_PUBLIC_VAPID_KEY',
+      vapidKey,
       serviceWorkerRegistration: registration
     });
 
@@ -62,7 +71,7 @@ export const sendPushToUser = async (userId: string, payload: PushPayload) => {
   const tokens = (userSnap.data()?.fcmTokens || []) as string[];
   if (!tokens.length) return;
 
-  await fetch(SEND_ENDPOINT, {
+  const response = await fetch(SEND_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -72,4 +81,9 @@ export const sendPushToUser = async (userId: string, payload: PushPayload) => {
       payload,
     }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown push error');
+    throw new Error(`Push send failed: ${errorText}`);
+  }
 };
