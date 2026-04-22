@@ -102,7 +102,10 @@ app.post('/api/transcribe', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
+export default app;
+
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`STT Proxy active on port ${PORT}`);
 });
