@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import { PageLayout } from './components/layout/PageLayout';
 import { PageHeader } from './components/layout/PageHeader';
+import ConfirmModal from './components/ConfirmModal';
 
 interface Meeting {
   id: string;
@@ -38,6 +39,7 @@ export default function CalendarPage({ user }: { user: any }) {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [meetingToDelete, setMeetingToDelete] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(!isDemoMode);
   const [showModal, setShowModal] = useState(false);
@@ -292,7 +294,6 @@ export default function CalendarPage({ user }: { user: any }) {
 
   const handleDelete = async (id: string) => {
     if (isDemoMode) return;
-    if (!window.confirm('Erase this temporal entry?')) return;
     await deleteDoc(doc(db, 'meetings', id));
   };
 
@@ -497,8 +498,8 @@ export default function CalendarPage({ user }: { user: any }) {
                         >
                           <Edit2 size={12} />
                         </button>
-                        <button
-                          onClick={() => handleDelete(m.id)}
+                          <button
+                            onClick={() => setMeetingToDelete(m.id)}
                           className="p-2 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-rose-500/20 text-rose-400 border border-[var(--crm-border)] transition-all"
                         >
                           <Trash2 size={12} />
@@ -687,6 +688,19 @@ export default function CalendarPage({ user }: { user: any }) {
           </div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        open={meetingToDelete !== null}
+        title="Delete meeting?"
+        message="This scheduled meeting will be removed from the calendar."
+        confirmLabel="Delete meeting"
+        onCancel={() => setMeetingToDelete(null)}
+        onConfirm={async () => {
+          if (!meetingToDelete) return;
+          const id = meetingToDelete;
+          setMeetingToDelete(null);
+          await handleDelete(id);
+        }}
+      />
     </PageLayout>
   );
 }

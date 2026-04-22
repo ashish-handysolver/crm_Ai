@@ -6,6 +6,7 @@ import SearchableSelect from './components/SearchableSelect';
 import { db, firebaseConfig } from './firebase';
 import { useDemo } from './DemoContext';
 import { useAuth } from './contexts/AuthContext';
+import ConfirmModal from './components/ConfirmModal';
 
 export default function Team({ user, companyId, embedded = false }: { user: any, companyId: string | null, embedded?: boolean }) {
   const { isDemoMode, demoData } = useDemo();
@@ -23,6 +24,7 @@ export default function Team({ user, companyId, embedded = false }: { user: any,
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
   const activeMembers = teamMembers.filter(member => member.active !== false).length;
   const adminMembers = teamMembers.filter(member => member.role === 'admin').length;
   const managerMembers = teamMembers.filter(member => member.role === 'management').length;
@@ -389,10 +391,7 @@ export default function Team({ user, companyId, embedded = false }: { user: any,
                             </button>
                             {(role === 'admin' || role === 'super_admin') && member.uid !== user.uid && (
                               <button
-                                onClick={async () => {
-                                  if (!window.confirm("Confirm deletion protocol? This action is irreversible.")) return;
-                                  await deleteDoc(doc(db, 'users', member.id));
-                                }}
+                                onClick={() => setMemberToDelete(member)}
                                 className="p-2.5 rounded-xl text-[var(--crm-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 border border-[var(--crm-border)] transition-all shadow-sm active:scale-95"
                               >
                                 <Trash2 size={16} />
@@ -434,6 +433,19 @@ export default function Team({ user, companyId, embedded = false }: { user: any,
           )}
         </AnimatePresence>
       </div>
+      <ConfirmModal
+        open={memberToDelete !== null}
+        title="Delete team member?"
+        message={`This will remove ${memberToDelete?.displayName || memberToDelete?.email || 'this member'} from the workspace.`}
+        confirmLabel="Delete member"
+        onCancel={() => setMemberToDelete(null)}
+        onConfirm={async () => {
+          if (!memberToDelete) return;
+          const member = memberToDelete;
+          setMemberToDelete(null);
+          await deleteDoc(doc(db, 'users', member.id));
+        }}
+      />
     </div>
   );
 }

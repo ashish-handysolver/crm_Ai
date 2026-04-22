@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
+import ConfirmModal from './components/ConfirmModal';
 
 export interface CustomFieldDef {
   id: string;
@@ -36,6 +37,7 @@ export default function CustomFields({ user, embedded = false }: { user: any, em
   const [newPhase, setNewPhase] = useState('');
   const [newLeadType, setNewLeadType] = useState('');
   const [newOptionInputs, setNewOptionInputs] = useState<Record<string, string>>({});
+  const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -80,7 +82,6 @@ export default function CustomFields({ user, embedded = false }: { user: any, em
   };
 
   const removeField = async (id: string) => {
-    if (!window.confirm("Abort this field definition from the matrix?")) return;
     try {
       if (companyId) {
         const fieldDocRef = doc(db, 'custom_fields', id);
@@ -345,7 +346,7 @@ export default function CustomFields({ user, embedded = false }: { user: any, em
                           )}
                         </div>
                         {!isDemoMode && (
-                          <button onClick={() => removeField(field.id)} className="absolute top-6 right-6 p-2 text-[var(--crm-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
+                          <button onClick={() => setFieldToDelete(field.id)} className="absolute top-6 right-6 p-2 text-[var(--crm-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover/field:opacity-100">
                             <Trash2 size={20} />
                           </button>
                         )}
@@ -446,6 +447,19 @@ export default function CustomFields({ user, embedded = false }: { user: any, em
           </div>
         </div>
       </div>
+      <ConfirmModal
+        open={fieldToDelete !== null}
+        title="Delete custom field?"
+        message="This field definition will be removed and cleared from any leads using it."
+        confirmLabel="Delete field"
+        onCancel={() => setFieldToDelete(null)}
+        onConfirm={async () => {
+          if (!fieldToDelete) return;
+          const id = fieldToDelete;
+          setFieldToDelete(null);
+          await removeField(id);
+        }}
+      />
     </div>
   );
 }
