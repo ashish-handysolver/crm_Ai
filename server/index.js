@@ -6,6 +6,26 @@ import admin from 'firebase-admin';
 
 dotenv.config();
 
+const fallbackFirebaseConfig = {
+  apiKey: 'AIzaSyCDMYbu604E083IyEBE__U6KX4I2YaovQA',
+  authDomain: 'handydash-75858.firebaseapp.com',
+  databaseURL: 'https://handydash-75858.firebaseio.com',
+  projectId: 'handydash-75858',
+  storageBucket: 'handydash-75858.appspot.com',
+  messagingSenderId: '18967278229',
+  appId: '1:18967278229:web:eedb13d46173cf05b4619c',
+};
+
+const firebaseWebConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY || fallbackFirebaseConfig.apiKey,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || fallbackFirebaseConfig.authDomain,
+  databaseURL: process.env.VITE_FIREBASE_DATABASE_URL || fallbackFirebaseConfig.databaseURL,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || fallbackFirebaseConfig.projectId,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || fallbackFirebaseConfig.storageBucket,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || fallbackFirebaseConfig.messagingSenderId,
+  appId: process.env.VITE_FIREBASE_APP_ID || fallbackFirebaseConfig.appId,
+};
+
 const getFirebaseAdminCredential = () => {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson) {
@@ -45,6 +65,22 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 const speechClient = new SpeechClient();
+app.get('/api/push/config', (_req, res) => {
+  res.json({
+    firebase: firebaseWebConfig,
+    vapidPublicKey: process.env.VITE_VAPID_PUBLIC_KEY || '',
+  });
+});
+
+app.get('/api/push/status', (_req, res) => {
+  res.json({
+    ok: true,
+    firebaseAdminReady,
+    vapidConfigured: Boolean(process.env.VITE_VAPID_PUBLIC_KEY),
+    projectId: firebaseWebConfig.projectId,
+  });
+});
+
 app.post('/api/push/send', async (req, res) => {
   const { tokens, payload } = req.body || {};
 
