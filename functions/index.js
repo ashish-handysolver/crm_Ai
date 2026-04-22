@@ -1,38 +1,50 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+const { getMessaging } = require('firebase-admin/messaging');
 
-admin.initializeApp();
+initializeApp();
 
-exports.sendNotificationOnCreate = functions.firestore
-  .document('notifications/{notificationId}')
-  .onCreate(async (snap, context) => {
-    const notificationData = snap.data();
-    
-    // Only send push if there's a target user
+const DATABASE_ID = 'handydash-firestore';
+const db = getFirestore(undefined, DATABASE_ID);
+const messaging = getMessaging();
+
+exports.sendNotificationOnCreate = onDocumentCreated(
+  {
+    document: 'notifications/{notificationId}',
+    database: DATABASE_ID,
+    region: 'us-central1',
+  },
+  async (event) => {
+    const notificationData = event.data?.data();
+
+    if (!notificationData) {
+      console.log('Notification snapshot was empty, skipping push.');
+      return;
+    }
+
     if (!notificationData.userId) {
       console.log('No userId provided in notification, skipping push.');
-      return null;
+      return;
     }
 
     try {
-      // Get the target user's document to find their FCM tokens
-      const userRef = admin.firestore().doc(`users/${notificationData.userId}`);
+      const userRef = db.doc(`users/${notificationData.userId}`);
       const userSnap = await userRef.get();
-      
+
       if (!userSnap.exists) {
         console.log('User does not exist, skipping push.');
-        return null;
+        return;
       }
 
-      const userData = userSnap.data();
-      const tokens = userData.fcmTokens || [];
+      const userData = userSnap.data() || {};
+      const tokens = Array.isArray(userData.fcmTokens) ? userData.fcmTokens : [];
 
-      if (!tokens || tokens.length === 0) {
+      if (tokens.length === 0) {
         console.log('User has no registered FCM tokens, skipping push.');
-        return null;
+        return;
       }
 
-      // Build the standard push payload
       const payload = {
         notification: {
           title: notificationData.title || 'New Notification',
@@ -45,25 +57,22 @@ exports.sendNotificationOnCreate = functions.firestore
           },
           fcmOptions: {
             link: notificationData.link || '/',
-          }
+          },
         },
         data: {
           url: notificationData.link || '/',
-          tag: notificationData.id || context.params.notificationId,
+          tag: notificationData.id || event.params.notificationId,
         },
-        tokens: tokens,
+        tokens,
       };
 
-      // Send the payload
-      const response = await admin.messaging().sendEachForMulticast(payload);
+      const response = await messaging.sendEachForMulticast(payload);
       console.log(`Successfully sent message to ${response.successCount} devices`);
       if (response.failureCount > 0) {
         console.log(`Failed to send to ${response.failureCount} devices`);
       }
-
-      return null;
     } catch (error) {
       console.error('Error sending push notification:', error);
-      return null;
     }
-  });
+  }
+);
