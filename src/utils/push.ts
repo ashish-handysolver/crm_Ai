@@ -71,19 +71,27 @@ export const sendPushToUser = async (userId: string, payload: PushPayload) => {
   const tokens = (userSnap.data()?.fcmTokens || []) as string[];
   if (!tokens.length) return;
 
-  const response = await fetch(SEND_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      tokens,
-      payload,
-    }),
-  });
+  try {
+    const response = await fetch(SEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tokens,
+        payload,
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown push error');
-    throw new Error(`Push send failed: ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown push error');
+      console.warn(`Push send skipped: ${errorText}`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn('Push send request failed:', error);
+    return false;
   }
 };
