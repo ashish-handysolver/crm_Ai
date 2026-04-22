@@ -6,6 +6,8 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
 
 type ActivityLogRecord = {
   id: string;
@@ -326,7 +328,13 @@ export default function ManagementActivity({ user }: { user: any }) {
 
   if (!allowed) {
     return (
-      <div className="min-h-screen bg-[var(--crm-bg)] p-4 sm:p-6 lg:p-10">
+      <PageLayout maxWidth="1100px">
+        <PageHeader
+          title=""
+          description="Daily activity reports are available for management, admins, and super admins."
+          badge="Manager Report"
+          icon={Activity}
+        />
         <div className="mx-auto max-w-3xl rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-8 text-center shadow-lg">
           <Users className="mx-auto mb-4 text-[var(--crm-text-muted)]" size={40} />
           <h1 className="text-2xl font-black text-[var(--crm-text)]">Management access only</h1>
@@ -334,25 +342,18 @@ export default function ManagementActivity({ user }: { user: any }) {
             Daily activity reports are available for management, admins, and super admins.
           </p>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--crm-bg)] px-3 py-4 sm:px-6 lg:px-8 lg:py-8">
-      <div className="mx-auto max-w-7xl space-y-5">
-        <div className="flex flex-col gap-4 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-4 shadow-lg sm:p-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-              <Activity size={14} />
-              Manager Report
-            </div>
-            {/* <h1 className="text-2xl font-black tracking-tight text-[var(--crm-text)] sm:text-3xl">Daily Activity</h1>
-            <p className="mt-1 max-w-2xl text-sm font-semibold text-[var(--crm-text-muted)]">
-              Track who changed leads, added notes, updated status, and followed up during the selected day.
-            </p> */}
-          </div>
-
+    <PageLayout maxWidth="1600px" className="space-y-6 sm:space-y-8">
+      <PageHeader
+        title=""
+        description="Track who changed leads, added notes, updated statuses, and followed up during the selected period."
+        badge="Manager Report"
+        icon={Activity}
+        actions={
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
             <button
               type="button"
@@ -381,199 +382,199 @@ export default function ManagementActivity({ user }: { user: any }) {
               Clear Filters
             </button>
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-3 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3 shadow-lg sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
-          <label className="space-y-2">
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-              <CalendarDays size={13} />
-              Date
-            </span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(event) => setSelectedDate(event.target.value)}
-              className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition focus:border-indigo-400"
-            />
-          </label>
+      <div className="grid gap-3 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3 shadow-lg sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
+        <label className="space-y-2">
+          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+            <CalendarDays size={13} />
+            Date
+          </span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(event) => setSelectedDate(event.target.value)}
+            className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition focus:border-indigo-400"
+          />
+        </label>
 
-          <label className="space-y-2">
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-              <Users size={13} />
-              Team Member
-            </span>
-            <select
-              value={selectedMember}
-              onChange={(event) => setSelectedMember(event.target.value)}
-              className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition focus:border-indigo-400"
-            >
-              <option value="ALL">All team members</option>
-              {memberOptions.map(member => (
-                <option key={member.id} value={member.id}>{member.name}</option>
-              ))}
-            </select>
-          </label>
+        <label className="space-y-2">
+          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+            <Users size={13} />
+            Team Member
+          </span>
+          <select
+            value={selectedMember}
+            onChange={(event) => setSelectedMember(event.target.value)}
+            className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition focus:border-indigo-400"
+          >
+            <option value="ALL">All team members</option>
+            {memberOptions.map(member => (
+              <option key={member.id} value={member.id}>{member.name}</option>
+            ))}
+          </select>
+        </label>
 
-          <label className="space-y-2">
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-              <FileText size={13} />
-              Activity
-            </span>
-            <select
-              value={selectedType}
-              onChange={(event) => setSelectedType(event.target.value)}
-              className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition focus:border-indigo-400"
-            >
-              <option value="ALL">All activity</option>
-              {activityTypes.map(type => (
-                <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>
-              ))}
-            </select>
-          </label>
+        <label className="space-y-2">
+          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+            <FileText size={13} />
+            Activity
+          </span>
+          <select
+            value={selectedType}
+            onChange={(event) => setSelectedType(event.target.value)}
+            className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition focus:border-indigo-400"
+          >
+            <option value="ALL">All activity</option>
+            {activityTypes.map(type => (
+              <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>
+            ))}
+          </select>
+        </label>
 
-          <label className="space-y-2 sm:col-span-2 lg:col-span-1">
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-              <Search size={13} />
-              Search
-            </span>
-            <input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search action, lead, note..."
-              className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition placeholder:text-[var(--crm-text-muted)] focus:border-indigo-400"
-            />
-          </label>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[
-            { label: 'Activities', value: filteredLogs.length, icon: Activity },
-            { label: 'Active Members', value: activeMembers, icon: UserCheck },
-            { label: 'Leads Touched', value: leadsTouched, icon: Target },
-            { label: 'Top Member', value: topMember?.name || '-', icon: Users }
-          ].map(item => (
-            <div key={item.label} className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-4 shadow-sm">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] text-indigo-500">
-                <item.icon size={18} />
-              </div>
-              <div className="truncate text-xl font-black text-[var(--crm-text)]">{item.value}</div>
-              <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">{item.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-5">
-          {loading ? (
-            <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-8 text-center text-sm font-bold text-[var(--crm-text-muted)]">
-              Loading daily activity report...
-            </div>
-          ) : groupedLogs.length === 0 ? (
-            <div className="rounded-[8px] border border-dashed border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-8 text-center">
-              <Clock className="mx-auto mb-3 text-[var(--crm-text-muted)]" size={34} />
-              <h2 className="text-lg font-black text-[var(--crm-text)]">No activity found</h2>
-              <p className="mt-1 text-sm font-semibold text-[var(--crm-text-muted)]">
-                Try another date, team member, or search term.
-              </p>
-            </div>
-          ) : groupedLogs.map(group => (
-            <motion.section
-              key={group.memberId}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass-card overflow-hidden rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] shadow-lg"
-            >
-              <div className="flex flex-col gap-4 border-b border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-black text-white shadow-lg shadow-indigo-500/20">
-                    {(group.name || 'U').slice(0, 1).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="truncate text-base font-black text-[var(--crm-text)]">{group.name}</h2>
-                    <p className="truncate text-xs font-bold text-[var(--crm-text-muted)]">{group.email || 'Team activity'}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                  <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-center text-xs font-black uppercase tracking-wider text-[var(--crm-text)]">
-                    {group.items.length} action{group.items.length === 1 ? '' : 's'}
-                  </div>
-                  <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-center text-xs font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
-                    {new Set(group.items.map(item => item.leadId).filter(Boolean)).size} leads
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative space-y-4 p-4 sm:p-5">
-                <div className="absolute bottom-5 left-9 top-5 hidden w-px bg-gradient-to-b from-indigo-500/40 via-[var(--crm-border)] to-transparent sm:block" />
-                {group.items.map(log => {
-                  const lead = log.leadId ? leadById.get(log.leadId) : undefined;
-                  const leadName = lead?.name || lead?.contactName || 'Lead record';
-                  const company = lead?.company || lead?.companyName || lead?.email || '';
-
-                  return (
-                    <article key={log.id} className="relative grid gap-3 sm:grid-cols-[42px_1fr]">
-                      <div className="relative hidden sm:flex sm:justify-center">
-                        <div className="relative z-10 mt-5 flex h-8 w-8 items-center justify-center rounded-full border border-indigo-500/20 bg-[var(--crm-sidebar-bg)] text-indigo-500 shadow-lg">
-                          <Activity size={14} />
-                        </div>
-                      </div>
-
-                      <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 shadow-sm transition hover:border-indigo-500/30 hover:bg-[var(--crm-control-hover-bg)] sm:p-5">
-                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className={`rounded-[8px] border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getActivityTone(log.type)}`}>
-                                {(log.type || 'Activity').replaceAll('_', ' ')}
-                              </span>
-                              <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
-                                <Clock size={12} />
-                                {formatLogTime(log)}
-                              </span>
-                            </div>
-                            <h3 className="mt-3 break-words text-base font-black text-[var(--crm-text)]">{getDisplayAction(log)}</h3>
-                          </div>
-
-                          {log.leadId && (
-                            <Link
-                              to={`/clients/${log.leadId}/edit`}
-                              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[8px] border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-indigo-500 transition hover:bg-indigo-500/20"
-                            >
-                              Open Lead
-                              <ArrowUpRight size={13} />
-                            </Link>
-                          )}
-                        </div>
-
-                        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-                          <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3">
-                            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">Lead</div>
-                            {log.leadId ? (
-                              <Link to={`/clients/${log.leadId}/edit`} className="block truncate text-sm font-black text-indigo-500 hover:underline">
-                                {leadName}
-                              </Link>
-                            ) : (
-                              <span className="block truncate text-sm font-black text-[var(--crm-text)]">{leadName}</span>
-                            )}
-                            {company && <div className="mt-1 truncate text-xs font-bold text-[var(--crm-text-muted)]">{company}</div>}
-                          </div>
-
-                          <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3">
-                            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">Details</div>
-                            <p className="break-words text-sm font-semibold leading-6 text-[var(--crm-text-muted)]">{getDetailText(log)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </motion.section>
-          ))}
-        </div>
-
-        <p className="pb-4 text-center text-xs font-semibold text-[var(--crm-text-muted)]">
-          Report generated for {user?.displayName || user?.email || 'manager'} on {new Date().toLocaleDateString()}.
-        </p>
+        <label className="space-y-2 sm:col-span-2 lg:col-span-1">
+          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+            <Search size={13} />
+            Search
+          </span>
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search action, lead, note..."
+            className="w-full rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] px-3 py-3 text-sm font-bold text-[var(--crm-text)] outline-none transition placeholder:text-[var(--crm-text-muted)] focus:border-indigo-400"
+          />
+        </label>
       </div>
-    </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: 'Activities', value: filteredLogs.length, icon: Activity },
+          { label: 'Active Members', value: activeMembers, icon: UserCheck },
+          { label: 'Leads Touched', value: leadsTouched, icon: Target },
+          { label: 'Top Member', value: topMember?.name || '-', icon: Users }
+        ].map(item => (
+          <div key={item.label} className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-4 shadow-sm">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] text-indigo-500">
+              <item.icon size={18} />
+            </div>
+            <div className="truncate text-xl font-black text-[var(--crm-text)]">{item.value}</div>
+            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">{item.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-5">
+        {loading ? (
+          <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-8 text-center text-sm font-bold text-[var(--crm-text-muted)]">
+            Loading daily activity report...
+          </div>
+        ) : groupedLogs.length === 0 ? (
+          <div className="rounded-[8px] border border-dashed border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-8 text-center">
+            <Clock className="mx-auto mb-3 text-[var(--crm-text-muted)]" size={34} />
+            <h2 className="text-lg font-black text-[var(--crm-text)]">No activity found</h2>
+            <p className="mt-1 text-sm font-semibold text-[var(--crm-text-muted)]">
+              Try another date, team member, or search term.
+            </p>
+          </div>
+        ) : groupedLogs.map(group => (
+          <motion.section
+            key={group.memberId}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card overflow-hidden rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] shadow-lg"
+          >
+            <div className="flex flex-col gap-4 border-b border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-black text-white shadow-lg shadow-indigo-500/20">
+                  {(group.name || 'U').slice(0, 1).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-black text-[var(--crm-text)]">{group.name}</h2>
+                  <p className="truncate text-xs font-bold text-[var(--crm-text-muted)]">{group.email || 'Team activity'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-center text-xs font-black uppercase tracking-wider text-[var(--crm-text)]">
+                  {group.items.length} action{group.items.length === 1 ? '' : 's'}
+                </div>
+                <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-3 py-2 text-center text-xs font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
+                  {new Set(group.items.map(item => item.leadId).filter(Boolean)).size} leads
+                </div>
+              </div>
+            </div>
+
+            <div className="relative space-y-4 p-4 sm:p-5">
+              <div className="absolute bottom-5 left-9 top-5 hidden w-px bg-gradient-to-b from-indigo-500/40 via-[var(--crm-border)] to-transparent sm:block" />
+              {group.items.map(log => {
+                const lead = log.leadId ? leadById.get(log.leadId) : undefined;
+                const leadName = lead?.name || lead?.contactName || 'Lead record';
+                const company = lead?.company || lead?.companyName || lead?.email || '';
+
+                return (
+                  <article key={log.id} className="relative grid gap-3 sm:grid-cols-[42px_1fr]">
+                    <div className="relative hidden sm:flex sm:justify-center">
+                      <div className="relative z-10 mt-5 flex h-8 w-8 items-center justify-center rounded-full border border-indigo-500/20 bg-[var(--crm-sidebar-bg)] text-indigo-500 shadow-lg">
+                        <Activity size={14} />
+                      </div>
+                    </div>
+
+                    <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-4 shadow-sm transition hover:border-indigo-500/30 hover:bg-[var(--crm-control-hover-bg)] sm:p-5">
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`rounded-[8px] border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getActivityTone(log.type)}`}>
+                              {(log.type || 'Activity').replaceAll('_', ' ')}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">
+                              <Clock size={12} />
+                              {formatLogTime(log)}
+                            </span>
+                          </div>
+                          <h3 className="mt-3 break-words text-base font-black text-[var(--crm-text)]">{getDisplayAction(log)}</h3>
+                        </div>
+
+                        {log.leadId && (
+                          <Link
+                            to={`/clients/${log.leadId}/edit`}
+                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[8px] border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-indigo-500 transition hover:bg-indigo-500/20"
+                          >
+                            Open Lead
+                            <ArrowUpRight size={13} />
+                          </Link>
+                        )}
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+                        <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3">
+                          <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">Lead</div>
+                          {log.leadId ? (
+                            <Link to={`/clients/${log.leadId}/edit`} className="block truncate text-sm font-black text-indigo-500 hover:underline">
+                              {leadName}
+                            </Link>
+                          ) : (
+                            <span className="block truncate text-sm font-black text-[var(--crm-text)]">{leadName}</span>
+                          )}
+                          {company && <div className="mt-1 truncate text-xs font-bold text-[var(--crm-text-muted)]">{company}</div>}
+                        </div>
+
+                        <div className="rounded-[8px] border border-[var(--crm-border)] bg-[var(--crm-card-bg)] p-3">
+                          <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-[var(--crm-text-muted)]">Details</div>
+                          <p className="break-words text-sm font-semibold leading-6 text-[var(--crm-text-muted)]">{getDetailText(log)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </motion.section>
+        ))}
+      </div>
+
+      <p className="pb-4 text-center text-xs font-semibold text-[var(--crm-text-muted)]">
+        Report generated for {user?.displayName || user?.email || 'manager'} on {new Date().toLocaleDateString()}.
+      </p>
+    </PageLayout>
   );
 }

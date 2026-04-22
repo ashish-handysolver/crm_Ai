@@ -29,6 +29,9 @@ const DEFAULT_LEAD_TYPES = (import.meta as any).env.VITE_LEAD_TYPES
   ? (import.meta as any).env.VITE_LEAD_TYPES.split(',').map((s: string) => s.trim().toUpperCase())
   : ['B2B', 'B2C', 'ENTERPRISE'];
 
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
+
 export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActiveOnlyRoute?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,6 +51,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isDeletingLead, setIsDeletingLead] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
   const [activityFilter, setActivityFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>(isActiveOnlyRoute ? 'ACTIVE' : 'ALL');
@@ -1381,24 +1385,20 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   };
 
   return (
-    <div className={`flex-1 bg-transparent min-h-full ${viewMode === 'kanban' ? 'overflow-x-hidden' : ''}`}>
-      <div className={`max-w-[1600px] mx-auto ${viewMode === 'kanban' ? 'p-0 sm:p-7 lg:p-10' : 'p-3 sm:p-7 lg:p-10'} space-y-4 sm:space-y-8`}>
-
-        {/* Header Section */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 px-2 sm:px-0">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
-              <Users size={14} /> All leads
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+    <PageLayout maxWidth="1600px" className={viewMode === 'kanban' ? 'p-0 sm:p-7 lg:p-10' : ''}>
+      <PageHeader
+        title=""
+        description="Oversee your entire sales pipeline and manage client relationships with precision."
+        badge="Lead Portfolio"
+        icon={Users}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
             {!isDemoMode ? (
               <>
-                <button onClick={() => setIsImportModalOpen(true)} className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 sm:px-5 py-3 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-[var(--crm-control-hover-bg)] transition-all shadow-sm">
-                  <UploadCloud size={18} /> <span>Import Excel</span>
+                <button onClick={() => setIsImportModalOpen(true)} className="btn-secondary">
+                  <UploadCloud size={18} /> <span>Import</span>
                 </button>
-                <Link to="/clients/new" className="w-full sm:w-auto justify-center flex items-center gap-3 px-4 sm:px-5 py-3 bg-indigo-600 text-white rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20">
+                <Link to="/clients/new" className="btn-primary">
                   <Plus size={18} />
                   <span>New Lead</span>
                 </Link>
@@ -1408,176 +1408,177 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                 Demo Territory
               </div>
             )}
+          </div>
+        }
+      />
+
+      <ImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} user={user} />
+
+      <AnimatePresence>
+        {(error || success) && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-8 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm border ${error ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+            {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+            {error || success}
           </motion.div>
-        </header>
+        )}
+      </AnimatePresence>
 
-        <ImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} user={user} />
+      {/* Toolbar - Added overflow-visible to prevent select clipping */}
+      <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[1.35rem] !overflow-visible p-3 sm:p-5 mb-4 sm:mb-7 flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-3 sm:gap-5 relative z-50 mx-2 sm:mx-0">
+        <div className="relative w-full xl:max-w-md group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+          <input
+            type="text"
+            placeholder="Filter leads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15 transition-all shadow-sm"
+          />
+        </div>
 
-        <AnimatePresence>
-          {(error || success) && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-8 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm border ${error ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-              {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
-              {error || success}
+        <AnimatePresence mode="wait">
+          {selectedLeads.length === 0 ? (
+            <motion.div
+              key="filters"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex flex-col xl:flex-row xl:items-center xl:justify-end gap-2.5 sm:gap-3 w-full xl:w-auto"
+            >
+              <div className="hidden md:flex items-center gap-1 p-1 bg-[var(--crm-control-bg)] rounded-xl border border-[var(--crm-border)] shadow-sm">
+                <button onClick={() => setViewMode('list')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}>LIST</button>
+                <button onClick={() => setViewMode('kanban')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}>Card View</button>
+              </div>
+
+              <div className="h-8 w-[1px] bg-[var(--crm-border)] mx-1 hidden lg:block"></div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-row xl:flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
+                <div className="w-full sm:w-auto min-w-[150px]">
+                  <SearchableSelect
+                    options={[
+                      { id: '', name: 'Types' },
+                      ...availableLeadTypes.map(t => ({ id: t, name: t }))
+                    ]}
+                    value={leadTypeFilter}
+                    onChange={setLeadTypeFilter}
+                    placeholder="Types"
+                    compact={true}
+                    hideSearch={availableLeadTypes.length < 5}
+                  />
+                </div>
+
+                {role !== 'team_member' && (
+                  <div className="w-full sm:w-auto min-w-[160px] sm:min-w-[200px]">
+                    <SearchableSelect
+                      options={teamMembers.map(tm => ({
+                        id: tm.id,
+                        name: tm.displayName || 'Untitled',
+                        company: '',
+                        avatar: tm.photoURL
+                      }))}
+                      value={teamMemberFilter}
+                      onChange={setTeamMemberFilter}
+                      placeholder="Team Members"
+                      compact={true}
+                    />
+                  </div>
+                )}
+
+                <div className="w-full sm:w-auto min-w-[150px]">
+                  <SearchableSelect
+                    options={[
+                      { id: 'ALL', name: 'Status' },
+                      { id: 'HOT', name: 'Hot 🔥' },
+                      { id: 'WARM', name: 'Warm ☀️' },
+                      { id: 'COLD', name: 'Cold ❄️' }
+                    ]}
+                    value={healthFilter}
+                    onChange={setHealthFilter}
+                    placeholder="Status"
+                    compact={true}
+                    hideSearch={true}
+                  />
+                </div>
+
+                {!isActiveOnlyRoute && (
+                  <div className="w-full sm:w-auto min-w-[150px]">
+                    <SearchableSelect
+                      options={[
+                        { id: 'ALL', name: 'Activity' },
+                        { id: 'ACTIVE', name: 'Active (Connected)' },
+                        { id: 'INACTIVE', name: 'Not Active' }
+                      ]}
+                      value={activityFilter}
+                      onChange={(val) => setActivityFilter(val as any)}
+                      placeholder="Activity"
+                      compact={true}
+                      hideSearch={true}
+                    />
+                  </div>
+                )}
+
+                <div className="w-full sm:w-auto min-w-[150px]">
+                  <SearchableSelect
+                    options={[
+                      { id: 'ALL', name: 'All Leads' },
+                      { id: 'INTERESTED', name: 'Interested 👍' },
+                      { id: 'NOT_INTERESTED', name: 'Not Interested 👎' }
+                    ]}
+                    value={interestFilter}
+                    onChange={(val) => setInterestFilter(val as any)}
+                    placeholder="All Leads"
+                    compact={true}
+                    hideSearch={true}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="actions"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto"
+            >
+              <div className="flex items-center gap-3 mr-2 sm:mr-4">
+                <span className="text-[10px] sm:text-xs font-black text-indigo-400 uppercase tracking-tighter">
+                  {selectedLeads.length} Selected
+                </span>
+                <button
+                  onClick={() => setSelectedLeads([])}
+                  className="text-[10px] font-black text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] uppercase tracking-widest transition-colors underline underline-offset-4"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleBulkInterestUpdate(true)}
+                  className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-cyan-500/10 text-cyan-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-cyan-500/20 transition-all border border-cyan-500/20 shadow-sm uppercase tracking-widest"
+                >
+                  <ThumbsUp size={14} /> <span className="hidden sm:inline">Interested</span>
+                </button>
+                <button
+                  onClick={() => handleBulkInterestUpdate(false)}
+                  className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-rose-500/10 text-rose-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500/20 transition-all border border-rose-500/20 shadow-sm uppercase tracking-widest"
+                >
+                  <ThumbsDown size={14} /> <span className="hidden sm:inline">Not Interested</span>
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 bg-rose-600 text-white rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500 transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest"
+                >
+                  <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
 
-        {/* Toolbar - Added overflow-visible to prevent select clipping */}
-        <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[1.35rem] !overflow-visible p-3 sm:p-5 mb-4 sm:mb-7 flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-3 sm:gap-5 relative z-50 mx-2 sm:mx-0">
-          <div className="relative w-full xl:max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--crm-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
-            <input
-              type="text"
-              placeholder="Filter leads..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[var(--crm-input-bg)] border border-[var(--crm-border)] rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15 transition-all shadow-sm"
-            />
-          </div>
-
-          <AnimatePresence mode="wait">
-            {selectedLeads.length === 0 ? (
-              <motion.div
-                key="filters"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex flex-col xl:flex-row xl:items-center xl:justify-end gap-2.5 sm:gap-3 w-full xl:w-auto"
-              >
-                <div className="hidden md:flex items-center gap-1 p-1 bg-[var(--crm-control-bg)] rounded-xl border border-[var(--crm-border)] shadow-sm">
-                  <button onClick={() => setViewMode('list')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}>LIST</button>
-                  <button onClick={() => setViewMode('kanban')} className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/30' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}>Card View</button>
-                </div>
-
-                <div className="h-8 w-[1px] bg-[var(--crm-border)] mx-1 hidden lg:block"></div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-row xl:flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
-                  <div className="w-full sm:w-auto min-w-[150px]">
-                    <SearchableSelect
-                      options={[
-                        { id: '', name: 'Types' },
-                        ...availableLeadTypes.map(t => ({ id: t, name: t }))
-                      ]}
-                      value={leadTypeFilter}
-                      onChange={setLeadTypeFilter}
-                      placeholder="Types"
-                      compact={true}
-                      hideSearch={availableLeadTypes.length < 5}
-                    />
-                  </div>
-
-                  {role !== 'team_member' && (
-                    <div className="w-full sm:w-auto min-w-[160px] sm:min-w-[200px]">
-                      <SearchableSelect
-                        options={teamMembers.map(tm => ({
-                          id: tm.id,
-                          name: tm.displayName || 'Untitled',
-                          company: '',
-                          avatar: tm.photoURL
-                        }))}
-                        value={teamMemberFilter}
-                        onChange={setTeamMemberFilter}
-                        placeholder="Team Members"
-                        compact={true}
-                      />
-                    </div>
-                  )}
-
-                  <div className="w-full sm:w-auto min-w-[150px]">
-                    <SearchableSelect
-                      options={[
-                        { id: 'ALL', name: 'Status' },
-                        { id: 'HOT', name: 'Hot 🔥' },
-                        { id: 'WARM', name: 'Warm ☀️' },
-                        { id: 'COLD', name: 'Cold ❄️' }
-                      ]}
-                      value={healthFilter}
-                      onChange={setHealthFilter}
-                      placeholder="Status"
-                      compact={true}
-                      hideSearch={true}
-                    />
-                  </div>
-
-                  {!isActiveOnlyRoute && (
-                    <div className="w-full sm:w-auto min-w-[150px]">
-                      <SearchableSelect
-                        options={[
-                          { id: 'ALL', name: 'Activity' },
-                          { id: 'ACTIVE', name: 'Active (Connected)' },
-                          { id: 'INACTIVE', name: 'Not Active' }
-                        ]}
-                        value={activityFilter}
-                        onChange={(val) => setActivityFilter(val as any)}
-                        placeholder="Activity"
-                        compact={true}
-                        hideSearch={true}
-                      />
-                    </div>
-                  )}
-
-                  <div className="w-full sm:w-auto min-w-[150px]">
-                    <SearchableSelect
-                      options={[
-                        { id: 'ALL', name: 'All Leads' },
-                        { id: 'INTERESTED', name: 'Interested 👍' },
-                        { id: 'NOT_INTERESTED', name: 'Not Interested 👎' }
-                      ]}
-                      value={interestFilter}
-                      onChange={(val) => setInterestFilter(val as any)}
-                      placeholder="All Leads"
-                      compact={true}
-                      hideSearch={true}
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="actions"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto"
-              >
-                <div className="flex items-center gap-3 mr-2 sm:mr-4">
-                  <span className="text-[10px] sm:text-xs font-black text-indigo-400 uppercase tracking-tighter">
-                    {selectedLeads.length} Selected
-                  </span>
-                  <button
-                    onClick={() => setSelectedLeads([])}
-                    className="text-[10px] font-black text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] uppercase tracking-widest transition-colors underline underline-offset-4"
-                  >
-                    Clear
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleBulkInterestUpdate(true)}
-                    className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-cyan-500/10 text-cyan-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-cyan-500/20 transition-all border border-cyan-500/20 shadow-sm uppercase tracking-widest"
-                  >
-                    <ThumbsUp size={14} /> <span className="hidden sm:inline">Interested</span>
-                  </button>
-                  <button
-                    onClick={() => handleBulkInterestUpdate(false)}
-                    className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-rose-500/10 text-rose-400 rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500/20 transition-all border border-rose-500/20 shadow-sm uppercase tracking-widest"
-                  >
-                    <ThumbsDown size={14} /> <span className="hidden sm:inline">Not Interested</span>
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 bg-rose-600 text-white rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500 transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest"
-                  >
-                    <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* <div className="lg:hidden px-4 sm:px-0">
+      {/* <div className="lg:hidden px-4 sm:px-0">
           <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-control-bg)] p-1.5 shadow-inner">
             <button
               onClick={() => setViewMode('list')}
@@ -1594,28 +1595,29 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           </div>
         </div> */}
 
-        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 overflow-x-auto hide-scrollbar pb-1 px-4 sm:px-0">
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
-            >
-              Clear Filters
-            </button>
-          )}
-          {['All', ...availablePhases].map((phase) => (
-            <button
-              key={phase}
-              onClick={() => setSelectedPhase(phase)}
-              className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${selectedPhase === phase
-                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm'
-                : 'bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] hover:bg-[var(--crm-control-hover-bg)] hover:text-[var(--crm-text)]'
-                }`}
-            >
-              {phase} <span className="ml-1 opacity-75">({phaseCounts[phase] || 0})</span>
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 overflow-x-auto hide-scrollbar pb-1 px-4 sm:px-0">
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
+          >
+            Clear Filters
+          </button>
+        )}
+        {['All', ...availablePhases].map((phase) => (
+          <button
+            key={phase}
+            onClick={() => setSelectedPhase(phase)}
+            className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${selectedPhase === phase
+              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm'
+              : 'bg-[var(--crm-control-bg)] text-[var(--crm-text-muted)] border border-[var(--crm-border)] hover:bg-[var(--crm-control-hover-bg)] hover:text-[var(--crm-text)]'
+              }`}
+          >
+            {phase} <span className="ml-1 opacity-75">({phaseCounts[phase] || 0})</span>
+          </button>
+        ))}
+      </div>
+      <div>
         {viewMode === 'kanban' ? <KanbanView /> : (
           <>
 
@@ -2372,6 +2374,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 }

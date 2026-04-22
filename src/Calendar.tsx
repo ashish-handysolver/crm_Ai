@@ -12,6 +12,8 @@ import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
 
 interface Meeting {
   id: string;
@@ -61,9 +63,6 @@ export default function CalendarPage({ user }: { user: any }) {
   });
   const [showShareTemplates, setShowShareTemplates] = useState<string | null>(null);
 
-  // Legacy audio pulse removed - centralized in NotificationWatcher Utility
-
-  const reminderCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sentReminders = useRef<Set<string>>(new Set());
 
   // Request notification permission
@@ -140,8 +139,6 @@ export default function CalendarPage({ user }: { user: any }) {
 
     return () => { unsub(); unsubUsers(); };
   }, [companyId, isDemoMode, demoData, role, user.uid]);
-
-  // 10-minute reminder checker removed - centralized in NotificationWatcher component
 
   const getDaysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
   const getFirstDayOfMonth = (y: number, m: number) => new Date(y, m, 1).getDay();
@@ -309,22 +306,19 @@ export default function CalendarPage({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-transparent text-[var(--crm-text)] p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
-        <div className="max-w-7xl mx-auto animate-pulse">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-            <div className="space-y-4 w-full">
-              <div className="w-32 h-4 bg-[var(--crm-border)] rounded-full"></div>
-              <div className="w-64 sm:w-96 h-12 bg-[var(--crm-border)] rounded-xl"></div>
-              <div className="w-full max-w-xl h-6 bg-[var(--crm-border)] rounded"></div>
-            </div>
-            <div className="w-48 h-14 bg-[var(--crm-border)] rounded-2xl shrink-0"></div>
+      <PageLayout>
+        <div className="space-y-12 animate-pulse">
+          <div className="space-y-4 w-full">
+            <div className="w-32 h-4 bg-[var(--crm-border)] rounded-full"></div>
+            <div className="w-64 sm:w-96 h-12 bg-[var(--crm-border)] rounded-xl"></div>
+            <div className="w-full max-w-xl h-6 bg-[var(--crm-border)] rounded"></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             <div className="lg:col-span-3 h-[600px] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem]"></div>
             <div className="h-[600px] bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem]"></div>
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -332,250 +326,191 @@ export default function CalendarPage({ user }: { user: any }) {
   const labelClasses = "text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-2 block px-1";
 
   return (
-    <div className="flex-1 bg-transparent text-[var(--crm-text)] p-4 sm:p-8 lg:p-12 min-h-full font-sans overflow-x-hidden">
-      <div className="max-w-7xl mx-auto">
+    <PageLayout>
+      <PageHeader
+        title=""
+        description="Organize your team's schedule and keep track of client engagements with ease."
+        badge="Strategic Calendar"
+        icon={CalendarIcon}
+        actions={
+          <button
+            onClick={() => {
+              Notification.requestPermission();
+              setSuccess('Notifications active: High-priority alerts tested.');
+              setTimeout(() => setSuccess(''), 4000);
+            }}
+            className="btn-secondary"
+          >
+            <Bell size={18} /> <span className="hidden sm:inline">Alerts</span>
+          </button>
+        }
+      />
 
-        {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-8 md:mb-12">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-[9px] md:text-[10px] font-black text-indigo-600 tracking-[0.25em] uppercase mb-2 md:mb-4 flex items-center gap-2">
-              <CalendarIcon size={12} className="fill-indigo-600 animate-pulse md:hidden" />
-              <CalendarIcon size={14} className="fill-indigo-600 animate-pulse hidden md:block" />
-              Meeting Scheduler
+      <AnimatePresence>
+        {(error || success) && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={`mb-10 p-5 rounded-[2rem] flex items-center gap-4 text-sm font-bold shadow-lg border ${error ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${error ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+              {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
             </div>
-
+            {error || success}
           </motion.div>
+        )}
+      </AnimatePresence>
 
-          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
-            <button
-              onClick={() => {
-                Notification.requestPermission();
-                setSuccess('Notifications active: High-priority alerts tested.');
-                setTimeout(() => setSuccess(''), 4000);
-              }}
-              className="group flex items-center justify-center md:justify-start gap-3 w-full md:w-auto px-6 md:px-8 py-3.5 md:py-4 bg-[var(--crm-border)] border border-[var(--crm-border)] text-[var(--crm-text)] rounded-2xl text-xs md:text-sm font-black hover:border-indigo-500/30 hover:bg-[var(--crm-card-bg)] shadow-sm transition-all active:scale-95 uppercase tracking-widest"
-            >
-              <Bell size={18} className="group-hover:rotate-12 transition-transform" />
-            </button>
-          </motion.div>
-        </header>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        {/* Calendar Grid */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 glass-card !bg-[var(--crm-card-bg)] !p-0 !rounded-[2.5rem] shadow-2xl border border-[var(--crm-border)] overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/20 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-indigo-100/10 transition-colors"></div>
 
-        {/* Alerts */}
-        <AnimatePresence>
-          {(error || success) && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={`mb-10 p-5 rounded-[2rem] flex items-center gap-4 text-sm font-bold shadow-lg border ${error ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${error ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
-                {error ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+          {/* Month nav */}
+          <div className="flex items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 relative z-10">
+            <button onClick={prevMonth} className="p-2.5 md:p-3 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronLeft size={20} className="text-[var(--crm-text-muted)]" /></button>
+            <h2 className="text-lg md:text-2xl font-black text-[var(--crm-text)] tracking-tight">{MONTHS[currentMonth]} {currentYear}</h2>
+            <button onClick={nextMonth} className="p-2.5 md:p-3 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronRight size={20} className="text-[var(--crm-text-muted)]" /></button>
+          </div>
+
+          {/* Day names */}
+          <div className="grid grid-cols-7 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/40 relative z-10">
+            {DAYS.map(d => (
+              <div key={d} className="py-4 text-center text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{d}</div>
+            ))}
+          </div>
+
+          {/* Date cells */}
+          <div className="grid grid-cols-7 relative z-10">
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-20 sm:h-36 border-b border-r border-white/5 bg-transparent" />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dayMeetings = getMeetingsForDay(day);
+              const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+
+              return (
+                <div
+                  key={day}
+                  onClick={() => openModal(day)}
+                  className={`h-20 sm:h-36 border-b border-r border-[var(--crm-border)] p-1 sm:p-4 cursor-pointer transition-all group/cell hover:bg-indigo-500/10 ${isToday ? 'bg-indigo-500/20' : 'bg-transparent'}`}
+                >
+                  <div className={`text-[10px] sm:text-xs font-black w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg sm:rounded-xl mb-1.5 sm:mb-3 transition-all ${isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-[var(--crm-text-muted)] group-hover/cell:text-indigo-300 group-hover/cell:bg-indigo-500/20 group-hover/cell:shadow-sm'}`}>
+                    {day}
+                  </div>
+                  {/* Desktop View: Full Text */}
+                  <div className="hidden sm:block space-y-1.5 overflow-hidden">
+                    {dayMeetings.slice(0, 3).map(m => (
+                      <div key={m.id} className="relative group/meeting">
+                        <div
+                          className="text-[9px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-lg truncate border border-indigo-500/30 shadow-sm transition-all group-hover/cell:scale-105"
+                        >
+                          {m.scheduledAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · {m.title}
+                        </div>
+
+                        {/* Quick Actions Hover */}
+                        <div className="absolute inset-0 bg-indigo-600 rounded-lg opacity-0 group-hover/meeting:opacity-100 transition-opacity flex items-center justify-center gap-3 z-10">
+                          <button onClick={(e) => { e.stopPropagation(); openEditModal(m); }} className="text-white hover:scale-125 transition-transform" title="Edit Meeting"><Sparkles size={10} /></button>
+                          {m.meetLink && (
+                            <button onClick={(e) => { e.stopPropagation(); window.open(m.meetLink, '_blank'); }} className="text-white hover:scale-125 transition-transform" title="Join Meet"><Video size={10} /></button>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); handleQuickShare(m); }} className="text-white hover:scale-125 transition-transform" title="WhatsApp Invite"><MessageSquare size={10} /></button>
+                        </div>
+                      </div>
+                    ))}
+                    {dayMeetings.length > 3 && (
+                      <div className="text-[9px] text-[var(--crm-text-muted)] font-bold uppercase tracking-tighter pl-1">+{dayMeetings.length - 3} more</div>
+                    )}
+                  </div>
+                  {/* Mobile View: Markers (Dots) */}
+                  <div className="flex sm:hidden flex-wrap gap-1 mt-auto">
+                    {dayMeetings.slice(0, 6).map(m => (
+                      <div key={m.id} className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.6)]" />
+                    ))}
+                    {dayMeetings.length > 6 && <div className="text-[6px] text-indigo-400 font-black">+</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Upcoming Meetings Sidebar */}
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+          <div className="glass-card !bg-[var(--crm-card-bg)] !border-[var(--crm-border)] !rounded-[2.5rem] p-8 text-[var(--crm-text)] relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+
+            <h3 className="text-xs font-black text-indigo-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center"><Clock size={16} /></div>
+              Upcoming
+            </h3>
+
+            {upcoming.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="w-12 h-12 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center text-[var(--crm-text-muted)]/40 mx-auto mb-4">
+                  <CalendarIcon size={24} />
+                </div>
+                <p className="text-[var(--crm-text-muted)] text-xs font-bold leading-relaxed italic opacity-70">
+                  Calendar is clear.<br />Select a node to begin.
+                </p>
               </div>
-              {error || success}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ) : (
+              <div className="space-y-4">
+                {upcoming.map((m, idx) => {
+                  const d = m.scheduledAt?.toDate?.();
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
+                      key={m.id} className="p-5 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] group/item hover:bg-[var(--crm-control-hover-bg)] hover:border-indigo-400/30 transition-all relative overflow-hidden"
+                    >
+                      <div className="flex items-start justify-between gap-3 relative z-10">
+                        <div className="min-w-0 w-full space-y-2">
+                          {/* Title */}
+                          <div className="font-black text-[var(--crm-text)] text-sm truncate tracking-tight mb-1">{m.title}</div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-
-          {/* Calendar Grid */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3 glass-card !bg-[var(--crm-card-bg)] !p-0 !rounded-[2.5rem] shadow-2xl border border-[var(--crm-border)] overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/20 rounded-bl-[100px] -z-0 pointer-events-none group-hover:bg-indigo-100/10 transition-colors"></div>
-
-            {/* Month nav */}
-            <div className="flex items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 relative z-10">
-              <button onClick={prevMonth} className="p-2.5 md:p-3 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronLeft size={18} className="text-[var(--crm-text-muted)] md:hidden" /><ChevronLeft size={20} className="text-[var(--crm-text-muted)] hidden md:block" /></button>
-              <h2 className="text-lg md:text-2xl font-black text-[var(--crm-text)] tracking-tight">{MONTHS[currentMonth]} {currentYear}</h2>
-              <button onClick={nextMonth} className="p-2.5 md:p-3 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 border border-[var(--crm-border)] rounded-2xl transition-all active:scale-90 shadow-sm"><ChevronRight size={18} className="text-[var(--crm-text-muted)] md:hidden" /><ChevronRight size={20} className="text-[var(--crm-text-muted)] hidden md:block" /></button>
-            </div>
-
-            {/* Day names */}
-            <div className="grid grid-cols-7 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/40 relative z-10">
-              {DAYS.map(d => (
-                <div key={d} className="py-4 text-center text-[10px] font-black text-[var(--crm-text-muted)] uppercase tracking-[0.2em]">{d}</div>
-              ))}
-            </div>
-
-            {/* Date cells */}
-            <div className="grid grid-cols-7 relative z-10">
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-28 sm:h-36 border-b border-r border-white/5 bg-transparent" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const dayMeetings = getMeetingsForDay(day);
-                const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-
-                return (
-                  <div
-                    key={day}
-                    onClick={() => openModal(day)}
-                    className={`h-20 sm:h-36 border-b border-r border-[var(--crm-border)] p-1 sm:p-4 cursor-pointer transition-all group/cell hover:bg-indigo-500/10 ${isToday ? 'bg-indigo-500/20' : 'bg-transparent'}`}
-                  >
-                    <div className={`text-[10px] sm:text-xs font-black w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg sm:rounded-xl mb-1.5 sm:mb-3 transition-all ${isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-[var(--crm-text-muted)] group-hover/cell:text-indigo-300 group-hover/cell:bg-indigo-500/20 group-hover/cell:shadow-sm'}`}>
-                      {day}
-                    </div>
-                    {/* Desktop View: Full Text */}
-                    <div className="hidden sm:block space-y-1.5 overflow-hidden">
-                      {dayMeetings.slice(0, 3).map(m => (
-                        <div key={m.id} className="relative group/meeting">
-                          <div
-                            className="text-[9px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-lg truncate border border-indigo-500/30 shadow-sm transition-all group-hover/cell:scale-105"
-                          >
-                            {m.scheduledAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · {m.title}
+                          {/* Date/Time */}
+                          <div className="flex items-center gap-2 text-[10px] text-indigo-400 font-black uppercase tracking-widest bg-indigo-500/10 px-2 py-1 w-fit rounded-lg border border-indigo-500/20">
+                            <Clock size={12} />
+                            {d?.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · {d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                           </div>
 
-                          {/* Quick Actions Hover */}
-                          <div className="absolute inset-0 bg-indigo-600 rounded-lg opacity-0 group-hover/meeting:opacity-100 transition-opacity flex items-center justify-center gap-3 z-10">
-                            <button onClick={(e) => { e.stopPropagation(); openEditModal(m); }} className="text-white hover:scale-125 transition-transform" title="Edit Meeting"><Sparkles size={10} /></button>
-                            {m.meetLink && (
-                              <button onClick={(e) => { e.stopPropagation(); window.open(m.meetLink, '_blank'); }} className="text-white hover:scale-125 transition-transform" title="Join Meet"><Video size={10} /></button>
+                          {/* Entity Tags */}
+                          <div className="flex flex-col gap-1.5 mt-2">
+                            {m.leadName && (
+                              <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
+                                <User size={10} />
+                                <span className="text-[var(--crm-text)] truncate">{m.leadName}</span>
+                              </div>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); handleQuickShare(m); }} className="text-white hover:scale-125 transition-transform" title="WhatsApp Invite"><MessageSquare size={10} /></button>
                           </div>
                         </div>
-                      ))}
-                      {dayMeetings.length > 3 && (
-                        <div className="text-[9px] text-[var(--crm-text-muted)] font-bold uppercase tracking-tighter pl-1">+{dayMeetings.length - 3} more</div>
-                      )}
-                    </div>
-                    {/* Mobile View: Markers (Dots) */}
-                    <div className="flex sm:hidden flex-wrap gap-1 mt-auto">
-                      {dayMeetings.slice(0, 6).map(m => (
-                        <div key={m.id} className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.6)]" />
-                      ))}
-                      {dayMeetings.length > 6 && <div className="text-[6px] text-indigo-400 font-black">+</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
+                      </div>
 
-          {/* Upcoming Meetings Sidebar */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            <div className="bg-[var(--crm-card-bg)] border border-[var(--crm-border)] rounded-[2.5rem] p-8 text-[var(--crm-text)] relative overflow-hidden shadow-2xl">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-
-              <h3 className="text-xs font-black text-indigo-400 tracking-[0.2em] uppercase mb-8 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center"><Clock size={16} /></div>
-                Meeting
-              </h3>
-
-              {upcoming.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="w-12 h-12 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-2xl flex items-center justify-center text-[var(--crm-text-muted)]/40 mx-auto mb-4">
-                    <CalendarIcon size={24} />
-                  </div>
-                  <p className="text-[var(--crm-text-muted)] text-xs font-bold leading-relaxed italic opacity-70">
-                    Calendar is clear.<br />Select a node to begin.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {upcoming.map((m, idx) => {
-                    const d = m.scheduledAt?.toDate?.();
-                    return (
-                      <motion.div
-                        initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
-                        key={m.id} className="p-5 rounded-2xl bg-[var(--crm-control-bg)] border border-[var(--crm-border)] group/item hover:bg-[var(--crm-control-hover-bg)] hover:border-indigo-400/30 transition-all relative overflow-hidden"
-                      >
-                        <div className="absolute top-5 left-5 text-[var(--crm-text-muted)] pointer-events-none">
-                          <Sparkles size={18} className="text-indigo-500" />
-                        </div>
-                        <div className="flex items-start justify-between gap-3 relative z-10 pl-8">
-                          <div className="min-w-0 w-full space-y-2">
-                            {/* Title */}
-                            <div className="font-black text-[var(--crm-text)] text-sm truncate tracking-tight mb-1">{m.title}</div>
-
-                            {/* Date/Time */}
-                            <div className="flex items-center gap-2 text-[10px] text-indigo-400 font-black uppercase tracking-widest bg-indigo-500/10 px-2 py-1 w-fit rounded-lg border border-indigo-500/20">
-                              <CalendarIcon size={12} />
-                              {d?.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · {d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                            </div>
-
-                            {/* Entity Tags */}
-                            <div className="flex flex-col gap-1.5 mt-2">
-                              {m.leadName && (
-                                <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
-                                  <User size={10} className="text-[var(--crm-text-muted)]" />
-                                  <span className="opacity-70">Lead:</span>
-                                  <span className="text-[var(--crm-text)]">{m.leadName}</span>
-                                </div>
-                              )}
-
-                              {m.ownerUid && (
-                                <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
-                                  <ShieldCheck size={10} className="text-blue-400" />
-                                  <span className="opacity-70">Creator:</span>
-                                  <span className="text-blue-400">{teamMembers.find(t => t.id === m.ownerUid)?.displayName || 'Unknown'}</span>
-                                </div>
-                              )}
-
-                              {m.assignedTo && m.assignedTo.length > 0 && (
-                                <div className="flex items-center gap-2 text-[10px] text-[var(--crm-text-muted)] font-bold">
-                                  <Users size={10} className="text-emerald-400" />
-                                  <span className="opacity-70">Assignees:</span>
-                                  <span className="text-emerald-400 truncate">
-                                    {m.assignedTo.map(uid => teamMembers.find(t => t.id === uid)?.displayName || 'Unknown').join(', ')}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 mt-5 relative z-10 sm:pl-8">
-                          {/* Core Meeting Buttons */}
-                          <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
-                            {/* Meet Link */}
-                            <button
-                              onClick={() => window.open(m.meetLink, '_blank')}
-                              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-indigo-500 text-white text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all shadow-md shadow-indigo-500/20 hover:scale-105 active:scale-95 whitespace-nowrap"
-                            >
-                              <Video size={12} /> Meet
-                            </button>
-
-                            {/* Guest Recorder Link */}
-                            <button
-                              onClick={() => window.open(`/m/${m.id}`, '_blank')}
-                              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-purple-500/20 text-purple-400 text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all hover:bg-purple-500/30 active:scale-95 border border-purple-500/20 whitespace-nowrap"
-                            >
-                              <Mic size={12} />Record
-                            </button>
-
-                            {/* Invite Block */}
-                            <button
-                              onClick={() => handleQuickShare(m)}
-                              className="w-full h-full flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all active:scale-95 border border-emerald-500/20 whitespace-nowrap"
-                            >
-                              <MessageSquare size={12} /> Invite
-                            </button>
-                          </div>
-
-                          {/* Utilities */}
-                          <div className="flex gap-2 ml-auto mt-2 sm:mt-0 right-0">
-                            <button
-                              onClick={() => openEditModal(m)}
-                              className="p-2 sm:p-2.5 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-[var(--crm-bg)] hover:text-indigo-400 transition-all active:scale-95 border border-[var(--crm-border)]"
-                              title="Edit Meeting"
-                            >
-                              <Edit2 size={12} className="text-[var(--crm-text-muted)]" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(m.id)}
-                              className="p-2 sm:p-2.5 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-rose-500/20 hover:text-rose-400 transition-all active:scale-95 border border-[var(--crm-border)]"
-                              title="Delete Meeting"
-                            >
-                              <Trash2 size={12} className="text-[var(--crm-text-muted)]" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 mt-5 relative z-10">
+                        <button
+                          onClick={() => window.open(m.meetLink, '_blank')}
+                          className="flex-1 btn-primary !py-2 !px-3 text-[10px] shadow-sm"
+                        >
+                          <Video size={12} /> Meet
+                        </button>
+                        <button
+                          onClick={() => openEditModal(m)}
+                          className="p-2 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-[var(--crm-bg)] border border-[var(--crm-border)] transition-all"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(m.id)}
+                          className="p-2 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-rose-500/20 text-rose-400 border border-[var(--crm-border)] transition-all"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Create/Edit Meeting Modal */}
@@ -587,10 +522,8 @@ export default function CalendarPage({ user }: { user: any }) {
               initial={{ scale: 0.9, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 50 }}
-              className="bg-[var(--crm-sidebar-bg)] sm:rounded-[2.5rem] shadow-2xl w-full h-full sm:h-auto sm:max-w-xl border-[var(--crm-border)] relative z-10 overflow-hidden flex flex-col"
+              className="bg-[var(--crm-sidebar-bg)] sm:rounded-[2.5rem] shadow-2xl w-full h-full sm:h-auto sm:max-w-xl border border-[var(--crm-border)] relative z-10 overflow-hidden flex flex-col"
             >
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-bl-[100px] -z-0 pointer-events-none"></div>
-
               <div className="flex items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-[var(--crm-border)] bg-[var(--crm-bg)]/20 relative z-10 shrink-0">
                 <div>
                   <h2 className="text-xl md:text-2xl font-black text-[var(--crm-text)] tracking-tight">
@@ -601,7 +534,7 @@ export default function CalendarPage({ user }: { user: any }) {
                     {selectedDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
-                <button onClick={() => setShowModal(false)} className="p-2.5 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 rounded-2xl transition-colors text-[var(--crm-text-muted)]">
+                <button onClick={() => setShowModal(false)} className="p-2.5 bg-[var(--crm-bg)]/20 hover:bg-[var(--crm-bg)]/40 rounded-2xl transition-colors">
                   <X size={20} />
                 </button>
               </div>
@@ -754,6 +687,6 @@ export default function CalendarPage({ user }: { user: any }) {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 }

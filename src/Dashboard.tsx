@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Plus, TrendingUp, Zap, Target, MoreHorizontal, Activity, ArrowUpRight, ArrowRight, Users, Sparkles, UserCircle, CalendarDays, Flame, ChevronLeft, ChevronRight, LayoutDashboard, Search, FileText
+  Plus, TrendingUp, Zap, Target, MoreHorizontal, Activity, ArrowUpRight, ArrowRight, Users, Sparkles, UserCircle, CalendarDays, Flame, ChevronLeft, ChevronRight, LayoutDashboard, Search, FileText, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -11,7 +11,8 @@ import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'fi
 import { useAuth } from './contexts/AuthContext';
 import { useDemo } from './DemoContext';
 import { logActivity } from './utils/activity';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
 
 export default function Dashboard({ user }: { user: any }) {
   const { companyId, role } = useAuth();
@@ -66,7 +67,7 @@ export default function Dashboard({ user }: { user: any }) {
       unsubscribeLeads();
       unsubscribeUsers();
     };
-  }, [companyId, isDemoMode, demoData]);
+  }, [companyId, isDemoMode, demoData, role, user.uid]);
 
   const handleHealthChange = async (leadId: string, newHealth: string) => {
     if (isDemoMode) return;
@@ -168,46 +169,31 @@ export default function Dashboard({ user }: { user: any }) {
   };
 
   return (
-    <div className="flex-1 bg-transparent min-h-full">
-      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-10">
-
-        {/* Header Section (Compact Mobile App Style) */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative glass-card bg-gradient-to-br from-[var(--crm-card-bg)] to-[var(--crm-bg)]/50 border border-[var(--crm-border)] p-4 sm:p-6 overflow-hidden rounded-[1.5rem] shadow-md"
-        >
-          {/* Decorative Glow Element */}
-          <div className="absolute top-1/2 right-0 w-48 h-48 bg-indigo-500/40 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3 pointer-events-none" style={{ opacity: 'var(--crm-glow-opacity)' }} />
-
-          {/* Content */}
-          <div className="relative z-10">
-            <h1 className="text-lg sm:text-2xl font-black tracking-tight text-[var(--crm-text)] flex items-center gap-1.5 truncate">
-              Welcome back,{' '}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 truncate">
-                {user.displayName?.split(' ')[0] || 'User'}
-              </span>
-            </h1>
+    <PageLayout>
+      <PageHeader 
+        title={`Welcome back, ${user.displayName?.split(' ')[0] || 'User'}`}
+        description="Here is what's happening with your sales pipeline today."
+        badge="Command Center"
+        icon={LayoutDashboard}
+        actions={
+          <div className="flex items-center gap-1.5 bg-[var(--crm-border)] p-1.5 rounded-2xl border border-[var(--crm-border)] backdrop-blur-sm shadow-inner overflow-hidden">
+            {[
+              { id: 'overview', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+              { id: 'analytics', label: 'AI Analytics', icon: <Sparkles size={16} /> },
+              { id: 'reports', label: 'Reports', icon: <FileText size={16} /> },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}
+              >
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
           </div>
-        </motion.header>
-
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-[var(--crm-border)] p-1.5 rounded-2xl w-full sm:w-fit border border-[var(--crm-border)] backdrop-blur-sm shadow-inner overflow-hidden">
-          {[
-            { id: 'overview', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-            { id: 'analytics', label: 'AI Analytics', icon: <Sparkles size={16} /> },
-            { id: 'reports', label: 'Reports', icon: <FileText size={16} /> },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 sm:flex-none flex items-center justify-center sm:justify-start gap-2 px-1.5 sm:px-6 py-2.5 rounded-xl text-[10px] sm:text-sm font-bold transition-all min-w-0 ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-[var(--crm-text-muted)] hover:text-[var(--crm-text)]'}`}
-            >
-              <span className="shrink-0">{tab.icon}</span>
-              <span className="truncate">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+        }
+      />
 
         <AnimatePresence mode="wait">
           {activeTab === 'overview' ? (
@@ -435,7 +421,6 @@ export default function Dashboard({ user }: { user: any }) {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+    </PageLayout>
   );
 }

@@ -10,10 +10,6 @@ const DownloadApp = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.25em] shadow-sm mb-2">
             <Download size={14} className="animate-pulse" /> PWA Deployment
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight uppercase">Install Experience</h1>
-          <p className="text-slate-500 font-medium max-w-2xl text-lg italic mt-4">
-            Optimize your workflow by adding handycrm.ai directly to your workspace for a native feel.
-          </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -45,7 +41,7 @@ const DownloadApp = () => {
                     {step.icon}
                   </div>
                   <div className="text-sm font-bold text-slate-600">
-                    <span className="text-[10px] block font-black text-slate-400 uppercase tracking-tighter mb-0.5">Step 0{i+1}</span>
+                    <span className="text-[10px] block font-black text-slate-400 uppercase tracking-tighter mb-0.5">Step 0{i + 1}</span>
                     {step.text}
                   </div>
                 </div>
@@ -62,7 +58,7 @@ const DownloadApp = () => {
           >
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
-                <Smartphone size={28} />
+                <Chrome size={28} />
               </div>
               <div>
                 <h2 className="text-2xl font-black text-slate-900 lowercase">android Node</h2>
@@ -82,19 +78,13 @@ const DownloadApp = () => {
                     {step.icon}
                   </div>
                   <div className="text-sm font-bold text-slate-600">
-                    <span className="text-[10px] block font-black text-slate-400 uppercase tracking-tighter mb-0.5">Step 0{i+1}</span>
+                    <span className="text-[10px] block font-black text-slate-400 uppercase tracking-tighter mb-0.5">Step 0{i + 1}</span>
                     {step.text}
                   </div>
                 </div>
               ))}
             </div>
           </motion.div>
-        </div>
-
-        <div className="mt-12 p-8 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden text-center">
-           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pointer-events-none"></div>
-           <h3 className="text-xl font-black mb-2 uppercase tracking-tighter">Native Performance</h3>
-           <p className="text-slate-400 text-sm font-medium">Enjoy push notifications, offline access, and lightning-fast boot sequences directly from your home screen.</p>
         </div>
       </div>
     </div>

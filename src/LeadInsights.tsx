@@ -15,6 +15,9 @@ import { jsPDF } from 'jspdf';
 import TranscriptPlayer from './TranscriptPlayer';
 import { logActivity } from './utils/activity';
 import { analyzeWithGroq, transcribeWithGroq } from './utils/ai-service';
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
+
 export default function LeadInsights({ user }: { user: any }) {
   const { id } = useParams();
   const { role } = useAuth();
@@ -349,21 +352,12 @@ export default function LeadInsights({ user }: { user: any }) {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 space-y-10 animate-pulse">
-          <div className="flex flex-col gap-6 sm:gap-8">
-            <div className="w-32 h-8 bg-[var(--crm-border)] rounded-lg"></div>
-            <div className="flex flex-col lg:flex-row justify-between gap-8 sm:gap-10">
-              <div className="space-y-4">
-                <div className="w-48 h-6 bg-[var(--crm-border)] rounded-full"></div>
-                <div className="w-64 sm:w-96 h-12 sm:h-16 bg-[var(--crm-border)] rounded-xl"></div>
-                <div className="w-full sm:w-80 h-6 bg-[var(--crm-border)] rounded"></div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-32 sm:w-40 h-24 bg-[var(--crm-border)] rounded-2xl"></div>
-                <div className="w-32 sm:w-40 h-24 bg-[var(--crm-border)] rounded-2xl"></div>
-              </div>
-            </div>
+      <PageLayout>
+        <div className="space-y-12 animate-pulse">
+          <div className="space-y-4 w-full">
+            <div className="w-32 h-4 bg-[var(--crm-border)] rounded-full"></div>
+            <div className="w-64 sm:w-96 h-12 bg-[var(--crm-border)] rounded-xl"></div>
+            <div className="w-full max-w-xl h-6 bg-[var(--crm-border)] rounded"></div>
           </div>
           <div className="h-16 bg-[var(--crm-border)] rounded-[1.2rem] w-full"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -372,24 +366,28 @@ export default function LeadInsights({ user }: { user: any }) {
             ))}
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (lead === 'UNAUTHORIZED') {
     return (
-      <div className="flex-1 bg-transparent flex flex-col items-center justify-center min-h-[100dvh] text-[var(--crm-text-muted)] font-black uppercase tracking-widest text-sm p-8 text-center">
-        <ShieldAlert size={48} className="text-rose-500 mb-4" />
-        Access Denied: Resource Isolated
-      </div>
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--crm-text-muted)] font-black uppercase tracking-widest text-sm p-8 text-center">
+          <ShieldAlert size={48} className="text-rose-500 mb-4" />
+          Access Denied: Resource Isolated
+        </div>
+      </PageLayout>
     );
   }
 
   if (!lead) {
     return (
-      <div className="flex-1 bg-transparent flex items-center justify-center min-h-[100dvh] text-[var(--crm-text-muted)] font-black uppercase tracking-widest text-sm">
-        Lead Record Missing
-      </div>
+      <PageLayout>
+        <div className="flex items-center justify-center min-h-[60vh] text-[var(--crm-text-muted)] font-black uppercase tracking-widest text-sm">
+          Lead Record Missing
+        </div>
+      </PageLayout>
     );
   }
 
@@ -404,19 +402,23 @@ export default function LeadInsights({ user }: { user: any }) {
     tasks: []
   };
   const lightCardClass = "glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] border-[var(--crm-border)] shadow-[0_18px_42px_-30px_rgba(15,23,42,0.32)]";
+  const getPhaseProgress = (phase?: string) => {
+    const phaseKey = (phase || '').toUpperCase();
+    const phaseMap: Record<string, number> = {
+      NEW: 10,
+      DISCOVERY: 20,
+      CONTACTED: 25,
+      QUALIFIED: 40,
+      PROPOSAL: 60,
+      NEGOTIATION: 75,
+      WON: 100,
+      CLOSED_WON: 100,
+      LOST: 0,
+      CLOSED_LOST: 0,
+      INACTIVE: 5,
+    };
 
-  const getPhaseProgress = (phase: string) => {
-    switch (phase?.toUpperCase()) {
-      case 'INACTIVE':
-      case 'LOST': return 10;
-      case 'DISCOVERY': return 25;
-      case 'CONNECTED': return 40;
-      case 'NURTURING': return 50;
-      case 'QUALIFIED': return 75;
-      case 'WON':
-      case 'CLOSED': return 100;
-      default: return 60;
-    }
+    return phaseMap[phaseKey] ?? 30;
   };
 
   const saveInsights = async (newInsights: any) => {
@@ -588,73 +590,56 @@ export default function LeadInsights({ user }: { user: any }) {
   };
 
   return (
-    <div className="flex-1 bg-transparent min-h-screen overflow-y-auto">
-      <div className="max-w-[1400px] mx-auto p-4 sm:p-8 lg:p-12 space-y-12">
-
-        {/* Navigation & Header */}
-        <div className="flex flex-col gap-6 sm:gap-8">
-          <Link to="/clients" className="inline-flex items-center gap-2 text-[10px] font-black text-[var(--crm-text-muted)] hover:text-cyan-400 uppercase tracking-[0.2em] transition-all group w-fit">
-            <div className="p-2 bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-xl group-hover:border-cyan-500/50 group-hover:shadow-lg group-hover:shadow-cyan-500/10 transition-all backdrop-blur-md">
-              <ChevronLeft size={14} />
+    <PageLayout>
+      <PageHeader 
+        title={lead.name}
+        description="Deep intelligence view. Analyze interactions, track core objectives, and drive strategic outcomes."
+        badge="Lead Insights"
+        icon={Sparkles}
+        actions={
+          <div className="flex flex-wrap sm:flex-nowrap gap-4">
+            <div className="glass-card !p-3 !rounded-xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] flex flex-col items-end min-w-[120px]">
+              <div className="text-[8px] font-black text-indigo-400/60 uppercase tracking-widest mb-1">Neural Score</div>
+              <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border ${lead.status === 'Won' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : lead.status === 'Lost' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
+                {lead.status || 'In Progress'}
+              </span>
             </div>
-            Back to Leads
-          </Link>
 
-          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 sm:gap-10">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
+            <div className="glass-card !p-3 !rounded-xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] flex flex-col items-end min-w-[120px]">
+              <div className="text-[8px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-1">Phase Velocity</div>
+              <button
+                onClick={toggleInterest}
+                className={`w-full px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${lead.isInterested !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
+              >
+                {lead.isInterested !== false ? <ThumbsUp size={10} /> : <ThumbsDown size={10} />}
+                {lead.isInterested !== false ? 'Interested' : 'No'}
+              </button>
+            </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight text-[var(--crm-text)] leading-tight font-display overflow-hidden">
-                <span className="text-gradient-flow">{lead.name}</span>
-              </h1>
-
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap sm:flex-nowrap gap-4 shrink-0">
-              <div className="glass-card !p-5 !rounded-2xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
-                <div className="text-[9px] font-black text-indigo-400/60 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <Sparkles size={12} className="group-hover:animate-spin" /> Neural Score
-                </div>
-                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-lg ${lead.status === 'Won' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : lead.status === 'Lost' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
-                  <div className={`w-2 h-2 rounded-full ${lead.status === 'Won' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : lead.status === 'Lost' ? 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.5)]' : 'bg-indigo-400 animate-pulse shadow-[0_0_8px_rgba(129,140,248,0.5)]'}`} />
-                  {lead.status === 'Won' ? 'Closed-Won' : lead.status === 'Lost' ? 'Disqualified' : 'In Progress'}
-                </span>
-              </div>
-
-              <div className="glass-card !p-5 !rounded-2xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
-                <div className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-3 text-right">Phase Velocity</div>
-                <button
-                  onClick={toggleInterest}
-                  className={`w-full px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border shadow-lg transition-all ${lead.isInterested !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
+            <div className="glass-card !p-3 !rounded-xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] flex flex-col items-end min-w-[120px]">
+              <div className="text-[8px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-1">Mood Signal</div>
+              <div className="relative w-full">
+                <select
+                  value={insights.sentiment}
+                  onChange={handleSentimentChange}
+                  className={`w-full px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border appearance-none cursor-pointer outline-none transition-all pr-6 ${insights.sentiment === 'Positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : insights.sentiment === 'Negative' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] border-[var(--crm-border)]'}`}
+                  disabled={!selectedRec}
                 >
-                  {lead.isInterested !== false ? <ThumbsUp size={12} /> : <ThumbsDown size={12} />}
-                  {lead.isInterested !== false ? 'Interested' : 'Not Interested'}
-                </button>
-              </div>
-
-              <div className="glass-card !p-5 !rounded-2xl !bg-[var(--crm-card-bg)] border-[var(--crm-border)] shadow-2xl flex flex-col items-end flex-1 sm:min-w-[180px]">
-                <div className="text-[9px] font-black text-[var(--crm-text-muted)] uppercase tracking-widest mb-3 text-right">Mood Signal</div>
-                <div className="relative w-full">
-                  <select
-                    value={insights.sentiment}
-                    onChange={handleSentimentChange}
-                    className={`w-full px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-lg appearance-none cursor-pointer outline-none transition-all pr-10 ${insights.sentiment === 'Positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : insights.sentiment === 'Negative' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20' : 'bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] border-[var(--crm-border)] hover:bg-[var(--crm-bg)]/40'}`}
-                    disabled={!selectedRec}
-                  >
-                    <option value="Positive">Positive</option>
-                    <option value="Neutral">Neutral</option>
-                    <option value="Negative">Negative</option>
-                    <option value="Analyzing...">Analyzing...</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--crm-text-muted)]">
-                    <Edit size={12} />
-                  </div>
+                  <option value="Positive">Positive</option>
+                  <option value="Neutral">Neutral</option>
+                  <option value="Negative">Negative</option>
+                  <option value="Analyzing...">Analyzing...</option>
+                </select>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--crm-text-muted)]">
+                  <Edit size={10} />
                 </div>
               </div>
-            </motion.div>
-          </header>
-        </div>
+            </div>
+          </div>
+        }
+      />
 
-
+      <div className="space-y-12 pb-20">
         {/* Intelligence Timeline */}
         <div className="glass-card !p-3 !rounded-[2.5rem] !bg-[var(--crm-card-bg)] border-[var(--crm-border)] flex flex-nowrap items-center gap-4 overflow-x-auto shadow-2xl hide-scrollbar scroll-smooth">
           <div className="pl-6 pr-8 shrink-0 hidden sm:flex items-center gap-3 border-r border-[var(--crm-border)] py-3">
@@ -687,21 +672,20 @@ export default function LeadInsights({ user }: { user: any }) {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-end gap-5">
             <button
               onClick={handleExportPDF}
-              className="px-8 py-4 rounded-[1.5rem] bg-[var(--crm-bg)]/20 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] font-black text-[10px] uppercase tracking-widest shadow-2xl border border-[var(--crm-border)] hover:border-[var(--crm-text)]/20 transition-all flex items-center gap-3 active:scale-95 backdrop-blur-md"
+              className="btn-secondary !rounded-[1.5rem] !px-8 !py-4 text-[10px]"
             >
-              <Download size={14} /> Download Pdf
+              <Download size={14} /> Download PDF Report
             </button>
             <button
               onClick={handleRegenerate}
               disabled={generatingAI}
-              className="px-8 py-4 rounded-[1.5rem] btn-primary text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50"
+              className="btn-primary !rounded-[1.5rem] !px-8 !py-4 text-[10px]"
             >
               {generatingAI ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-              {generatingAI ? 'Regenerating Insights...' : 'Regenerate Insights'}
+              {generatingAI ? 'Regenerating...' : 'Regenerate Insights'}
             </button>
           </motion.div>
         )}
-
 
         <AnimatePresence>
           {generatingAI && (
@@ -775,13 +759,10 @@ export default function LeadInsights({ user }: { user: any }) {
           })}
         </div>
 
-
         {/* Split View */}
-        <div className="flex flex-col xl:flex-row gap-8 mb-12">
-
+        <div className="flex flex-col xl:flex-row gap-8">
           {/* High-Level Overview & Progress */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
-
             {/* Executive Summary Card */}
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`lg:col-span-2 ${lightCardClass} p-10 text-[var(--crm-text)] relative overflow-hidden group/summary`}>
               <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/15 to-purple-500/15 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3 opacity-40"></div>
@@ -796,33 +777,47 @@ export default function LeadInsights({ user }: { user: any }) {
                     {editingOverview === null ? (
                       <>
                         <button onClick={handleRegenerate} disabled={generatingAI} title="Recalibrate Analysis" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl disabled:opacity-50 active:scale-95">
-                          <RotateCcw size={18} className={generatingAI ? "animate-spin" : ""} />
+                          {generatingAI ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
                         </button>
-                        <button onClick={() => setEditingOverview(insights.overview)} title="Override Content" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95">
+                        <button
+                          onClick={() => setEditingOverview(insights.overview || '')}
+                          title="Edit Summary"
+                          className="p-3 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95"
+                        >
                           <Edit size={18} />
                         </button>
                       </>
-                    ) : null}
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setEditingOverview(null)}
+                          title="Cancel"
+                          className="p-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95"
+                        >
+                          <X size={18} />
+                        </button>
+                        <button
+                          onClick={handleOverviewSave}
+                          title="Save Summary"
+                          className="p-3 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95"
+                        >
+                          <Check size={18} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {editingOverview !== null ? (
-                  <div className="space-y-6">
-                    <textarea
-                      autoFocus
-                      className="w-full text-sm leading-relaxed font-medium bg-black/40 border border-white/10 rounded-[2rem] p-8 text-[var(--crm-text)]/90 outline-none focus:ring-4 focus:ring-cyan-500/10 min-h-[250px] shadow-inner font-sans tracking-wide"
-                      value={editingOverview}
-                      onChange={e => setEditingOverview(e.target.value)}
-                    />
-                    <div className="flex justify-end gap-3">
-                      <button onClick={() => setEditingOverview(null)} className="px-6 py-3 text-[10px] font-black uppercase text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] transition-all tracking-widest">Abort</button>
-                      <button onClick={handleOverviewSave} className="px-8 py-3 text-[10px] font-black uppercase bg-cyan-600 hover:bg-cyan-500 text-[var(--crm-text)] flex items-center gap-2 rounded-xl shadow-[0_20px_40px_-12px_rgba(6,182,212,0.3)] active:scale-95 transition-all tracking-widest font-display"><Check size={14} /> Commit Changes</button>
-                    </div>
-                  </div>
-                ) : (
+                {editingOverview === null ? (
                   <p className="text-xl md:text-2xl leading-relaxed font-medium text-[var(--crm-text)] pr-10 italic font-serif opacity-90">
-                    "{insights.overview}"
+                    "{insights.overview || 'No summary generated yet.'}"
                   </p>
+                ) : (
+                  <textarea
+                    value={editingOverview}
+                    onChange={(e) => setEditingOverview(e.target.value)}
+                    className="w-full min-h-[220px] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-[2rem] p-6 text-base md:text-lg font-medium text-[var(--crm-text)] outline-none focus:ring-4 focus:ring-cyan-500/10 resize-none shadow-inner"
+                  />
                 )}
               </div>
             </motion.div>
@@ -1242,6 +1237,6 @@ export default function LeadInsights({ user }: { user: any }) {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </PageLayout>
   );
 }

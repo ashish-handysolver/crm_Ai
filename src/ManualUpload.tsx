@@ -12,6 +12,9 @@ import { useDemo } from './DemoContext';
 import { Eye } from 'lucide-react';
 import SearchableSelect from './components/SearchableSelect';
 
+import { PageLayout } from './components/layout/PageLayout';
+import { PageHeader } from './components/layout/PageHeader';
+
 export default function ManualUpload({ user }: { user: any }) {
   const { companyId, role } = useAuth();
   const { isDemoMode, demoData } = useDemo();
@@ -126,18 +129,24 @@ export default function ManualUpload({ user }: { user: any }) {
   const isTxt = uploadFile?.type === 'text/plain' || uploadFile?.name.toLowerCase().endsWith('.txt');
   const isDoc = isPdf || isWord || isTxt;
 
-  if (!user) return <div className="p-20 text-center text-slate-500 font-medium">Please sign in to add info.</div>;
+  if (!user) return (
+    <PageLayout>
+      <div className="p-20 text-center text-[var(--crm-text-muted)] font-black uppercase tracking-widest text-sm">
+        Please sign in to add info.
+      </div>
+    </PageLayout>
+  );
 
   return (
-    <div className="flex-1 bg-transparent p-4 md:p-8 lg:p-12 min-h-full">
-      <div className="max-w-3xl mx-auto">
+    <PageLayout>
+      <PageHeader
+        title=""
+        description="Manually upload conversation recordings, documents, or strategic notes to the neural archive."
+        badge="Manual Upload"
+        icon={UploadCloud}
+      />
 
-        <header className="mb-8 md:mb-12 text-center md:text-left space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm mb-2">
-            <UploadCloud size={14} className="animate-pulse" />  Add Audio / Docs / Text </div>
-
-        </header>
-
+      <div className="max-w-3xl mx-auto space-y-12">
         <AnimatePresence mode="wait">
           {success ? (
             <motion.div
@@ -243,7 +252,7 @@ export default function ManualUpload({ user }: { user: any }) {
                     <textarea
                       value={manualText}
                       onChange={e => setManualText(e.target.value)}
-                      placeholder="Add Notes"
+                      placeholder="Add Strategic Notes..."
                       className="w-full min-h-[180px] bg-[var(--crm-bg)]/20 border border-[var(--crm-border)] rounded-[2rem] pl-14 pr-8 py-5 text-sm font-bold focus:bg-[var(--crm-bg)]/40 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none text-[var(--crm-text)] placeholder:text-[var(--crm-text-muted)] leading-relaxed shadow-inner"
                     />
                   </div>
@@ -259,7 +268,7 @@ export default function ManualUpload({ user }: { user: any }) {
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
                   <span>
-                    {isSubmitting ? 'Saving...' : isDemoMode ? 'Demo Mode ' : 'Save'}
+                    {isSubmitting ? 'Injecting...' : isDemoMode ? 'Demo Mode ' : 'Inject Intelligence'}
                   </span>
                 </button>
               </div>
@@ -267,6 +276,6 @@ export default function ManualUpload({ user }: { user: any }) {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </PageLayout>
   );
 }
