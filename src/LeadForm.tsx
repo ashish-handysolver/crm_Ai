@@ -7,7 +7,6 @@ import { db } from './firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from './contexts/AuthContext';
 import { logActivity } from './utils/activity';
-import { sendPushToUser } from './utils/push';
 import { motion } from 'motion/react';
 import SearchableSelect from './components/SearchableSelect';
 
@@ -161,12 +160,6 @@ export default function LeadForm({ user }: { user: any }) {
             type: 'lead',
             link: `/clients`
           });
-          await sendPushToUser(payload.assignedTo, {
-            title: 'Lead Assigned',
-            body: `You have been assigned to lead: ${payload.name || 'Unknown'}`,
-            tag: `lead-${leadId}`,
-            url: '/clients',
-          });
 
         }
       } else if (!isEditing) {
@@ -189,12 +182,6 @@ export default function LeadForm({ user }: { user: any }) {
             read: false,
             type: 'lead',
             link: `/clients`
-          });
-          await sendPushToUser(payload.assignedTo, {
-            title: 'New Lead Assigned',
-            body: `A new lead has been assigned to you: ${payload.name || 'Unknown'}`,
-            tag: `lead-${leadId}`,
-            url: '/clients',
           });
 
         }
