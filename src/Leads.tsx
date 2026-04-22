@@ -1617,6 +1617,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
             </button>
           ))}
         </div>
+        <div>
         {viewMode === 'kanban' ? <KanbanView /> : (
           <>
 

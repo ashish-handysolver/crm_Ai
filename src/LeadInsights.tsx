@@ -9,14 +9,6 @@ import {
   Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft,
   Briefcase, ChevronLeft, Calendar, Edit, Check, Plus, Trash2, ArrowUpRight,
   CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2, ShieldAlert,
-import { ref, getBytes } from 'firebase/storage';
-import { useAuth } from './contexts/AuthContext';
-import { db, storage } from './firebase';
-import { motion, AnimatePresence } from 'motion/react';
-import {
-  Loader2, AlertTriangle, Archive, Zap, Wand2, Sparkles, CheckSquare, AlignLeft,
-  Briefcase, ChevronLeft, Calendar, Edit, Check, Plus, Trash2, ArrowUpRight,
-  CalendarDays, Clock, RotateCcw, Download, X, Maximize2, Minimize2, ShieldAlert,
   ThumbsUp, ThumbsDown, MessageSquare as MessageIcon, History
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
@@ -410,6 +402,24 @@ export default function LeadInsights({ user }: { user: any }) {
     tasks: []
   };
   const lightCardClass = "glass-card !bg-[var(--crm-card-bg)] !rounded-[2.5rem] border-[var(--crm-border)] shadow-[0_18px_42px_-30px_rgba(15,23,42,0.32)]";
+  const getPhaseProgress = (phase?: string) => {
+    const phaseKey = (phase || '').toUpperCase();
+    const phaseMap: Record<string, number> = {
+      NEW: 10,
+      DISCOVERY: 20,
+      CONTACTED: 25,
+      QUALIFIED: 40,
+      PROPOSAL: 60,
+      NEGOTIATION: 75,
+      WON: 100,
+      CLOSED_WON: 100,
+      LOST: 0,
+      CLOSED_LOST: 0,
+      INACTIVE: 5,
+    };
+
+    return phaseMap[phaseKey] ?? 30;
+  };
 
   const saveInsights = async (newInsights: any) => {
     if (!selectedRec) return;
@@ -767,10 +777,47 @@ export default function LeadInsights({ user }: { user: any }) {
                     {editingOverview === null ? (
                       <>
                         <button onClick={handleRegenerate} disabled={generatingAI} title="Recalibrate Analysis" className="p-3 text-cyan-400 hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl disabled:opacity-50 active:scale-95">
-                ) : (
+                          {generatingAI ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
+                        </button>
+                        <button
+                          onClick={() => setEditingOverview(insights.overview || '')}
+                          title="Edit Summary"
+                          className="p-3 text-[var(--crm-text-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-control-hover-bg)] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95"
+                        >
+                          <Edit size={18} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setEditingOverview(null)}
+                          title="Cancel"
+                          className="p-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95"
+                        >
+                          <X size={18} />
+                        </button>
+                        <button
+                          onClick={handleOverviewSave}
+                          title="Save Summary"
+                          className="p-3 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-xl transition-all shadow-2xl active:scale-95"
+                        >
+                          <Check size={18} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {editingOverview === null ? (
                   <p className="text-xl md:text-2xl leading-relaxed font-medium text-[var(--crm-text)] pr-10 italic font-serif opacity-90">
-                    "{insights.overview}"
+                    "{insights.overview || 'No summary generated yet.'}"
                   </p>
+                ) : (
+                  <textarea
+                    value={editingOverview}
+                    onChange={(e) => setEditingOverview(e.target.value)}
+                    className="w-full min-h-[220px] bg-[var(--crm-control-bg)] border border-[var(--crm-border)] rounded-[2rem] p-6 text-base md:text-lg font-medium text-[var(--crm-text)] outline-none focus:ring-4 focus:ring-cyan-500/10 resize-none shadow-inner"
+                  />
                 )}
               </div>
             </motion.div>
@@ -1190,6 +1237,6 @@ export default function LeadInsights({ user }: { user: any }) {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </PageLayout>
   );
 }
