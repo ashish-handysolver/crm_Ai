@@ -15,6 +15,7 @@ import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import { PageLayout } from './components/layout/PageLayout';
 import { PageHeader } from './components/layout/PageHeader';
 import ConfirmModal from './components/ConfirmModal';
+import { sendPushToUser } from './utils/push';
 
 interface Meeting {
   id: string;
@@ -279,6 +280,12 @@ export default function CalendarPage({ user }: { user: any }) {
                 createdAt: Timestamp.now(),
                 read: false,
                 companyId: companyId
+              });
+              await sendPushToUser(uid, {
+                title: 'New Meeting',
+                body: `You were invited to meeting: ${meetingData.title}`,
+                tag: `meeting-${meetingRef.id}`,
+                url: '/calendar',
               });
             }
           }

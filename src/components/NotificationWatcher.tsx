@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'fi
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { playNotificationSound, SoundProfile } from '../utils/sounds';
+import { showAppNotification } from '../utils/notifications';
 
 export const NotificationWatcher: React.FC = () => {
   const { user, companyId, role } = useAuth();
@@ -12,9 +13,9 @@ export const NotificationWatcher: React.FC = () => {
     notificationSoundId: 'cyber_pulse'
   });
 
-  // Fetch user settings on mount/user change
   useEffect(() => {
     if (!user) return;
+
     const fetchSettings = async () => {
       try {
         const snap = await getDoc(doc(db, 'users', user.uid));
@@ -29,20 +30,15 @@ export const NotificationWatcher: React.FC = () => {
         console.error('Settings sync failed:', err);
       }
     };
+
     fetchSettings();
   }, [user]);
 
-  // Meeting subscription and reminder loop
   useEffect(() => {
     if (!user || !companyId) return;
 
-    // Browser Notification permission solicitation
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
     const q = query(collection(db, 'meetings'), where('companyId', '==', companyId));
-    
+
     const unsub = onSnapshot(q, (snap) => {
       const allMeetings = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       const myMeetings = (role === 'admin' || role === 'super_admin' || role === 'management')
@@ -55,25 +51,20 @@ export const NotificationWatcher: React.FC = () => {
 
         myMeetings.forEach(m => {
           if (alertedMeetingIds.current.has(m.id)) return;
-          
+
           const scheduledAt = m.scheduledAt instanceof Timestamp ? m.scheduledAt.toDate() : (m.scheduledAt?.toDate?.() || null);
           if (!scheduledAt) return;
 
           const diffMs = scheduledAt.getTime() - now.getTime();
           const diffMin = diffMs / 60000;
 
-          // If within the lead time window (and hasn't already started)
           if (diffMin > 0 && diffMin <= leadTimeMin) {
             alertedMeetingIds.current.add(m.id);
-            
-            // Execute Audio Protocol
             playNotificationSound(userSettings.current.notificationSoundId);
 
-            // Execute Visual Protocol (Browser Notification)
             if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('📅 UPCOMING SESSION', {
+              void showAppNotification('Upcoming Session', {
                 body: `"${m.title}" starts in ${Math.ceil(diffMin)} minute(s).`,
-                icon: '/logo.png',
                 tag: m.id
               });
             }
@@ -81,14 +72,13 @@ export const NotificationWatcher: React.FC = () => {
         });
       };
 
-      // Initial check and set interval
       checkReminders();
-      const interval = setInterval(checkReminders, 30000); // Check every 30s
+      const interval = setInterval(checkReminders, 30000);
       return () => clearInterval(interval);
     });
 
     return () => unsub();
   }, [user, companyId, role]);
 
-  return null; // Headless component
+  return null;
 };
