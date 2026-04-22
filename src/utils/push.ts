@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { db, messaging } from '../firebase';
-import { getToken } from 'firebase/messaging';
+import { app, db } from '../firebase';
+import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import { requestNotificationPermission } from './notifications';
 
 type PushPayload = {
@@ -10,9 +10,42 @@ type PushPayload = {
   url?: string;
 };
 
-const SEND_ENDPOINT = '/api/push/send';
 const FCM_SW_URL = '/firebase-messaging-sw.js';
 const FCM_SW_SCOPE = '/firebase-cloud-messaging-push-scope';
+
+let messagingSupportPromise: Promise<boolean> | null = null;
+
+const getApiBaseUrl = () => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/$/, '');
+  }
+
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3001';
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:3001`;
+};
+
+const SEND_ENDPOINT = `${getApiBaseUrl()}/api/push/send`;
+
+const getMessagingIfSupported = async () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  if (!messagingSupportPromise) {
+    messagingSupportPromise = isSupported().catch(() => false);
+  }
+
+  const supported = await messagingSupportPromise;
+  if (!supported) {
+    return null;
+  }
+
+  return getMessaging(app);
+};
 
 const savePushSubscription = async (userId: string, token: string) => {
   const userRef = doc(db, 'users', userId);
@@ -28,7 +61,7 @@ const savePushSubscription = async (userId: string, token: string) => {
 };
 
 export const registerDeviceForPush = async (userId: string, companyId: string | null) => {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window) || !messaging) {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
     return false;
   }
 
@@ -38,6 +71,11 @@ export const registerDeviceForPush = async (userId: string, companyId: string | 
   }
 
   try {
+    const messaging = await getMessagingIfSupported();
+    if (!messaging) {
+      return false;
+    }
+
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
     if (!vapidKey || vapidKey === 'YOUR_PUBLIC_VAPID_KEY') {
       console.warn('Push registration skipped: missing VITE_VAPID_PUBLIC_KEY.');

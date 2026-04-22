@@ -4,9 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "server": "node server/index.js",
+    "client:dev": "vite --strictPort --port=3000 --host=0.0.0.0",
+    "dev": "npx concurrently -k -n api,web \"npm:server\" \"npm:client:dev\"",
     "build": "vite build",
-    "start": "vite preview --port=3000 --host=0.0.0.0",
+    "client:start": "vite preview --strictPort --port=3000 --host=0.0.0.0",
+    "start": "npx concurrently -k -n api,web \"npm:server\" \"npm:client:start\"",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
@@ -56,6 +59,7 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.4.1",
+    "concurrently": "^9.2.1",
     "vitest": "^2.1.8"
   }
 }
