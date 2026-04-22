@@ -25,7 +25,14 @@ const getApiBaseUrl = () => {
     return 'http://localhost:3001';
   }
 
-  return `${window.location.protocol}//${window.location.hostname}:3001`;
+  const { hostname, origin, protocol } = window.location;
+  const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+
+  if (isLocalHost) {
+    return `${protocol}//${hostname}:3001`;
+  }
+
+  return origin;
 };
 
 const SEND_ENDPOINT = `${getApiBaseUrl()}/api/push/send`;
