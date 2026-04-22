@@ -10,7 +10,7 @@ type PushPayload = {
   url?: string;
 };
 
-const SEND_ENDPOINT = '/api/push/send';
+
 const FCM_SW_URL = '/firebase-messaging-sw.js';
 const FCM_SW_SCOPE = '/firebase-cloud-messaging-push-scope';
 
@@ -64,34 +64,3 @@ export const registerDeviceForPush = async (userId: string, companyId: string | 
   }
 };
 
-export const sendPushToUser = async (userId: string, payload: PushPayload) => {
-  const userSnap = await getDoc(doc(db, 'users', userId));
-  if (!userSnap.exists()) return;
-
-  const tokens = (userSnap.data()?.fcmTokens || []) as string[];
-  if (!tokens.length) return;
-
-  try {
-    const response = await fetch(SEND_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        tokens,
-        payload,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown push error');
-      console.warn(`Push send skipped: ${errorText}`);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.warn('Push send request failed:', error);
-    return false;
-  }
-};
