@@ -18,7 +18,6 @@ import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import SearchableSelect from './components/SearchableSelect';
 import { transcribeWithGroq } from './utils/ai-service';
 import ConfirmModal from './components/ConfirmModal';
-import { sendPushToUser } from './utils/push';
 
 
 const DUMMY_LEADS = [
@@ -659,12 +658,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           link: `/leads`,
           leadName: lead?.name || 'Unknown',
           assignedByName: user.displayName || 'Admin'
-        });
-        await sendPushToUser(assignedTo, {
-          title: 'Lead Assigned',
-          body: `You have been assigned to lead: ${lead?.name || 'Unknown'}`,
-          tag: `lead-${leadId}`,
-          url: '/leads',
         });
 
       }
