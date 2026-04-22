@@ -36,7 +36,7 @@ export const registerDeviceForPush = async (userId: string, companyId: string | 
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const registration = await navigator.serviceWorker.ready;
     
     const token = await getToken(messaging, {
       // NOTE: Replace this with your actual VAPID key from Firebase Console

@@ -31,6 +31,15 @@ app.post('/api/push/send', async (req, res) => {
       title: payload.title,
       body: payload.body,
     },
+    webpush: {
+      notification: {
+        icon: '/logo.png',
+        badge: '/logo.png',
+      },
+      fcmOptions: {
+        link: payload.url || '/',
+      }
+    },
     data: {
       url: payload.url || '/',
       tag: payload.tag || '',

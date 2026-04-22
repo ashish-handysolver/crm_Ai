@@ -1,3 +1,35 @@
+importScripts('https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-compat.js');
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDMYbu604E083IyEBE__U6KX4I2YaovQA",
+  authDomain: "handydash-75858.firebaseapp.com",
+  databaseURL: "https://handydash-75858.firebaseio.com",
+  projectId: "handydash-75858",
+  storageBucket: "handydash-75858.appspot.com",
+  messagingSenderId: "18967278229",
+  appId: "1:18967278229:web:eedb13d46173cf05b4619c"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[sw.js] Received background message ', payload);
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'HandyCRM';
+  const notificationOptions = {
+    body: payload.notification?.body || payload.data?.body || 'You have a new update.',
+    icon: '/logo.png',
+    badge: '/logo.png',
+    tag: payload.data?.tag,
+    data: {
+      url: payload.data?.url || '/',
+    }
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
 const CACHE_NAME = 'handycrm-v2'; // Increment version for fresh start
 
 // Assets that must be available offline for the shell to load
@@ -84,29 +116,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-self.addEventListener('push', (event) => {
-  if (!event.data) return;
 
-  let payload = {};
-  try {
-    payload = event.data.json();
-  } catch {
-    payload = { title: 'HandyCRM', body: event.data.text() };
-  }
-
-  const title = payload.title || 'HandyCRM';
-  const options = {
-    body: payload.body || 'You have a new update.',
-    icon: payload.icon || '/logo.png',
-    badge: payload.badge || '/logo.png',
-    tag: payload.tag,
-    data: {
-      url: payload.url || '/',
-    },
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
