@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from './components/ConfirmModal';
 
 export default function SuperAdmin() {
   const [companies, setCompanies] = React.useState<any[]>([]);
@@ -29,6 +30,7 @@ export default function SuperAdmin() {
   const [newUserDisplayName, setNewUserDisplayName] = React.useState('');
   const [newUserRole, setNewUserRole] = React.useState('user');
   const [actionLoading, setActionLoading] = React.useState(false);
+  const [leadToDelete, setLeadToDelete] = React.useState<string | null>(null);
   
   const navigate = useNavigate();
 
@@ -124,8 +126,6 @@ export default function SuperAdmin() {
   };
 
   const handleDeleteLead = async (leadId: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this lead and all its associated data? This cannot be undone.")) return;
-    
     try {
       // 1. Delete associated recordings first
       const recordingsSnap = await getDocs(query(collection(db, 'recordings'), where('leadId', '==', leadId)));
@@ -774,7 +774,7 @@ export default function SuperAdmin() {
                        Close Node
                     </button>
                     <button 
-                      onClick={() => { if(confirm("Are you sure you want to delete this lead?")) handleDeleteLead(selectedLead.id); }}
+                      onClick={() => setLeadToDelete(selectedLead.id)}
                       className="p-5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-[2rem] hover:bg-rose-500/20 transition-all active:scale-95"
                       title="Terminate Node"
                     >
@@ -786,6 +786,19 @@ export default function SuperAdmin() {
             </div>
           )}
         </AnimatePresence>
+        <ConfirmModal
+          open={leadToDelete !== null}
+          title="Delete lead permanently?"
+          message="This will permanently delete the lead and all associated data. This action cannot be undone."
+          confirmLabel="Delete permanently"
+          onCancel={() => setLeadToDelete(null)}
+          onConfirm={async () => {
+            if (!leadToDelete) return;
+            const id = leadToDelete;
+            setLeadToDelete(null);
+            await handleDeleteLead(id);
+          }}
+        />
       </div>
     </div>
   );

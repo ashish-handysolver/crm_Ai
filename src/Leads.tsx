@@ -17,6 +17,7 @@ import { logActivity } from './utils/activity';
 import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import SearchableSelect from './components/SearchableSelect';
 import { transcribeWithGroq } from './utils/ai-service';
+import ConfirmModal from './components/ConfirmModal';
 
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
@@ -82,6 +83,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   const [teamMemberFilter, setTeamMemberFilter] = useState((location.state as any)?.assignedTo || '');
   const [activeTodayFilter, setActiveTodayFilter] = useState((location.state as any)?.activeToday || false);
   const [activePhasesFilter, setActivePhasesFilter] = useState<string[]>((location.state as any)?.activePhases || []);
+  const [deleteTarget, setDeleteTarget] = useState<{ mode: 'single'; leadId: string } | { mode: 'bulk'; leadIds: string[] } | null>(null);
 
   const preserveScrollWhile = useCallback((update: () => void) => {
     const scrollX = window.scrollX;
@@ -526,8 +528,6 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
   };
 
   const handleDeleteLead = async (leadId: string) => {
-    if (!window.confirm("Are you sure you want to delete this lead? This will also remove all associated recordings and meetings.")) return;
-
     try {
       setLoadingLeads(true);
       const qRecs = query(collection(db, 'recordings'), where('leadId', '==', leadId));
@@ -873,20 +873,19 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (!selectedLeads.length) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedLeads.length} leads? This will also remove all associated recordings and meetings.`)) return;
+  const handleBulkDelete = async (leadIds = selectedLeads) => {
+    if (!leadIds.length) return;
 
     try {
       setLoadingLeads(true);
-      for (const leadId of selectedLeads) {
+      for (const leadId of leadIds) {
         const recSnap = await getDocs(query(collection(db, 'recordings'), where('leadId', '==', leadId)));
         for (const d of recSnap.docs) await deleteDoc(doc(db, 'recordings', d.id));
         const mtgSnap = await getDocs(query(collection(db, 'meetings'), where('leadId', '==', leadId)));
         for (const d of mtgSnap.docs) await deleteDoc(doc(db, 'meetings', d.id));
         await deleteDoc(doc(db, 'leads', leadId));
       }
-      setSuccess(`Successfully deleted ${selectedLeads.length} leads.`);
+      setSuccess(`Successfully deleted ${leadIds.length} leads.`);
       setSelectedLeads([]);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -1567,7 +1566,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                   <ThumbsDown size={14} /> <span className="hidden sm:inline">Not Interested</span>
                 </button>
                 <button
-                  onClick={handleBulkDelete}
+                    onClick={() => setDeleteTarget({ mode: 'bulk', leadIds: [...selectedLeads] })}
                   className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 bg-rose-600 text-white rounded-2xl text-[10px] sm:text-xs font-black hover:bg-rose-500 transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest"
                 >
                   <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
@@ -1829,7 +1828,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                               </Link>
                               {(role === 'admin' || role === 'super_admin') && (
                                 <button
-                                  onClick={() => handleDeleteLead(lead.id)}
+                                  onClick={() => setDeleteTarget({ mode: 'single', leadId: lead.id })}
                                   className="p-2 sm:p-3 text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg sm:rounded-xl transition-all border border-transparent"
                                   title="Delete Lead"
                                 >
@@ -2060,7 +2059,7 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 </Link>
                                 {(role === 'admin' || role === 'super_admin') && (
                                   <button
-                                    onClick={() => handleDeleteLead(lead.id)}
+                                    onClick={() => setDeleteTarget({ mode: 'single', leadId: lead.id })}
                                     className="w-9 h-9 flex items-center justify-center text-[var(--crm-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all border border-transparent hover:border-rose-500/20"
                                     title="Delete Lead"
                                   >
@@ -2374,6 +2373,27 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           </div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title={deleteTarget?.mode === 'bulk' ? 'Delete selected leads?' : 'Delete lead?'}
+        message={
+          deleteTarget?.mode === 'bulk'
+            ? `This will permanently delete ${deleteTarget.leadIds.length} leads along with their recordings and meetings.`
+            : 'This will permanently delete the lead and all associated recordings and meetings.'
+        }
+        confirmLabel={deleteTarget?.mode === 'bulk' ? 'Delete leads' : 'Delete lead'}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          const target = deleteTarget;
+          setDeleteTarget(null);
+          if (target.mode === 'bulk') {
+            await handleBulkDelete(target.leadIds);
+            return;
+          }
+          await handleDeleteLead(target.leadId);
+        }}
+      />
     </PageLayout>
   );
 }
