@@ -18,7 +18,7 @@ import { WHATSAPP_TEMPLATES, openWhatsApp } from './utils/whatsapp';
 import SearchableSelect from './components/SearchableSelect';
 import { transcribeWithGroq } from './utils/ai-service';
 import ConfirmModal from './components/ConfirmModal';
-
+import { sendPushToUser } from './utils/push';
 
 const DUMMY_LEADS = [
   { id: '1', name: 'Alexander Sterling', email: 'a.sterling@vanguard.io', company: 'Vanguard Systems', location: 'London, UK', source: 'LINKEDIN', health: 'HOT', score: 85, lastPulse: '2 hours ago', phase: 'QUALIFIED', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', phone: '+44 20 7123 4567' },
@@ -659,7 +659,12 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
           leadName: lead?.name || 'Unknown',
           assignedByName: user.displayName || 'Admin'
         });
-
+        await sendPushToUser(assignedTo, {
+          title: 'Lead Assigned',
+          body: `You have been assigned to lead: ${lead?.name || 'Unknown'}`,
+          tag: `lead-${leadId}`,
+          url: '/leads',
+        });
       }
     } catch (e) {
       console.error('Failed to update assignment', e);

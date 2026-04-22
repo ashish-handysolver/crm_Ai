@@ -6,38 +6,12 @@ import admin from 'firebase-admin';
 
 dotenv.config();
 
-const getFirebaseAdminCredential = () => {
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (serviceAccountJson) {
-    return admin.credential.cert(JSON.parse(serviceAccountJson));
-  }
-
-  const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-  if (serviceAccountBase64) {
-    const decoded = Buffer.from(serviceAccountBase64, 'base64').toString('utf8');
-    return admin.credential.cert(JSON.parse(decoded));
-  }
-
-  return null;
-};
-
-let firebaseAdminReady = false;
-
 if (!admin.apps.length) {
   try {
-    const credential = getFirebaseAdminCredential();
-    if (credential) {
-      admin.initializeApp({ credential });
-    } else {
-      admin.initializeApp();
-    }
-    firebaseAdminReady = true;
+    admin.initializeApp();
   } catch (err) {
-    firebaseAdminReady = false;
     console.warn('Firebase Admin init failed:', err.message);
   }
-} else {
-  firebaseAdminReady = true;
 }
 
 const app = express();
@@ -50,13 +24,6 @@ app.post('/api/push/send', async (req, res) => {
 
   if (!Array.isArray(tokens) || tokens.length === 0 || !payload?.title) {
     return res.status(400).json({ error: 'Tokens and payload.title are required.' });
-  }
-
-  if (!firebaseAdminReady) {
-    return res.status(503).json({
-      error: 'Firebase Admin messaging is not configured on the server.',
-      code: 'messaging/not-configured',
-    });
   }
 
   const message = {
@@ -86,16 +53,10 @@ app.post('/api/push/send', async (req, res) => {
       success: true,
       sent: response.successCount,
       failed: response.failureCount,
-      errors: response.responses
-        .filter((item) => !item.success)
-        .map((item) => item.error?.message || 'Unknown messaging error'),
     });
   } catch (error) {
     console.error('FCM send error:', error);
-    res.status(500).json({
-      error: error?.message || 'Failed to send notifications',
-      code: error?.code || 'messaging/unknown',
-    });
+    res.status(500).json({ error: 'Failed to send notifications' });
   }
 });
 
@@ -141,12 +102,7 @@ app.post('/api/transcribe', async (req, res) => {
   }
 });
 
-export default app;
-
-if (!process.env.VERCEL) {
-  const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`STT Proxy active on port ${PORT}`);
 });
-}
-
