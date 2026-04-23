@@ -69,3 +69,10 @@ export const getFirebaseMessaging = () => {
   const app = getFirebaseAdminApp();
   return app ? admin.messaging(app) : null;
 };
+
+export const getFirebaseAdminDb = () => {
+  const app = getFirebaseAdminApp();
+  return app ? admin.firestore(app) : null;
+};
+
+export { admin };

@@ -1,11 +1,35 @@
-import { getFirebaseMessaging } from './firebaseAdmin.js';
+import { admin, getFirebaseAdminDb, getFirebaseMessaging } from './firebaseAdmin.js';
 
 export const getPushConfigurationError = () => ({
   error: 'Firebase Admin is not configured for push notifications.',
   details: 'Set FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY, or GCLOUD_SERVICE_ACCOUNT_JSON / GCLOUD_SERVICE_ACCOUNT_PATH, or provide valid application default credentials.',
 });
 
-export const sendPushNotifications = async ({ tokens, payload }) => {
+const INVALID_TOKEN_CODES = new Set([
+  'messaging/invalid-registration-token',
+  'messaging/registration-token-not-registered',
+]);
+
+const removeInvalidTokens = async (userId, tokens) => {
+  if (!userId || tokens.length === 0) {
+    return;
+  }
+
+  const db = getFirebaseAdminDb();
+  if (!db) {
+    return;
+  }
+
+  try {
+    await db.collection('users').doc(userId).set({
+      fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokens),
+    }, { merge: true });
+  } catch (error) {
+    console.error('Failed to prune invalid FCM tokens:', error);
+  }
+};
+
+export const sendPushNotifications = async ({ userId, tokens, payload }) => {
   if (!Array.isArray(tokens) || tokens.length === 0 || !payload?.title) {
     return {
       status: 400,
@@ -46,10 +70,16 @@ export const sendPushNotifications = async ({ tokens, payload }) => {
 
   try {
     const response = await messaging.sendEachForMulticast(message);
+    const invalidTokens = response.responses
+      .map((item, index) => ({ item, token: tokens[index] }))
+      .filter(({ item }) => !item.success && INVALID_TOKEN_CODES.has(item.error?.code || ''))
+      .map(({ token }) => token);
     const failedResponses = response.responses
       .filter((item) => !item.success)
-      .map((item) => item.error?.message)
+      .map((item) => item.error?.message || item.error?.code)
       .filter(Boolean);
+
+    await removeInvalidTokens(userId, invalidTokens);
 
     return {
       status: 200,
@@ -58,6 +88,7 @@ export const sendPushNotifications = async ({ tokens, payload }) => {
         sent: response.successCount,
         failed: response.failureCount,
         errors: failedResponses,
+        invalidTokensRemoved: invalidTokens.length,
       },
     };
   } catch (error) {

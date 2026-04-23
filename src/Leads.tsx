@@ -1301,7 +1301,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
               {leadInitial}
             </div>
             <div className="min-w-0 space-y-1">
-              <h3 className="font-black text-base text-[var(--crm-text)] leading-snug break-words">{lead.name || 'Untitled lead'}</h3>
+              <Link
+                to={`/analytics/${lead.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-black text-base text-[var(--crm-text)] leading-snug break-words hover:text-indigo-400 transition-colors"
+              >
+                {lead.name || 'Untitled lead'}
+              </Link>
               <div className="text-xs font-bold text-[var(--crm-text)] truncate">{lead.company || 'No company'}</div>
               <a href={lead.phone ? `tel:${lead.phone}` : undefined} onClick={(e) => e.stopPropagation()} className="inline-flex max-w-full items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/15 px-2 py-1 text-[11px] font-bold text-[var(--crm-text-muted)] hover:text-emerald-400 transition-colors">
                 <Phone size={12} className="text-emerald-400 shrink-0" />
@@ -1945,7 +1951,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-3">
-                                    <div className="font-extrabold text-[var(--crm-text)] text-base break-words leading-tight">{lead.name}</div>
+                                    <Link
+                                      to={`/analytics/${lead.id}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="font-extrabold text-[var(--crm-text)] text-base break-words leading-tight hover:text-indigo-400 transition-colors"
+                                    >
+                                      {lead.name}
+                                    </Link>
                                     <div className="flex items-center gap-1.5">
                                       <button
                                         onClick={(e) => {
@@ -2129,11 +2141,13 @@ export default function Leads({ user, isActiveOnlyRoute }: { user: any; isActive
                                       <div className="flex items-center gap-3">
 
                                         {shareUrls[lead.id] ? (
-                                          <div className="flex items-center gap-2 w-72 bg-[var(--crm-control-bg)] rounded-xl shadow-inner border border-[var(--crm-border)] p-1">
-                                            <input readOnly value={shareUrls[lead.id]} className="flex-1 bg-transparent px-3 py-1.5 text-xs font-mono text-[var(--crm-text-muted)] outline-none text-ellipsis" />
-                                            {/* <button onClick={() => onCopyLink(lead.id, lead.name)} className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors font-bold shadow-sm" title="Copy Link">
-                                              <Copy size={16} />
-                                            </button> */}
+                                          <div className="flex items-center gap-2 w-72 bg-[var(--crm-control-bg)] rounded-xl shadow-inner border border-[var(--crm-border)] p-1.5">
+                                            <Link
+                                              to={`/analytics/${lead.id}`}
+                                              className="flex-1 px-3 py-2 text-xs font-black uppercase tracking-wider text-[var(--crm-text)] hover:text-indigo-400 transition-colors truncate"
+                                            >
+                                              Open {lead.name} Profile
+                                            </Link>
                                             <button onClick={() => onShareLink(lead.id, lead.name)} className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors font-bold shadow-sm" title="Share Link">
                                               <Share2 size={16} />
                                             </button>

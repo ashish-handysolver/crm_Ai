@@ -341,7 +341,9 @@ export default function Reports({ user }: { user: any }) {
                           <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 border-2 sm:border-4 border-slate-900 shadow-sm" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-black text-lg sm:text-xl lg:text-2xl text-[var(--crm-text)] tracking-tight truncate">{rec.lead.name}</h3>
+                          <Link to={`/analytics/${rec.lead.id}`} className="font-black text-lg sm:text-xl lg:text-2xl text-[var(--crm-text)] tracking-tight truncate hover:text-indigo-400 transition-colors">
+                            {rec.lead.name}
+                          </Link>
                           <div className="text-[10px] sm:text-xs font-black text-indigo-400 mt-0.5 sm:mt-1 uppercase tracking-widest truncate flex items-center gap-1.5 sm:gap-2">
                             <Sparkles size={12} className="animate-pulse" /> {rec.lead.company}
                           </div>

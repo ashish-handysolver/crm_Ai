@@ -53,6 +53,22 @@ const getApiBaseUrl = () => {
 
 const SEND_ENDPOINT = `${getApiBaseUrl()}/api/push/send`;
 
+const toAbsoluteUrl = (url?: string) => {
+  if (!url) {
+    return typeof window !== 'undefined' ? window.location.origin : undefined;
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  if (typeof window === 'undefined') {
+    return url;
+  }
+
+  return new URL(url, window.location.origin).toString();
+};
+
 const getMessagingIfSupported = async () => {
   if (typeof window === 'undefined') {
     return null;
@@ -145,13 +161,24 @@ export const sendPushToUser = async (userId: string, payload: PushPayload) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      userId,
       tokens,
-      payload,
+      payload: {
+        ...payload,
+        url: toAbsoluteUrl(payload.url),
+      },
     }),
   });
 
+  const responseBody = await response.json().catch(() => null);
+
   if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown push error');
-    throw new Error(`Push send failed: ${errorText}`);
+    throw new Error(`Push send failed: ${JSON.stringify(responseBody) || 'Unknown push error'}`);
   }
+
+  if (!responseBody?.success || responseBody.sent === 0) {
+    throw new Error(`Push send failed: ${JSON.stringify(responseBody) || 'No devices accepted the notification.'}`);
+  }
+
+  return responseBody;
 };

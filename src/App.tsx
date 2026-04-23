@@ -863,31 +863,42 @@ const RecordingView = () => {
     }
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
     if (!recording) return;
 
-    let text = `✨ *Meeting Highlights & Next Steps* ✨\n\n`;
-    const notes = recording.aiInsights?.meetingMinutes || [];
-    if (notes.length > 0) {
-      text += `📌 *Key Notes:*\n`;
-      notes.forEach((note: string) => { text += `🔹 ${note}\n`; });
-      text += `\n`;
+    let resolvedLead: any = recording.lead || null;
+
+    if (!resolvedLead && recording.leadId && recording.leadId !== 'general') {
+      const leadSnap = await getDoc(doc(db, 'leads', recording.leadId));
+      if (leadSnap.exists()) {
+        resolvedLead = { id: leadSnap.id, ...leadSnap.data() };
+      }
     }
 
-    const tasks = recording.aiInsights?.tasks || [];
-    if (tasks.length > 0) {
-      text += `🚀 *Action Items:*\n`;
-      tasks.forEach((task: any) => {
-        const assignee = task.assignee ? ` (@${task.assignee})` : '';
-        text += `${task.completed ? '✅' : '🔴'} ${task.title}${assignee}\n`;
-      });
+    if (!resolvedLead && recording.meetingId) {
+      const meetingSnap = await getDoc(doc(db, 'meetings', recording.meetingId));
+      if (meetingSnap.exists()) {
+        const meetingData = meetingSnap.data() as any;
+        if (meetingData?.leadId) {
+          const leadSnap = await getDoc(doc(db, 'leads', meetingData.leadId));
+          if (leadSnap.exists()) {
+            resolvedLead = { id: leadSnap.id, ...leadSnap.data() };
+          }
+        }
+      }
     }
 
-    if (notes.length === 0 && tasks.length === 0) {
-      text += `⏳ _No insights generated yet._\n`;
-    }
+    const recapTemplate = WHATSAPP_TEMPLATES.find((template) => template.id === 'meeting-recap');
+    const recordUrl = `${window.location.origin}/r/${recording.id}`;
+    const text = recapTemplate
+      ? recapTemplate.generate({
+          leadName: resolvedLead?.name || recording.lead?.name || recording.leadName,
+          aiInsights: recording.aiInsights,
+          recordUrl,
+        })
+      : `Recording Link: ${recordUrl}`;
 
-    const phone = recording.lead?.phone || '';
+    const phone = resolvedLead?.phone || recording.lead?.phone || '';
     openWhatsApp(phone, text);
   };
 

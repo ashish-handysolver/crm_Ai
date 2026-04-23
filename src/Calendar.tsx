@@ -221,7 +221,6 @@ export default function CalendarPage({ user }: { user: any }) {
   const handleQuickShare = (rec: any) => {
     const template = WHATSAPP_TEMPLATES.find(t => t.id === 'meeting-invite');
     if (!template) return;
-
     const lead = leads.find(l => l.id === rec.leadId);
 
     const d = rec.scheduledAt?.toDate?.() || new Date();
@@ -232,6 +231,7 @@ export default function CalendarPage({ user }: { user: any }) {
       meetingTitle: rec.title,
       dateTime: dateTimeStr,
       meetingUrl: rec.meetLink
+
     });
 
     openWhatsApp(lead?.phone || '', text);
@@ -493,11 +493,27 @@ export default function CalendarPage({ user }: { user: any }) {
 
                       {/* Action buttons */}
                       <div className="flex items-center gap-2 mt-5 relative z-10">
+                        {m.meetLink ? (
+                          <button
+                            onClick={() => window.open(m.meetLink, '_blank')}
+                            className="flex-1 btn-primary !py-2 !px-3 text-[10px] shadow-sm"
+                          >
+                            <Video size={12} /> Meet
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleQuickShare(m)}
+                            className="flex-1 btn-primary !py-2 !px-3 text-[10px] shadow-sm"
+                          >
+                            <MessageSquare size={12} /> WhatsApp
+                          </button>
+                        )}
                         <button
-                          onClick={() => window.open(m.meetLink, '_blank')}
-                          className="flex-1 btn-primary !py-2 !px-3 text-[10px] shadow-sm"
+                          onClick={() => handleQuickShare(m)}
+                          className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all"
+                          title="WhatsApp Invite"
                         >
-                          <Video size={12} /> Meet
+                          <MessageSquare size={12} />
                         </button>
                         <button
                           onClick={() => openEditModal(m)}
@@ -505,8 +521,8 @@ export default function CalendarPage({ user }: { user: any }) {
                         >
                           <Edit2 size={12} />
                         </button>
-                          <button
-                            onClick={() => setMeetingToDelete(m.id)}
+                        <button
+                          onClick={() => setMeetingToDelete(m.id)}
                           className="p-2 rounded-xl bg-[var(--crm-bg)]/40 hover:bg-rose-500/20 text-rose-400 border border-[var(--crm-border)] transition-all"
                         >
                           <Trash2 size={12} />
