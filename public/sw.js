@@ -36,9 +36,15 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification?.title || payload.data?.title || 'HandyCRM';
+  
+  if (payload.notification) {
+    console.log('[sw.js] Notification handled automatically by Firebase.');
+    return;
+  }
+
+  const notificationTitle = payload.data?.title || 'HandyCRM';
   const notificationOptions = {
-    body: payload.notification?.body || payload.data?.body || 'You have a new update.',
+    body: payload.data?.body || 'You have a new update.',
     icon: '/logo.png',
     badge: '/logo.png',
     tag: payload.data?.tag,

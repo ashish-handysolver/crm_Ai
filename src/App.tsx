@@ -62,7 +62,7 @@ import { Plus } from 'lucide-react';
 import { analyzeWithGroq, transcribeWithGroq } from './utils/ai-service';
 import jsPDF from 'jspdf';
 import { requestNotificationPermission, showAppNotification } from './utils/notifications';
-import { registerDeviceForPush } from './utils/push';
+import { registerDeviceForPush, isIos, isStandaloneDisplay } from './utils/push';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DemoProvider, useDemo } from './DemoContext';
@@ -202,13 +202,26 @@ const NotificationBell = () => {
       .catch((error) => console.error('Push sync failed:', error));
   }, [user, companyId]);
 
-  const handleRequestPush = () => {
+  const handleRequestPush = async () => {
     if (!user) return;
-    registerDeviceForPush(user.uid, companyId || null)
-      .then((enabled) => setPushEnabled(enabled))
-      .catch((error) => {
-        console.error('Push registration failed:', error);
-      });
+    if (isIos() && !isStandaloneDisplay()) {
+      alert("To enable notifications on iOS, please tap the Share icon and select 'Add to Home Screen'. Open the app from your home screen to enable push notifications.");
+      return;
+    }
+    try {
+      const enabled = await registerDeviceForPush(user.uid, companyId || null);
+      setPushEnabled(enabled);
+      if (!enabled) {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+          alert('Notifications are blocked by your browser. Please enable them in your site settings.');
+        } else {
+          alert('Failed to enable push notifications. Your device or browser might not support it.');
+        }
+      }
+    } catch (error) {
+      console.error('Push registration failed:', error);
+      alert('An error occurred while enabling push notifications.');
+    }
   };
 
   const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {

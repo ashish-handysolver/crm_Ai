@@ -15,7 +15,7 @@ const FCM_SW_SCOPE = '/';
 
 let messagingSupportPromise: Promise<boolean> | null = null;
 
-const isIos = () => {
+export const isIos = () => {
   if (typeof window === 'undefined') {
     return false;
   }
@@ -23,7 +23,7 @@ const isIos = () => {
   return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 };
 
-const isStandaloneDisplay = () => {
+export const isStandaloneDisplay = () => {
   if (typeof window === 'undefined') {
     return false;
   }
