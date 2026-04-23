@@ -10,10 +10,26 @@ type PushPayload = {
   url?: string;
 };
 
-const FCM_SW_URL = '/firebase-messaging-sw.js';
-const FCM_SW_SCOPE = '/firebase-cloud-messaging-push-scope';
+const FCM_SW_URL = '/sw.js';
+const FCM_SW_SCOPE = '/';
 
 let messagingSupportPromise: Promise<boolean> | null = null;
+
+const isIos = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+};
+
+const isStandaloneDisplay = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.matchMedia?.('(display-mode: standalone)')?.matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+};
 
 const getApiBaseUrl = () => {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
@@ -72,6 +88,12 @@ export const registerDeviceForPush = async (userId: string, companyId: string | 
     return false;
   }
 
+  // On iOS, web push is intended for Home Screen web apps.
+  if (isIos() && !isStandaloneDisplay()) {
+    console.info('Push registration skipped on iOS until the app is opened from the Home Screen.');
+    return false;
+  }
+
   const permission = await requestNotificationPermission();
   if (permission !== 'granted') {
     return false;
@@ -92,6 +114,7 @@ export const registerDeviceForPush = async (userId: string, companyId: string | 
     const registration = await navigator.serviceWorker.register(FCM_SW_URL, {
       scope: FCM_SW_SCOPE,
     });
+    await navigator.serviceWorker.ready;
 
     const token = await getToken(messaging, {
       vapidKey,
