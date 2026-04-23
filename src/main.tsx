@@ -8,9 +8,16 @@ import { Analytics } from '@vercel/analytics/react';
 // Register Service Worker for PWA Support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
         console.info('PWA_SYNC_ESTABLISHED: ServiceWorker registered');
+        navigator.serviceWorker.getRegistrations()
+          .then((registrations) => Promise.all(
+            registrations
+              .filter((item) => item.scope.includes('/firebase-cloud-messaging-push-scope'))
+              .map((item) => item.unregister())
+          ))
+          .catch(err => console.warn('PWA_SYNC_CLEANUP_FAILED:', err));
         // Check for updates
         reg.onupdatefound = () => {
           const installingWorker = reg.installing;
